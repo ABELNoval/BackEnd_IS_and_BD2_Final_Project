@@ -1,6 +1,6 @@
 namespace Domain.Entities
 {
-    class Director:User
+    public class Director:User
     {
         //mismas propiedas del  Usuario
     }

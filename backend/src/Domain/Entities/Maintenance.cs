@@ -1,6 +1,6 @@
 namespace Domain.Entities
 {
-    class Maintenance
+    public class Maintenance
     {
         public int Id { get; set; }
         public DateTime DateTime { get; set; }

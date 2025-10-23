@@ -1,6 +1,6 @@
 namespace Domain.Entities
 {
-    class Assessment
+    public class Assessment
     {
         public int Id { get; set; }
         public string Coment { get; set; } = string.Empty;

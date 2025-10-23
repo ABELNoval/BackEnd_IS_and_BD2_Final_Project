@@ -1,6 +1,6 @@
 namespace Domain.Entities
 {
-    class TechnicalDowntime
+    public class TechnicalDowntime
     {
         public int Id { get; set; }
         public string Cause { get; set; } = string.Empty;

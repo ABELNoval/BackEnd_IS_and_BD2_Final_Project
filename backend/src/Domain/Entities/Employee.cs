@@ -1,7 +1,8 @@
 namespace Domain.Entities
 {
-    class Employee:User
+    public class Employee:User
     {
+        public int? DepartmentId { get; set; }
         public Department Department { get; set; } = null!;
     }
 }

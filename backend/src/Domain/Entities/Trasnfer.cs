@@ -1,6 +1,6 @@
 namespace Domain.Entities
 {
-    class Transfer
+    public class Transfer
     {
         public int Id { get; set; }
         public DateTime DateTime { get; set; }
