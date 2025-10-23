@@ -79,3 +79,8 @@ _ReSharper*/
 *.mdf
 *.ldf
 *.sqlite
+
+# Configuraciones de desarrollo
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Production.json
