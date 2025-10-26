@@ -2,14 +2,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Domain.Entities;
 
-namespace Infrastructure.Persistence.Repositories
+namespace Infrastructure.Persistence.Interfaces
 {
-    public interface IEquipmentRepository
+    public interface IEquipmentRepository : IRepository<Equipment>
     {
-        Task<Equipment> GetByIdAsync(int id);
-        Task<IEnumerable<Equipment>> GetAllAsync();
-        Task AddAsync(Equipment equipment);
-        Task UpdateAsync(Equipment equipment);
-        Task DeleteAsync(int id);
+        // Métodos específicos de Equipment si los hay
     }
 }

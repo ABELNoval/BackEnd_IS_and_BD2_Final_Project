@@ -2,14 +2,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Domain.Entities;
 
-namespace Infrastructure.Persistence.Repositories
+namespace Infrastructure.Persistence.Interfaces
 {
-    public interface IMaintenanceRepository
+    public interface IMaintenanceRepository : IRepository<Maintenance>
     {
-        Task<Maintenance> GetByIdAsync(int id);
-        Task<IEnumerable<Maintenance>> GetAllAsync();
-        Task AddAsync(Maintenance maintenance);
-        Task UpdateAsync(Maintenance maintenance);
-        Task DeleteAsync(int id);
+        // Métodos específicos de Maintenance si los hay
     }
 }

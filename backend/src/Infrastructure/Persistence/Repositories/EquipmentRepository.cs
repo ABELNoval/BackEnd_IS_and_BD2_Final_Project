@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Domain.Entities;
+using Infrastructure.Persistence.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories
@@ -14,7 +15,7 @@ namespace Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<Equipment> GetByIdAsync(int id)
+        public async Task<Equipment> GetByIdAsync(Guid id)
         {
             return await _context.Equipments.FindAsync(id);
         }
@@ -36,9 +37,9 @@ namespace Infrastructure.Persistence.Repositories
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task DeleteAsync(Guid id)
         {
-            var equipment = await _context.Equipments.FindAsync(id);
+            var equipment = await GetByIdAsync(id);
             if (equipment != null)
             {
                 _context.Equipments.Remove(equipment);
