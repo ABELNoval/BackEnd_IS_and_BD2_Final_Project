@@ -7,8 +7,8 @@ using System.Threading.Tasks;
 
 namespace Infrastructure.Persistence.Repositories
 {
-    public class SectionRepository : BaseRepository<Section>, ISectionRepository
+    public class AssessmentRepository : BaseRepository<Assessment>, IAssessmentRepository
     {
-        public SectionRepository(AppDbContext context) : base(context) { }
+        public AssessmentRepository(AppDbContext context) : base(context) { }
     }
 }
