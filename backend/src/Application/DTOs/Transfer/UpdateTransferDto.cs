@@ -1,4 +1,4 @@
-namespace Application.DTOs.Transfet
+namespace Application.DTOs.Transfer
 {
     public class UpdateTransferDto
     {

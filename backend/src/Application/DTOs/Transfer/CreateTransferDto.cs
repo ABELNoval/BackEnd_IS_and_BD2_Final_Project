@@ -1,10 +1,10 @@
-namespace Application.DTOs.Transfet
+namespace Application.DTOs.Transfer
 {
     public class CreateTransferDto
     {
-        public DateTime DateTime { get; set; }
+        public DateTime Date { get; set; }
         public int OriginDepartmentId { get; set; }
         public int DestinyDepartmentId { get; set; }
-        public int EquimentId { get; set; }
+        public int EquipmentId { get; set; }
     }
 }
