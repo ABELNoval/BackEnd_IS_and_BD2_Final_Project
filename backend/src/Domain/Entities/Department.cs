@@ -1,12 +1,47 @@
-namespace Domain.Entities
+using Domain.Common;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents a department in the organization.
+/// Departments are organizational units that own equipment.
+/// </summary>
+public class Department : Entity
 {
-    public class Department
+    public string Name { get; private set; }
+    public Guid SectionId { get; private set; }
+    public Guid ResponsibleId { get; private set; }
+
+    protected Department() { }
+
+    private Department(string name, Guid sectionId, Guid responsibleId)
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public Section Section { get; set; } = null!;
-        public List<Equipment> Equipments { get; set; } = new List<Equipment>()!;
-        public List<Employee> Employees { get; set; } = null!;
-        public Responsible Responsible{ get; set; } = null!;
+        GenerateId();
+        Name = name.Trim();
+        SectionId = sectionId;
+        ResponsibleId = responsibleId;
+        Validate();
     }
+
+    public static Department Create(string name, Guid sectionId, Guid responsibleId)
+    {
+        return new Department(name, sectionId, responsibleId);
+    }
+
+    private void Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Name))
+            throw new InvalidEntityException(nameof(Department), "Name cannot be empty");
+
+        if (SectionId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Department), "Section ID cannot be empty");
+
+        if (ResponsibleId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Department), "Responsible ID cannot be empty");
+    }
+
+    public bool BelongsToSection(Guid sectionId) => SectionId == sectionId;
+    
+    public bool HasResponsible(Guid responsibleId) => ResponsibleId == responsibleId;
 }
