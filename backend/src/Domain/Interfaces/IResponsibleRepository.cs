@@ -1,6 +1,6 @@
 using Domain.Entities;
 
-namespace Infrastructure.Persistence.Interfaces
+namespace Domain.Interfaces
 {
     public interface IResponsibleRepository : IRepository<Responsible>
     {

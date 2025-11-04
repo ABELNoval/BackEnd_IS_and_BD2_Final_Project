@@ -30,18 +30,30 @@ namespace Infrastructure.Persistence
         {
             base.OnModelCreating(modelBuilder);
 
-            // Para MySQL, necesitamos configurar algunas cosas específicas
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+            modelBuilder.Entity<TechnicalDowntime>(b =>
             {
-                // Configurar nombres de tablas en minúsculas para MySQL
-                entityType.SetTableName(entityType.GetTableName().ToLower());
-                
-                // Configurar nombres de columnas en minúsculas
-                foreach (var property in entityType.GetProperties())
-                {
-                    property.SetColumnName(property.GetColumnName().ToLower());
-                }
-            }
+                b.HasKey(td => td.Id);
+
+                b.HasOne(td => td.Technical)
+                 .WithMany()
+                 .HasForeignKey(td => td.TechnicalId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(td => td.Equipment)
+                 .WithMany()
+                 .HasForeignKey(td => td.EquipmentId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(td => td.DestinyType)
+                 .WithMany()
+                 .HasForeignKey(td => td.DestinyTypeId)
+                 .OnDelete(DeleteBehavior.Restrict);
+
+                b.HasOne(td => td.Department)
+                 .WithMany()
+                 .HasForeignKey(td => td.DepartmentId)
+                 .OnDelete(DeleteBehavior.Restrict);
+            });
 
             // CONFIGURACIÓN TPT PARA LA JERARQUÍA COMPLETA
             modelBuilder.Entity<User>().ToTable("Users");

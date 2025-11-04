@@ -1,6 +1,6 @@
 using Domain.Entities;
 
-namespace Infrastructure.Persistence.Interfaces
+namespace Domain.Interfaces
 {
     public interface ISectionRepository : IRepository<Section>
     {

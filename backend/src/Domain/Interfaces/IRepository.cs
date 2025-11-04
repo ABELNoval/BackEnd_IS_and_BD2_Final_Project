@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Infrastructure.Persistence.Interfaces
+namespace Domain.Interfaces
 {
     public interface IRepository<T> where T : class
     {
