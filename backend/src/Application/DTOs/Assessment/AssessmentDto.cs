@@ -2,19 +2,22 @@ namespace Application.DTOs.Assessment
 {
     public class AssessmentDTO
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; }
+
+        public Guid TechnicalId { get; set; }
+
+        public Guid DirectorId { get; set; }
+
+        public decimal Score { get; set; }
+
         public string Comment { get; set; } = string.Empty;
-        public double Punctuation { get; set; } 
-        public DateTime Date { get; set; }
 
+        public DateTime AssessmentDate { get; set; }
 
-        public int DirectorId { get; set; }
-        public string DirectorName { get; set; } = string.Empty;
-
-
-        public int TechnicalId { get; set; }
-        public string TechnicalName { get; set; } = string.Empty;
-        public string TechnicalSpecialty { get; set; } = string.Empty;
+        // CHECK => FOR MAPPER
+        public string? DirectorName { get; set; }
+        public string? TechnicalName { get; set; }
+        public string? TechnicalSpecialty { get; set; }
 
     }
 }
