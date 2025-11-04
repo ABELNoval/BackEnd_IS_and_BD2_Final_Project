@@ -2,19 +2,23 @@ namespace Application.DTOs.Maintenance
 {
     public class MaintenanceDto
     {
-        public int Id { get; set; }
-        public DateTime Date { get; set; }
+        public Guid Id { get; set; }
+
+        public Guid EquipmentId { get; set; }
+
+        public Guid TechnicalId { get; set; }
+
+        public DateTime MaintenanceDate { get; set; }
+
+        public int MaintenanceTypeId { get; set; }
+
+        public string MaintenanceTypeName { get; set; } = string.Empty;
+        
         public decimal Cost { get; set; }
-        public string Type { get; set; } = string.Empty;
-        
-        
-        public int EquimentId { get; set; }
-        public string EquipmentName { get; set; } = string.Empty;
-        public string EquipmentType { get; set; } = string.Empty;
-        public string EquipmentState { get; set; } = string.Empty;
-        
-        
-        public int TechnicalId { get; set; }
-        public string TechnicalName { get; set; } = string.Empty;
+
+        // CHECK => MAPPER
+        public string? EquipmentName { get; set; }
+        public string? EquipmentType { get; set; }
+        public string? TechnicalName { get; set; }
     }
 }

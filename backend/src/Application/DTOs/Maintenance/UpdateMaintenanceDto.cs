@@ -1,11 +1,13 @@
 namespace Application.DTOs.Maintenance
 {
-    public class UpdateMaintenaceDto
+    public class UpdateMaintenanceDto
     {
-        public int Id { get; set; }
-        public DateTime Date { get; set; }
+        public Guid Id { get; set; }
+
         public decimal Cost { get; set; }
-        public string Type { get; set; } = string.Empty;
-        public int TechnicalId { get; set; }
+
+        public int MaintenanceTypeId { get; set; }
+
+        public DateTime MaintenanceDate { get; set; }
     }
 }
