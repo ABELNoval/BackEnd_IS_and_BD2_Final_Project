@@ -60,7 +60,7 @@ namespace Domain.ValueObjects
             if (!list.Any())
                 return new PerformanceScore(0);
 
-            var average = list.Average(a => a.Score);
+            var average = list.Average(a => a.Score.Value);
             return new PerformanceScore(average);
         }
 
