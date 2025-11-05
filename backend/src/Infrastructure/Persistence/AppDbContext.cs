@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Domain.Entities;
+using Domain.ValueObjects;
+using Domain.Enumerations;
 
 namespace Infrastructure.Persistence
 {
@@ -9,235 +11,264 @@ namespace Infrastructure.Persistence
         {
         }
 
-        // DbSets para cada entidad
+        // DbSets para entidades con identidad propia
         public DbSet<User> Users { get; set; }
         public DbSet<Director> Directors { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Technical> Technicals { get; set; }
         public DbSet<Responsible> Responsibles { get; set; }
-        public DbSet<Role> Roles { get; set; }
         public DbSet<Assessment> Assessments { get; set; }
         public DbSet<Department> Departments { get; set; }
-        public DbSet<DestinyType> DestinyTypes { get; set; }
         public DbSet<Equipment> Equipments { get; set; }
         public DbSet<EquipmentType> EquipmentTypes { get; set; }
         public DbSet<Maintenance> Maintenances { get; set; }
         public DbSet<Section> Sections { get; set; }
-        public DbSet<TechnicalDowntime> TechnicalDowntimes { get; set; }
         public DbSet<Transfer> Transfers { get; set; }
+        public DbSet<EquipmentDecommission> EquipmentDecommissions { get; set; }
+        
+        // Smart Enums NO necesitan DbSet - son valores en código, no tablas
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Para MySQL, necesitamos configurar algunas cosas específicas
-            foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-            {
-                // Configurar nombres de tablas en minúsculas para MySQL
-                entityType.SetTableName(entityType.GetTableName().ToLower());
-                
-                // Configurar nombres de columnas en minúsculas
-                foreach (var property in entityType.GetProperties())
-                {
-                    property.SetColumnName(property.GetColumnName().ToLower());
-                }
-            }
-
-            // CONFIGURACIÓN TPT PARA LA JERARQUÍA COMPLETA
+            /// <summary>
+            /// Configures TPT (Table Per Type) inheritance for User hierarchy.
+            /// </summary>
             modelBuilder.Entity<User>().ToTable("Users");
             modelBuilder.Entity<Director>().ToTable("Directors");
             modelBuilder.Entity<Employee>().ToTable("Employees");
             modelBuilder.Entity<Technical>().ToTable("Technicals");
             modelBuilder.Entity<Responsible>().ToTable("Responsibles");
 
-            // Configuración explícita de la herencia User -> Employee -> Responsible
-            modelBuilder.Entity<Employee>()
-                .HasBaseType<User>();
+            modelBuilder.Entity<Employee>().HasBaseType<User>();
+            modelBuilder.Entity<Responsible>().HasBaseType<Employee>();
+            modelBuilder.Entity<Technical>().HasBaseType<User>();
+            modelBuilder.Entity<Director>().HasBaseType<User>();
 
-            modelBuilder.Entity<Responsible>()
-                .HasBaseType<Employee>();
-
-            // Technical y Director heredan directamente de User
-            modelBuilder.Entity<Technical>()
-                .HasBaseType<User>();
-
-            modelBuilder.Entity<Director>()
-                .HasBaseType<User>();
-
-            // Configuración de claves foráneas para las agregaciones
-
-            // Assessment - Combinación de Director y Technical
+            /// <summary>
+            /// Configures Assessment entity with PerformanceScore value object converter.
+            /// </summary>
             modelBuilder.Entity<Assessment>(entity =>
             {
-                entity.HasOne(a => a.Director)
-                    .WithMany()
-                    .HasForeignKey("DirectorId")
-                    .OnDelete(DeleteBehavior.Restrict);
+                entity.ToTable("Assessments");
+                
+                entity.Property(a => a.Score)
+                    .HasConversion(
+                        v => v.Value,
+                        v => PerformanceScore.Create(v)
+                    )
+                    .HasColumnName("Score")
+                    .HasPrecision(5, 2)
+                    .IsRequired();
 
-                entity.HasOne(a => a.Technical)
-                    .WithMany()
-                    .HasForeignKey("TechnicalId")
-                    .OnDelete(DeleteBehavior.Restrict);
+                entity.Property(a => a.Comment)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(a => a.AssessmentDate)
+                    .IsRequired();
+
+                entity.HasIndex(a => a.AssessmentDate);
             });
 
-            // TechnicalDowntime - Agregación compleja (4 relaciones)
-            modelBuilder.Entity<TechnicalDowntime>(entity =>
-            {
-                entity.HasOne(td => td.Technical)
-                    .WithMany()
-                    .HasForeignKey("TechnicalId")
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(td => td.Equipment)
-                    .WithMany()
-                    .HasForeignKey("EquipmentId")
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(td => td.DestinyType)
-                    .WithMany(dt => dt.TechnicalDowntimes)
-                    .HasForeignKey("DestinyTypeId")
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(td => td.Department)
-                    .WithMany()
-                    .HasForeignKey("DepartmentId")
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // Maintenance - Combinación de Equipment y Technical
-            modelBuilder.Entity<Maintenance>(entity =>
-            {
-                entity.HasOne(m => m.Equipment)
-                    .WithMany()
-                    .HasForeignKey("EquipmentId")
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(m => m.Technical)
-                    .WithMany()
-                    .HasForeignKey("TechnicalId")
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // Transfer - Combinación entre Departamentos y Equipment
-            modelBuilder.Entity<Transfer>(entity =>
-            {
-                entity.HasOne(t => t.Origin)
-                    .WithMany()
-                    .HasForeignKey("OriginId")
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(t => t.Destiny)
-                    .WithMany()
-                    .HasForeignKey("DestinyId")
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(t => t.Equipment)
-                    .WithMany()
-                    .HasForeignKey("EquipmentId")
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // Relaciones de Department
-            modelBuilder.Entity<Department>(entity =>
-            {
-                entity.HasOne(d => d.Section)
-                    .WithMany(s => s.Departaments)
-                    .HasForeignKey("SectionId")
-                    .OnDelete(DeleteBehavior.Restrict);
-
-                entity.HasOne(d => d.Responsible)
-                    .WithMany()
-                    .HasForeignKey("ResponsibleId")
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-             
-            // Relaciones de Equipment
+            /// <summary>
+            /// Configures Equipment entity with smart enum converters for State and LocationType.
+            /// </summary>
             modelBuilder.Entity<Equipment>(entity =>
             {
-                entity.HasOne(e => e.EquipmentType)
-                    .WithMany(et => et.Equipments)
-                    .HasForeignKey("EquipmentTypeId")
-                    .OnDelete(DeleteBehavior.Restrict);
+                entity.ToTable("Equipments");
 
-                entity.HasOne(e => e.Department)
-                    .WithMany(d => d.Equipments)
-                    .HasForeignKey("DepartmentId")
-                    .OnDelete(DeleteBehavior.Restrict);
+                entity.Property(e => e.State)
+                    .HasConversion(
+                        v => v.Id,
+                        v => EquipmentState.GetAll().First(s => s.Id == v)
+                    )
+                    .HasColumnName("StateId")
+                    .IsRequired();
+
+                entity.Property(e => e.LocationType)
+                    .HasConversion(
+                        v => v.Id,
+                        v => LocationType.GetAll().First(l => l.Id == v)
+                    )
+                    .HasColumnName("LocationTypeId")
+                    .IsRequired();
+
+                entity.Property(e => e.Name)
+                    .HasMaxLength(200)
+                    .IsRequired();
+
+                entity.Property(e => e.AcquisitionDate)
+                    .IsRequired();
+
+                entity.Property(e => e.EquipmentTypeId)
+                    .IsRequired();
+
+                entity.Property(e => e.DepartmentId)
+                    .IsRequired(false);
+
+                entity.HasMany(e => e.Transfers)
+                    .WithOne()
+                    .HasForeignKey("EquipmentId")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.Maintenances)
+                    .WithOne()
+                    .HasForeignKey("EquipmentId")
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasMany(e => e.Decommissions)
+                    .WithOne()
+                    .HasForeignKey("EquipmentId")
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // Relaciones de Employee (Responsible hereda esta relación)
-            modelBuilder.Entity<Employee>(entity =>
-            {
-                entity.HasOne(e => e.Department)
-                    .WithMany(d => d.Employees)
-                    .HasForeignKey("DepartmentId")
-                    .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // Relaciones de User (base de toda la jerarquía)
+            /// <summary>
+            /// Configures User base entity with property constraints and unique email index.
+            /// </summary>
             modelBuilder.Entity<User>(entity =>
             {
-                entity.HasOne(u => u.Role)
-                    .WithMany(r => r.Users)
-                    .HasForeignKey("RoleId")
-                    .OnDelete(DeleteBehavior.Restrict);
+                entity.Property(u => u.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(u => u.Email)
+                    .HasMaxLength(150)
+                    .IsRequired();
+
+                entity.Property(u => u.PasswordHash)
+                    .HasMaxLength(255)
+                    .IsRequired();
+
+                entity.Property(u => u.RoleId)
+                    .HasColumnName("RoleId")
+                    .IsRequired();
+
+                entity.HasIndex(u => u.Email)
+                    .IsUnique();
             });
 
-            // Configuración de propiedades requeridas
-            modelBuilder.Entity<User>()
-                .Property(u => u.Name)
-                .IsRequired()
-                .HasMaxLength(100);
+            /// <summary>
+            /// Configures Technical entity with specialty and experience constraints.
+            /// </summary>
+            modelBuilder.Entity<Technical>(entity =>
+            {
+                entity.Property(t => t.Specialty)
+                    .HasMaxLength(100)
+                    .IsRequired();
 
-            modelBuilder.Entity<User>()
-                .Property(u => u.Gmail)
-                .IsRequired()
-                .HasMaxLength(150);
+                entity.Property(t => t.Experience)
+                    .IsRequired();
 
-            modelBuilder.Entity<User>()
-                .Property(u => u.Password)
-                .IsRequired()
-                .HasMaxLength(255);
+                entity.HasMany(t => t.Assessments)
+                    .WithOne()
+                    .HasForeignKey("TechnicalId")
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
 
-            modelBuilder.Entity<Technical>()
-                .Property(t => t.Specialty)
-                .IsRequired()
-                .HasMaxLength(100);
+            /// <summary>
+            /// Configures Maintenance entity with cost precision and date indexing.
+            /// </summary>
+            modelBuilder.Entity<Maintenance>(entity =>
+            {
+                entity.ToTable("Maintenances");
 
-            modelBuilder.Entity<Department>()
-                .Property(d => d.Name)
-                .IsRequired()
-                .HasMaxLength(100);
+                entity.Property(m => m.MaintenanceTypeId)
+                    .HasColumnName("MaintenanceTypeId")
+                    .IsRequired();
 
-            modelBuilder.Entity<Equipment>()
-                .Property(e => e.Name)
-                .IsRequired()
-                .HasMaxLength(100);
+                entity.Property(m => m.Cost)
+                    .HasPrecision(10, 2)
+                    .IsRequired();
 
-            modelBuilder.Entity<Equipment>()
-                .Property(e => e.State)
-                .IsRequired()
-                .HasMaxLength(50);
+                entity.Property(m => m.MaintenanceDate)
+                    .IsRequired();
 
-            // Índices para mejorar el rendimiento
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Gmail)
-                .IsUnique();
+                entity.HasIndex(m => m.MaintenanceDate);
+            });
 
-            modelBuilder.Entity<TechnicalDowntime>()
-                .HasIndex(td => td.Date);
+            /// <summary>
+            /// Configures Transfer entity with date tracking and indexing.
+            /// </summary>
+            modelBuilder.Entity<Transfer>(entity =>
+            {
+                entity.ToTable("Transfers");
 
-            modelBuilder.Entity<Maintenance>()
-                .HasIndex(m => m.DateTime);
+                entity.Property(t => t.TransferDate)
+                    .IsRequired();
 
-            modelBuilder.Entity<Transfer>()
-                .HasIndex(t => t.DateTime);
+                entity.Property(t => t.CreatedAt)
+                    .IsRequired();
 
-            modelBuilder.Entity<Assessment>()
-                .HasIndex(a => a.Date);
+                entity.HasIndex(t => t.TransferDate);
+            });
 
-            modelBuilder.Entity<Employee>()
-                .HasIndex(e => e.DepartmentId);
+            /// <summary>
+            /// Configures EquipmentDecommission entity with reason constraints and date indexing.
+            /// </summary>
+            modelBuilder.Entity<EquipmentDecommission>(entity =>
+            {
+                entity.ToTable("EquipmentDecommissions");
+
+                entity.Property(d => d.DestinyTypeId)
+                    .HasColumnName("DestinyTypeId")
+                    .IsRequired();
+
+                entity.Property(d => d.Reason)
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(d => d.DecommissionDate)
+                    .IsRequired();
+
+                entity.HasIndex(d => d.DecommissionDate);
+            });
+
+            /// <summary>
+            /// Configures Department entity with name constraints and foreign key references.
+            /// </summary>
+            modelBuilder.Entity<Department>(entity =>
+            {
+                entity.ToTable("Departments");
+
+                entity.Property(d => d.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(d => d.SectionId)
+                    .IsRequired();
+
+                entity.Property(d => d.ResponsibleId)
+                    .IsRequired();
+            });
+
+            /// <summary>
+            /// Configures Section entity with name constraints.
+            /// </summary>
+            modelBuilder.Entity<Section>(entity =>
+            {
+                entity.ToTable("Sections");
+
+                entity.Property(s => s.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+            });
+
+            /// <summary>
+            /// Configures EquipmentType entity with name constraints and unique index.
+            /// </summary>
+            modelBuilder.Entity<EquipmentType>(entity =>
+            {
+                entity.ToTable("EquipmentTypes");
+
+                entity.Property(et => et.Name)
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.HasIndex(et => et.Name)
+                    .IsUnique();
+            });
         }
     }
 }
