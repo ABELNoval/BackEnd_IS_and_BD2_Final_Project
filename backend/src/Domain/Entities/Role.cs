@@ -16,4 +16,33 @@ public class Role : Enumeration
     public static readonly Role Receptor = new(6, "Receptor");
 
     private Role(int id, string name) : base(id, name) { }
+
+    /// <summary>
+    /// Gets all available roles
+    /// </summary>
+    public static IEnumerable<Role> GetAll()
+    {
+        yield return Administrator;
+        yield return Director;
+        yield return Technical;
+        yield return Employee;
+        yield return Responsible;
+        yield return Receptor;
+    }
+
+    /// <summary>
+    /// Gets a role by ID
+    /// </summary>
+    public static Role? FromId(int id)
+    {
+        return GetAll().FirstOrDefault(r => r.Id == id);
+    }
+
+    /// <summary>
+    /// Gets a role by name
+    /// </summary>
+    public static Role? FromName(string name)
+    {
+        return GetAll().FirstOrDefault(r => r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    }
 }
