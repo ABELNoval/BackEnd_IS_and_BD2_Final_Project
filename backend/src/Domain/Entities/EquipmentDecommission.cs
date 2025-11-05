@@ -1,4 +1,5 @@
 using Domain.Common;
+using Domain.Enumerations;
 using Domain.Exceptions;
 
 namespace Domain.Entities;
@@ -61,6 +62,8 @@ public class EquipmentDecommission : Entity
 
     private void Validate()
     {
+        const int MaxReasonLength = 500;
+
         if (EquipmentId == Guid.Empty)
             throw new InvalidEntityException(nameof(EquipmentDecommission), "Equipment ID cannot be empty");
 
@@ -82,6 +85,9 @@ public class EquipmentDecommission : Entity
 
         if (string.IsNullOrWhiteSpace(Reason))
             throw new InvalidEntityException(nameof(EquipmentDecommission), "Reason cannot be empty");
+
+        if (Reason.Length > MaxReasonLength)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), $"Reason cannot exceed {MaxReasonLength} characters");
     }
 
     public bool WasDecommissionedBy(Guid technicalId) => TechnicalId == technicalId;

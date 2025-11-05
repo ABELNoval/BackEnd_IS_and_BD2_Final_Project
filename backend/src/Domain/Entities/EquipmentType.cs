@@ -11,7 +11,10 @@ public class EquipmentType : Entity
 {
     public string Name { get; private set; }
 
-    protected EquipmentType() { }
+    protected EquipmentType() 
+    {
+        Name = string.Empty;
+    }
 
     private EquipmentType(string name)
     {
@@ -27,7 +30,12 @@ public class EquipmentType : Entity
 
     private void Validate()
     {
+        const int MaxNameLength = 100;
+
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(EquipmentType), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(EquipmentType), $"Name cannot exceed {MaxNameLength} characters");
     }
 }

@@ -29,11 +29,21 @@ public abstract class User : Entity
 
     private void Validate()
     {
+        const int MaxNameLength = 100;
+        const int MaxEmailLength = 150;
+        const int MaxPasswordHashLength = 255;
+
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(User), "Name cannot be empty");
 
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(User), $"Name cannot exceed {MaxNameLength} characters");
+
         if (string.IsNullOrWhiteSpace(Email))
             throw new InvalidEntityException(nameof(User), "Email cannot be empty");
+
+        if (Email.Length > MaxEmailLength)
+            throw new InvalidEntityException(nameof(User), $"Email cannot exceed {MaxEmailLength} characters");
 
         if (!Email.Contains("@"))
             throw new InvalidEntityException(nameof(User), "Email format is invalid");
@@ -41,12 +51,16 @@ public abstract class User : Entity
         if (string.IsNullOrWhiteSpace(PasswordHash))
             throw new InvalidEntityException(nameof(User), "Password hash cannot be empty");
 
+        if (PasswordHash.Length > MaxPasswordHashLength)
+            throw new InvalidEntityException(nameof(User), $"Password hash cannot exceed {MaxPasswordHashLength} characters");
+
         var validRole = Role.FromId(RoleId);
         if (validRole == null)
             throw new InvalidEntityException(nameof(User), $"Invalid role ID: {RoleId}");
     }
 
-    public Role GetRole() => Role.FromId(RoleId);
+    public Role GetRole() => Role.FromId(RoleId) 
+        ?? throw new InvalidEntityException(nameof(User), $"Invalid role ID: {RoleId}");
     public bool HasRole(Role role) => RoleId == role.Id;
     public bool IsTechnical() => RoleId == Role.Technical.Id;
     public bool IsDirector() => RoleId == Role.Director.Id;

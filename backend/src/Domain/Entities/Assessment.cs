@@ -38,7 +38,10 @@ public class Assessment : Entity
     /// <summary>
     /// Parameterless constructor for EF Core
     /// </summary>
-    protected Assessment() { }
+    protected Assessment() 
+    {
+        Score = PerformanceScore.Create(0); // Default value for EF Core
+    }
 
     /// <summary>
     /// Private constructor with validation (Always-Valid pattern)
@@ -125,10 +128,17 @@ public class Assessment : Entity
 
     private void ValidateComment(string comment)
     {
+        const int MaxCommentLength = 500;
+
         if (string.IsNullOrWhiteSpace(comment))
             throw new InvalidEntityException(
                 nameof(Assessment),
                 "Comment cannot be empty");
+
+        if (comment.Length > MaxCommentLength)
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                $"Comment cannot exceed {MaxCommentLength} characters. Current length: {comment.Length}");
     }
 
     #endregion
