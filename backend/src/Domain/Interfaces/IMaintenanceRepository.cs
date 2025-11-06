@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Domain.Entities;
 
-namespace Infrastructure.Persistence.Interfaces
+namespace Domain.Interfaces
 {
     public interface IMaintenanceRepository : IRepository<Maintenance>
     {

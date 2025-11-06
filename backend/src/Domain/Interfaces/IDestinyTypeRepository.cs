@@ -1,6 +1,6 @@
-using Domain.Entities;
+using Domain.Enumerations;
 
-namespace Infrastructure.Persistence.Interfaces
+namespace Domain.Interfaces
 {
     public interface IDestinyTypeRepository : IRepository<DestinyType>
     {
