@@ -1,9 +1,38 @@
-namespace Domain.Entities
+using Domain.Common;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents a section in the organization.
+/// Sections group multiple departments.
+/// </summary>
+public class Section : Entity
 {
-    public class Section
+    public string Name { get; private set; } = string.Empty;
+
+    protected Section() { }
+
+    private Section(string name)
     {
-        public int ID { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public List<Department> Departaments{ get; set; } = new List<Department>();
-    }   
+        GenerateId();
+        Name = name.Trim();
+        Validate();
+    }
+
+    public static Section Create(string name)
+    {
+        return new Section(name);
+    }
+
+    private void Validate()
+    {
+        const int MaxNameLength = 100;
+
+        if (string.IsNullOrWhiteSpace(Name))
+            throw new InvalidEntityException(nameof(Section), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(Section), $"Name cannot exceed {MaxNameLength} characters");
+    }
 }
