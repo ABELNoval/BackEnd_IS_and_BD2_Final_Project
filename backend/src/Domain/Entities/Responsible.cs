@@ -16,7 +16,7 @@ public class Responsible : Employee
     /// <summary>
     /// Creates a new Responsible instance.
     /// </summary>
-    public static Responsible Create(string name, string email, string passwordHash)
+    public static new Responsible Create(string name, string email, string passwordHash)
     {
         return new Responsible(name, email, passwordHash);
     }
