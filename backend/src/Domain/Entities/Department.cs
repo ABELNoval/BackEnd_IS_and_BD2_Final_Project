@@ -9,7 +9,7 @@ namespace Domain.Entities;
 /// </summary>
 public class Department : Entity
 {
-    public string Name { get; private set; }
+    public string Name { get; private set; } = string.Empty;
     public Guid SectionId { get; private set; }
     public Guid ResponsibleId { get; private set; }
 
@@ -31,8 +31,13 @@ public class Department : Entity
 
     private void Validate()
     {
+        const int MaxNameLength = 100;
+
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(Department), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(Department), $"Name cannot exceed {MaxNameLength} characters");
 
         if (SectionId == Guid.Empty)
             throw new InvalidEntityException(nameof(Department), "Section ID cannot be empty");

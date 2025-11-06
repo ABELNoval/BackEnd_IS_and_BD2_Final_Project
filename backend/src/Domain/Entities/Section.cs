@@ -27,7 +27,12 @@ public class Section : Entity
 
     private void Validate()
     {
+        const int MaxNameLength = 100;
+
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(Section), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(Section), $"Name cannot exceed {MaxNameLength} characters");
     }
 }

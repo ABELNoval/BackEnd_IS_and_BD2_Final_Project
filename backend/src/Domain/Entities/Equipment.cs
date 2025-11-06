@@ -11,7 +11,7 @@ namespace Domain.Entities;
 /// </summary>
 public class Equipment : Entity
 {
-    private readonly List<Decommission> _decommissions = new();
+    private readonly List<EquipmentDecommission> _decommissions = new();
     private readonly List<Transfer> _transfers = new();
     private readonly List<Maintenance> _maintenances = new();
 
@@ -48,7 +48,7 @@ public class Equipment : Entity
     /// <summary>
     /// Collection of decommission records
     /// </summary>
-    public IReadOnlyCollection<Decommission> Decommissions => _decommissions.AsReadOnly();
+    public IReadOnlyCollection<EquipmentDecommission> Decommissions => _decommissions.AsReadOnly();
 
     /// <summary>
     /// Collection of transfer records
@@ -61,7 +61,12 @@ public class Equipment : Entity
     public IReadOnlyCollection<Maintenance> Maintenances => _maintenances.AsReadOnly();
 
     // EF Core constructor
-    private Equipment() { }
+    private Equipment() 
+    {
+        Name = string.Empty;
+        State = EquipmentState.Operative;
+        LocationType = LocationType.Warehouse;
+    }
 
     private Equipment(
         string name,
@@ -107,14 +112,14 @@ public class Equipment : Entity
         ValidateCanBeDecommissioned();
 
         // Create the decommission record BEFORE applying the strategy
-        var decommission = Decommission.Create(
-            Id,
-            destinationStrategy.DestinyTypeId,
-            destinationStrategy.TargetDepartmentId,
-            responsibleId,
-            technicalId,
-            decommissionDate,
-            reason);
+        var decommission = EquipmentDecommission.Create(
+            equipmentId: Id,
+            technicalId: technicalId,
+            departmentId: DepartmentId ?? Guid.Empty,
+            destinyTypeId: destinationStrategy.DestinyTypeId,
+            recipientId: responsibleId,
+            decommissionDate: decommissionDate,
+            reason: reason);
 
         // Apply the destination strategy (Tell, Don't Ask)
         // The strategy knows what to do with the equipment
@@ -132,20 +137,18 @@ public class Equipment : Entity
     public void AddTransfer(
         Guid targetDepartmentId,
         Guid responsibleId,
-        DateTime transferDate,
-        string reason)
+        DateTime transferDate)
     {
         ValidateCanBeTransferred(targetDepartmentId);
 
         var sourceDepartmentId = DepartmentId!.Value;
 
         var transfer = Transfer.Create(
-            Id,
-            sourceDepartmentId,
-            targetDepartmentId,
-            responsibleId,
-            transferDate,
-            reason);
+            equipmentId: Id,
+            sourceDepartmentId: sourceDepartmentId,
+            targetDepartmentId: targetDepartmentId,
+            responsibleId: responsibleId,
+            transferDate: transferDate);
 
         _transfers.Add(transfer);
         DepartmentId = targetDepartmentId;
@@ -159,19 +162,17 @@ public class Equipment : Entity
     public void AddMaintenance(
         Guid technicalId,
         DateTime maintenanceDate,
-        string type,
-        decimal cost,
-        string? description = null)
+        int maintenanceTypeId,
+        decimal cost)
     {
         ValidateCanBeMaintained();
 
         var maintenance = Maintenance.Create(
-            Id,
-            technicalId,
-            maintenanceDate,
-            type,
-            cost,
-            description);
+            equipmentId: Id,
+            technicalId: technicalId,
+            maintenanceDate: maintenanceDate,
+            maintenanceTypeId: maintenanceTypeId,
+            cost: cost);
 
         _maintenances.Add(maintenance);
         State = EquipmentState.UnderMaintenance;
@@ -233,12 +234,19 @@ public class Equipment : Entity
 
     #region Validation Methods
 
+    private const int MaxNameLength = 200;
+
     private void ValidateEquipment()
     {
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(
                 nameof(Equipment),
                 "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(
+                nameof(Equipment),
+                $"Name cannot exceed {MaxNameLength} characters");
 
         if (AcquisitionDate > DateTime.UtcNow)
             throw new InvalidEntityException(
