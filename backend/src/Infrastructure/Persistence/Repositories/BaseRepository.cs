@@ -14,14 +14,9 @@ namespace Infrastructure.Persistence.Repositories
             _context = context;
         }
 
-        public async Task<T> GetByIdAsync(Guid id)
+        public async Task<T?> GetByIdAsync(Guid id)
         {
-            var entity = await _context.Set<T>().FindAsync(id);
-            if (entity == null)
-            {
-                throw new KeyNotFoundException($"Entity of type {typeof(T).Name} with ID {id} not found.");
-            }
-            return entity;
+            return await _context.Set<T>().FindAsync(id);
         }
 
         public async Task<IEnumerable<T>> GetAllAsync()
@@ -32,20 +27,18 @@ namespace Infrastructure.Persistence.Repositories
         public async Task AddAsync(T entity)
         {
             await _context.Set<T>().AddAsync(entity);
-            await _context.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(T entity)
+        public void Update(T entity)
         {
             _context.Set<T>().Update(entity);
-            await _context.SaveChangesAsync();
         }
 
         public async Task DeleteAsync(Guid id)
         {
             var entity = await GetByIdAsync(id);
-            _context.Set<T>().Remove(entity);
-            await _context.SaveChangesAsync();
+            if (entity != null)
+                _context.Set<T>().Remove(entity);
         }
     }
 }
