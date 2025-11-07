@@ -1,4 +1,6 @@
+using Infrastructure;
 using Infrastructure.Persistence;
+using Microsoft.Extensions.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
         new MySqlServerVersion(new Version(8, 0, 39)) // Cambia si tu versión es otra
     )
 );
+
+// Registrar infra (repositorios, unit of work, etc.)
+builder.Services.AddInfrastructure(builder.Configuration);
 
 var app = builder.Build();
 

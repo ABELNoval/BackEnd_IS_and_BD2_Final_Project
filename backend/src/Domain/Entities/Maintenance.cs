@@ -1,4 +1,5 @@
 using Domain.Common;
+using Domain.Enumerations;
 using Domain.Exceptions;
 
 namespace Domain.Entities;
