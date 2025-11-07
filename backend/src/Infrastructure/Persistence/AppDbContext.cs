@@ -133,11 +133,20 @@ namespace Infrastructure.Persistence
                     .HasMaxLength(100)
                     .IsRequired();
 
+                // Map Email and PasswordHash value objects to simple string columns
                 entity.Property(u => u.Email)
+                    .HasConversion(
+                        v => v.Value,
+                        v => Domain.ValueObjects.Email.Create(v)
+                    )
                     .HasMaxLength(150)
                     .IsRequired();
 
                 entity.Property(u => u.PasswordHash)
+                    .HasConversion(
+                        v => v.Value,
+                        v => Domain.ValueObjects.PasswordHash.Create(v)
+                    )
                     .HasMaxLength(255)
                     .IsRequired();
 

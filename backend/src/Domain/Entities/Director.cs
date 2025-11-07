@@ -1,5 +1,5 @@
 namespace Domain.Entities;
-
+using Domain.ValueObjects;
 /// <summary>
 /// Director user type.
 /// Can assess technicals and approve equipment operations.
@@ -8,10 +8,10 @@ public class Director : User
 {
     private Director() { }
 
-    private Director(string name, string email, string passwordHash)
+    private Director(string name, Email email, PasswordHash passwordHash)
         : base(name, email, passwordHash, Role.Director.Id) { }
 
-    public static Director Create(string name, string email, string passwordHash)
+    public static Director Create(string name, Email email, PasswordHash passwordHash)
     {
         return new Director(name, email, passwordHash);
     }

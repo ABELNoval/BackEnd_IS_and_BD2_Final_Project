@@ -313,42 +313,5 @@ public class Equipment : Entity
     #endregion
 }
 
-/// <summary>
-/// Enumeration representing the state of equipment
-/// </summary>
-public class EquipmentState : Enumeration
-{
-    public static readonly EquipmentState Operative = new(1, "Operative");
-    public static readonly EquipmentState UnderMaintenance = new(2, "UnderMaintenance");
-    public static readonly EquipmentState Decommissioned = new(3, "Decommissioned");
-    public static readonly EquipmentState Disposed = new(4, "Disposed");
 
-    private EquipmentState(int id, string name) : base(id, name) { }
 
-    public static IEnumerable<EquipmentState> GetAll()
-    {
-        yield return Operative;
-        yield return UnderMaintenance;
-        yield return Decommissioned;
-        yield return Disposed;
-    }
-}
-
-/// <summary>
-/// Enumeration representing the location type of equipment
-/// </summary>
-public class LocationType : Enumeration
-{
-    public static readonly LocationType Department = new(1, "Department");
-    public static readonly LocationType Warehouse = new(2, "Warehouse");
-    public static readonly LocationType Disposal = new(3, "Disposal");
-
-    private LocationType(int id, string name) : base(id, name) { }
-
-    public static IEnumerable<LocationType> GetAll()
-    {
-        yield return Department;
-        yield return Warehouse;
-        yield return Disposal;
-    }
-}

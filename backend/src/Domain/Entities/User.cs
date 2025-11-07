@@ -1,5 +1,6 @@
 using Domain.Common;
 using Domain.Exceptions;
+using Domain.ValueObjects;
 
 namespace Domain.Entities;
 
@@ -9,14 +10,14 @@ namespace Domain.Entities;
 public abstract class User : Entity
 {
     public string Name { get; private set; } = string.Empty;
-    public string Email { get; private set; } = string.Empty;
-    public string PasswordHash { get; private set; } = string.Empty;
+    public Email Email { get; private set; } = default!;
+    public PasswordHash PasswordHash { get; private set; } = default!;
     public int RoleId { get; private set; }
 
     // EF Core constructor
     protected User() { }
 
-    protected User(string name, string email, string passwordHash, int roleId)
+    protected User(string name, Email email, PasswordHash passwordHash, int roleId)
     {
         GenerateId();
         Name = name;
@@ -30,8 +31,6 @@ public abstract class User : Entity
     private void Validate()
     {
         const int MaxNameLength = 100;
-        const int MaxEmailLength = 150;
-        const int MaxPasswordHashLength = 255;
 
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(User), "Name cannot be empty");
@@ -39,20 +38,7 @@ public abstract class User : Entity
         if (Name.Length > MaxNameLength)
             throw new InvalidEntityException(nameof(User), $"Name cannot exceed {MaxNameLength} characters");
 
-        if (string.IsNullOrWhiteSpace(Email))
-            throw new InvalidEntityException(nameof(User), "Email cannot be empty");
-
-        if (Email.Length > MaxEmailLength)
-            throw new InvalidEntityException(nameof(User), $"Email cannot exceed {MaxEmailLength} characters");
-
-        if (!Email.Contains("@"))
-            throw new InvalidEntityException(nameof(User), "Email format is invalid");
-
-        if (string.IsNullOrWhiteSpace(PasswordHash))
-            throw new InvalidEntityException(nameof(User), "Password hash cannot be empty");
-
-        if (PasswordHash.Length > MaxPasswordHashLength)
-            throw new InvalidEntityException(nameof(User), $"Password hash cannot exceed {MaxPasswordHashLength} characters");
+        // Email and PasswordHash are validated by their own ValueObjects when created
 
         var validRole = Role.FromId(RoleId);
         if (validRole == null)

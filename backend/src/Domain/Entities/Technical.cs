@@ -1,5 +1,5 @@
 using Domain.Exceptions;
-
+using Domain.ValueObjects;
 namespace Domain.Entities;
 
 /// <summary>
@@ -16,7 +16,7 @@ public class Technical : User
 
     private Technical() { }
 
-    private Technical(string name, string email, string passwordHash, int experience, string specialty)
+    private Technical(string name, Email email, PasswordHash passwordHash, int experience, string specialty)
         : base(name, email, passwordHash, Role.Technical.Id)
     {
         Experience = experience;
@@ -24,7 +24,7 @@ public class Technical : User
         ValidateTechnical();
     }
 
-    public static Technical Create(string name, string email, string passwordHash, int experience, string specialty)
+    public static Technical Create(string name, Email email, PasswordHash passwordHash, int experience, string specialty)
     {
         return new Technical(name, email, passwordHash, experience, specialty);
     }
