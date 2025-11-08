@@ -18,13 +18,8 @@ namespace Application.Mappers
 
                 // Mapear el nombre del tipo de mantenimiento (si está disponible)
                 .ForMember(dest => dest.MaintenanceTypeName, opt => opt.Ignore())
-                .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.Cost))
+                .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.Cost));
                 
-                // Completan fuera del mapper
-                .ForMember(dest => dest.EquipmentName, opt => opt.Ignore())
-                .ForMember(dest => dest.EquipmentType, opt => opt.Ignore())
-                .ForMember(dest => dest.TechnicalName, opt => opt.Ignore());
-
             // CreateDTO → Entity
             CreateMap<CreateMaintenanceDto, Maintenance>()
                 .ConstructUsing(dto => Maintenance.Create(

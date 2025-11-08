@@ -16,9 +16,9 @@ namespace Application.DTOs.Maintenance
         
         public decimal Cost { get; set; }
 
-        // CHECK => MAPPER
-        public string? EquipmentName { get; set; }
-        public string? EquipmentType { get; set; }
-        public string? TechnicalName { get; set; }
+        // For More Information
+        // public string? EquipmentName { get; set; }
+        // public string? EquipmentType { get; set; }
+        // public string? TechnicalName { get; set; }
     }
 }

@@ -16,11 +16,8 @@ namespace Application.Mappers
                 .ForMember(dest => dest.DirectorId, opt => opt.MapFrom(src => src.DirectorId))
                 .ForMember(dest => dest.Score, opt => opt.MapFrom(src => src.Score.Value))
                 .ForMember(dest => dest.Comment, opt => opt.MapFrom(src => src.Comment))
-                .ForMember(dest => dest.AssessmentDate, opt => opt.MapFrom(src => src.AssessmentDate))
-                // Campos externos (rellenados desde Application/Services)
-                .ForMember(dest => dest.DirectorName, opt => opt.Ignore())
-                .ForMember(dest => dest.TechnicalName, opt => opt.Ignore())
-                .ForMember(dest => dest.TechnicalSpecialty, opt => opt.Ignore());
+                .ForMember(dest => dest.AssessmentDate, opt => opt.MapFrom(src => src.AssessmentDate));
+                
 
             // CreateDTO → Entity
             CreateMap<CreateAssessmentDto, Assessment>()
