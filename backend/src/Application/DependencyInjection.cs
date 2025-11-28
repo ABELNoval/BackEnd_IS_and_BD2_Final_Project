@@ -12,10 +12,19 @@ namespace Application
         {
             services.AddAutoMapper(typeof(AssessmentMapper).Assembly);
 
+            // SERVICIOS
             services.AddScoped<IAssessmentService, AssessmentService>();
             services.AddScoped<IMaintenanceService, MaintenanceService>();
             services.AddScoped<ITransferService, TransferService>();
             services.AddScoped<IEquipmentDecommissionService, EquipmentDecommissionService>();
+            services.AddScoped<IDepartmentService, DepartmentService>();
+            services.AddScoped<ISectionService, SectionService>();
+            services.AddScoped<ITechnicalService, TechnicalService>();
+            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IDirectorService, DirectorService>();
+            services.AddScoped<IEquipmentService, EquipmentService>();
+            services.AddScoped<IEquipmentTypeService, EquipmentTypeService>();
+            services.AddScoped<IResponsibleService, ResponsibleService>();
 
             return services;
         }
