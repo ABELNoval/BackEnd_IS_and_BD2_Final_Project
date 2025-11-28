@@ -3,7 +3,9 @@ namespace Application.DTOs.Technical
     public class TechnicalDto
     {
         public Guid Id { get; set; }
-        public Guid EmployeeId { get; set; }
-        public string Specialization { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public int Experience { get; set; }
+        public string Specialty { get; set; } = string.Empty;
     }
 }
