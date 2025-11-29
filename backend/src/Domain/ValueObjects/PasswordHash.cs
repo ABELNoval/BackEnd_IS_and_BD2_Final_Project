@@ -23,6 +23,11 @@ public sealed record PasswordHash
         Value = trimmed;
     }
 
+    public bool Verify(string plainTextPassword)
+    {
+        return Value ==  plainTextPassword;
+    }
+
     public static PasswordHash Create(string value) => new PasswordHash(value);
 
     public override string ToString() => Value;
