@@ -1,30 +1,20 @@
 using System.Text;
 using Infrastructure;
 using Infrastructure.Persistence;
-using Infrastructure.Security;
+using Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Application.Interfaces.Services;
-using Application.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Application.Interfaces.Security;
 
+var builder = WebApplication.CreateBuilder(args);
 
-var builder = WebApplication.CreateBuilder(args) ;
-
-// ===========================================
-// 1️⃣  Agregar Controllers
-// ===========================================
+// Controllers
 builder.Services.AddControllers();
 
-// ===========================================
-// 2️⃣  AutoMapper (mira si ya tienes Assembly scanning)
-// ===========================================
+// Automapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// ===========================================
-// 3️⃣  Registrar AppDbContext con MySQL
-// ===========================================
+// DBContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("DefaultConnection"),
@@ -32,20 +22,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     )
 );
 
-// ===========================================
-// 4️⃣  Registrar capa Infrastructure (repos, UoW, etc.)
-// ===========================================
+// Registrar Infrastructure (Repos, UoW, JwtProvider)
 builder.Services.AddInfrastructure(builder.Configuration);
 
-// ===========================================
-// 5️⃣  Registrar servicios de autenticación y JWT
-// ===========================================
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddSingleton<IJwtProvider, JwtProvider>();
+// Registrar Application (Services + AutoMapper)
+builder.Services.AddApplication();
 
-// ===========================================
-// 6️⃣  Configurar Authentication JWT
-// ===========================================
+// JWT Auth
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -66,14 +49,9 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// ===========================================
-// 7️⃣  Agregar autorización
-// ===========================================
 builder.Services.AddAuthorization();
 
-// ===========================================
-// 8️⃣  CORS para permitir llamadas desde React
-// ===========================================
+// CORS para React
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
@@ -85,23 +63,28 @@ builder.Services.AddCors(options =>
         });
 });
 
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
 var app = builder.Build();
 
-// ===========================================
-// 9️⃣  Middleware pipeline
-// ===========================================
+if (app.Environment.IsDevelopment())
+{
+    // ⭐ AGREGAR ESTO
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
 app.UseCors("AllowAll");
 
 app.UseRouting();
 
-app.UseAuthentication();   // 🔥 OBLIGATORIO para JWT
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
-// ===========================================
-// 🔟  Migrar BD automáticamente
-// ===========================================
+// Migraciones automáticas
 using (var scope = app.Services.CreateScope())
 {
     var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();

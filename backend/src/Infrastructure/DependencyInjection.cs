@@ -3,20 +3,21 @@ using Microsoft.Extensions.DependencyInjection;
 using Domain.Interfaces;
 using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
+using Application.Interfaces.Security;
+using Infrastructure.Security;
+using Application.Interfaces.Services;
+using Application.Services;
 
 namespace Infrastructure
 {
     public static class DependencyInjection
     {
-        /// <summary>
-        /// Register infrastructure services (repositories, unit of work, etc.)
-        /// </summary>
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            // Unit of Work
+            // 🔹 Unit of Work
             services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            // Repositories
+            // 🔹 Repositorios
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IDirectorRepository, DirectorRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
@@ -31,6 +32,9 @@ namespace Infrastructure
             services.AddScoped<IAssessmentRepository, AssessmentRepository>();
             services.AddScoped<ITransferRepository, TransferRepository>();
             services.AddScoped<IDestinyTypeRepository, DestinyTypeRepository>();
+
+            // 🔹 JwtProvider = infraestructura técnica → debe estar aquí
+            services.AddSingleton<IJwtProvider, JwtProvider>();
 
             return services;
         }
