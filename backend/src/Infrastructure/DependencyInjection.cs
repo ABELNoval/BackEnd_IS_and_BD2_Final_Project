@@ -5,8 +5,6 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Application.Interfaces.Security;
 using Infrastructure.Security;
-using Application.Interfaces.Services;
-using Application.Services;
 
 namespace Infrastructure
 {
@@ -32,6 +30,7 @@ namespace Infrastructure
             services.AddScoped<IAssessmentRepository, AssessmentRepository>();
             services.AddScoped<ITransferRepository, TransferRepository>();
             services.AddScoped<IDestinyTypeRepository, DestinyTypeRepository>();
+            services.AddScoped<IEquipmentDecommissionRepository, EquipmentDecommissionRepository>();
 
             // 🔹 JwtProvider = infraestructura técnica → debe estar aquí
             services.AddSingleton<IJwtProvider, JwtProvider>();

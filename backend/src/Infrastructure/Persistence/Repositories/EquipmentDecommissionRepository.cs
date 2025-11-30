@@ -1,14 +1,12 @@
 using Domain.Entities;
-using Domain.Enumerations;
 using Domain.Interfaces;
-using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence.Repositories;
 
-public class TechnicalDowntimeRepository : BaseRepository<EquipmentDecommission>, ITechnicalDowntimeRepository
+public class EquipmentDecommissionRepository : BaseRepository<EquipmentDecommission>, IEquipmentDecommissionRepository
 {
-    public TechnicalDowntimeRepository(AppDbContext context) : base(context)
+    public EquipmentDecommissionRepository(AppDbContext context) : base(context)
     {
     }
 

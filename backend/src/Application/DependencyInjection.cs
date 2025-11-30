@@ -18,6 +18,13 @@ namespace Application
             services.AddScoped<ISectionService, SectionService>();
             services.AddScoped<IEquipmentTypeService, EquipmentTypeService>();
             services.AddScoped<IResponsibleService, ResponsibleService>();
+            services.AddScoped<IMaintenanceService, MaintenanceService>();
+            services.AddScoped<IDirectorService, DirectorService>();
+            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<ITechnicalService, TechnicalService>();
+            services.AddScoped<ITransferService, TransferService>();
+            services.AddScoped<IEquipmentDecommissionService, EquipmentDecommissionService>();
+            services.AddScoped<IAssessmentService, AssessmentService>();
             // services.AddScoped<IUserService, UserService>();
 
             // AuthService va aquí porque es lógicamente un servicio de aplicación
