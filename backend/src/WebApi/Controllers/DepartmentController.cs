@@ -16,7 +16,7 @@ namespace WebApi.Controllers
         }
 
         // ============================================================
-        // GET: api/department
+        // GET: api/department - OBTENER TODOS
         // ============================================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetAll(CancellationToken cancellationToken)
@@ -26,7 +26,7 @@ namespace WebApi.Controllers
         }
 
         // ============================================================
-        // GET: api/department/{id}
+        // GET: api/department/{id} - OBTENER POR ID
         // ============================================================
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<DepartmentDto>> GetById(Guid id, CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ namespace WebApi.Controllers
         }
 
         // ============================================================
-        // POST: api/department
+        // POST: api/department - CREAR NUEVO
         // ============================================================
         [HttpPost]
         public async Task<ActionResult<DepartmentDto>> Create(CreateDepartmentDto dto, CancellationToken cancellationToken)
@@ -49,7 +49,7 @@ namespace WebApi.Controllers
         }
 
         // ============================================================
-        // PUT: api/department/{id}
+        // PUT: api/department/{id} - ACTUALIZAR EXISTENTE
         // ============================================================
         [HttpPut("{id:guid}")]
         public async Task<ActionResult<DepartmentDto>> Update(Guid id, UpdateDepartmentDto dto, CancellationToken cancellationToken)
@@ -65,7 +65,7 @@ namespace WebApi.Controllers
         }
 
         // ============================================================
-        // DELETE: api/department/{id}
+        // DELETE: api/department/{id} - ELIMINAR
         // ============================================================
         [HttpDelete("{id:guid}")]
         public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -75,48 +75,6 @@ namespace WebApi.Controllers
                 return NotFound($"Department with id {id} not found.");
 
             return NoContent();
-        }
-
-        // ============================================================
-        // 🔍 EXTRA ENDPOINTS ÚTILES
-        // ============================================================
-
-        // GET: api/department/byName/{name}
-        [HttpGet("byName/{name}")]
-        public async Task<ActionResult<DepartmentDto>> GetByName(string name, CancellationToken cancellationToken)
-        {
-            var result = await _departmentService.GetByNameAsync(name, cancellationToken);
-            if (result == null)
-                return NotFound($"No department found with name '{name}'.");
-
-            return Ok(result);
-        }
-
-        // GET: api/department/section/{sectionId}
-        [HttpGet("section/{sectionId:guid}")]
-        public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetBySection(Guid sectionId, CancellationToken cancellationToken)
-        {
-            return Ok(await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken));
-        }
-
-        // GET: api/department/responsible/{personId}
-        [HttpGet("responsible/{responsibleId:guid}")]
-        public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetByResponsible(Guid responsibleId, CancellationToken cancellationToken)
-        {
-            return Ok(await _departmentService.GetByResponsibleIdAsync(responsibleId, cancellationToken));
-        }
-
-        // ============================================================
-        // PAGINACIÓN
-        // GET: api/department/paged?page=1&pageSize=10
-        // ============================================================
-        [HttpGet("paged")]
-        public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetPaged(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            CancellationToken cancellationToken = default)
-        {
-            return Ok(await _departmentService.GetAllPagedAsync(page, pageSize, cancellationToken));
         }
     }
 }
