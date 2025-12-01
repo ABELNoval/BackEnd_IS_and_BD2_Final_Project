@@ -1,8 +1,10 @@
 using Application.DTOs.Responsible;
 using Application.Interfaces.Services;
+using Application.Validators.Responsible;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -11,19 +13,32 @@ namespace Application.Services
         private readonly IResponsibleRepository _responsibleRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IValidator<CreateResponsibleDto> _createValidator;
+        private readonly IValidator<UpdateResponsibleDto> _updateValidator;
 
         public ResponsibleService(
             IResponsibleRepository responsibleRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IValidator<CreateResponsibleDto> createValidator,
+            IValidator<UpdateResponsibleDto> updateValidator)
         {
             _responsibleRepository = responsibleRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         public async Task<ResponsibleDto> CreateAsync(CreateResponsibleDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var entity = _mapper.Map<Responsible>(dto);
             await _responsibleRepository.AddAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -32,6 +47,13 @@ namespace Application.Services
 
         public async Task<ResponsibleDto?> UpdateAsync(UpdateResponsibleDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var existing = await _responsibleRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
@@ -44,6 +66,12 @@ namespace Application.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var existing = await _responsibleRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
                 return false;
@@ -55,6 +83,12 @@ namespace Application.Services
 
         public async Task<ResponsibleDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var entity = await _responsibleRepository.GetByIdAsync(id, cancellationToken);
             return entity == null ? null : _mapper.Map<ResponsibleDto>(entity);
         }
@@ -67,24 +101,59 @@ namespace Application.Services
 
         public async Task<ResponsibleDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
         {
+            // Validación básica del nombre
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new ArgumentException("Responsible name cannot be empty", nameof(name));
+            }
+
             var entity = await _responsibleRepository.GetByNameAsync(name, cancellationToken);
             return entity == null ? null : _mapper.Map<ResponsibleDto>(entity);
         }
 
         public async Task<ResponsibleDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
+            // Validación básica del email
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ArgumentException("Email cannot be empty", nameof(email));
+            }
+
+            // Validación de formato de email (básica)
+            if (!email.Contains("@"))
+            {
+                throw new ArgumentException("Invalid email format", nameof(email));
+            }
+
             var entity = await _responsibleRepository.GetByEmailAsync(email, cancellationToken);
             return entity == null ? null : _mapper.Map<ResponsibleDto>(entity);
         }
 
         public async Task<IEnumerable<ResponsibleDto>> GetAllPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
         {
+            // Validación de paginación
+            if (page < 1)
+            {
+                throw new ArgumentException("Page number must be greater than 0", nameof(page));
+            }
+
+            if (pageSize < 1 || pageSize > 100)
+            {
+                throw new ArgumentException("Page size must be between 1 and 100", nameof(pageSize));
+            }
+
             var entities = await _responsibleRepository.GetAllPagedAsync(page, pageSize, cancellationToken);
             return _mapper.Map<IEnumerable<ResponsibleDto>>(entities);
         }
 
         public async Task<ResponsibleDto?> GetByDepartmentIdAsync(Guid departmentId, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (departmentId == Guid.Empty)
+            {
+                throw new ArgumentException("Department ID cannot be empty", nameof(departmentId));
+            }
+
             var entity = await _responsibleRepository.GetByDepartmentIdAsync(departmentId, cancellationToken);
             return entity == null ? null : _mapper.Map<ResponsibleDto>(entity);
         }
@@ -97,16 +166,40 @@ namespace Application.Services
 
         public async Task<int> GetTransferCountAsync(Guid responsibleId, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (responsibleId == Guid.Empty)
+            {
+                throw new ArgumentException("Responsible ID cannot be empty", nameof(responsibleId));
+            }
+
             return await _responsibleRepository.GetTransferCountAsync(responsibleId, cancellationToken);
         }
 
         public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
+            // Validación básica del email
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ArgumentException("Email cannot be empty", nameof(email));
+            }
+
+            // Validación de formato de email (básica)
+            if (!email.Contains("@"))
+            {
+                throw new ArgumentException("Invalid email format", nameof(email));
+            }
+
             return await _responsibleRepository.ExistsByEmailAsync(email, cancellationToken);
         }
 
         public async Task<bool> IsManagingDepartmentAsync(Guid responsibleId, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (responsibleId == Guid.Empty)
+            {
+                throw new ArgumentException("Responsible ID cannot be empty", nameof(responsibleId));
+            }
+
             return await _responsibleRepository.IsManagingDepartmentAsync(responsibleId, cancellationToken);
         }
     }
