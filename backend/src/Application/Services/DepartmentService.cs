@@ -98,58 +98,5 @@ namespace Application.Services
             var entities = await _departmentRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
         }
-
-        public async Task<IEnumerable<DepartmentDto>> GetBySectionIdAsync(Guid sectionId, CancellationToken cancellationToken = default)
-        {
-            // Validación básica del ID
-            if (sectionId == Guid.Empty)
-            {
-                throw new ArgumentException("Section ID cannot be empty", nameof(sectionId));
-            }
-
-            var entities = await _departmentRepository.GetBySectionIdAsync(sectionId);
-            return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<DepartmentDto>> GetByResponsibleIdAsync(Guid responsibleId, CancellationToken cancellationToken = default)
-        {
-            // Validación básica del ID
-            if (responsibleId == Guid.Empty)
-            {
-                throw new ArgumentException("Responsible ID cannot be empty", nameof(responsibleId));
-            }
-
-            var entities = await _departmentRepository.GetByResponsibleIdAsync(responsibleId);
-            return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
-        }
-
-        public async Task<DepartmentDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            // Validación básica del nombre
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("Department name cannot be empty", nameof(name));
-            }
-
-            var entity = await _departmentRepository.GetByNameAsync(name);
-            return entity == null ? null : _mapper.Map<DepartmentDto>(entity);
-        }
-
-        public async Task<IEnumerable<DepartmentDto>> GetAllPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-        {
-            // Validación de paginación
-            if (pageNumber < 1)
-            {
-                throw new ArgumentException("Page number must be greater than 0", nameof(pageNumber));
-            }
-
-            if (pageSize < 1 || pageSize > 100)
-            {
-                throw new ArgumentException("Page size must be between 1 and 100", nameof(pageSize));
-            }
-
-            var entities = await _departmentRepository.GetAllPagedAsync(pageNumber, pageSize);
-            return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
-        }
     }
 }

@@ -30,52 +30,6 @@ namespace Application.Services
             _updateValidator = updateValidator;
         }
 
-        // Obtener todos
-        public async Task<IEnumerable<MaintenanceDto>> GetAllAsync(CancellationToken cancellationToken = default)
-        {
-            var maintenances = await _maintenanceRepository.GetAllAsync(cancellationToken);
-            return _mapper.Map<IEnumerable<MaintenanceDto>>(maintenances);
-        }
-
-        // Obtener por Id
-        public async Task<MaintenanceDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            // Validación básica del ID
-            if (id == Guid.Empty)
-            {
-                throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
-
-            var maintenance = await _maintenanceRepository.GetByIdAsync(id, cancellationToken);
-            return maintenance is null ? null : _mapper.Map<MaintenanceDto>(maintenance);
-        }
-
-        // Obtener por técnico
-        public async Task<IEnumerable<MaintenanceDto>> GetByTechnicalIdAsync(Guid technicalId, CancellationToken cancellationToken = default)
-        {
-            // Validación básica del ID
-            if (technicalId == Guid.Empty)
-            {
-                throw new ArgumentException("Technical ID cannot be empty", nameof(technicalId));
-            }
-
-            var maintenances = await _maintenanceRepository.GetByTechnicalIdAsync(technicalId, cancellationToken);
-            return _mapper.Map<IEnumerable<MaintenanceDto>>(maintenances);
-        }
-
-        // Obtener por equipo
-        public async Task<IEnumerable<MaintenanceDto>> GetByEquipmentIdAsync(Guid equipmentId, CancellationToken cancellationToken = default)
-        {
-            // Validación básica del ID
-            if (equipmentId == Guid.Empty)
-            {
-                throw new ArgumentException("Equipment ID cannot be empty", nameof(equipmentId));
-            }
-
-            var maintenances = await _maintenanceRepository.GetByEquipmentIdAsync(equipmentId, cancellationToken);
-            return _mapper.Map<IEnumerable<MaintenanceDto>>(maintenances);
-        }
-
         // Crear mantenimiento
         public async Task<MaintenanceDto> CreateAsync(CreateMaintenanceDto dto, CancellationToken cancellationToken = default)
         {
@@ -123,9 +77,33 @@ namespace Application.Services
                 throw new ArgumentException("ID cannot be empty", nameof(id));
             }
 
+            var existing = await _maintenanceRepository.GetByIdAsync(id, cancellationToken);
+            if (existing == null)
+                return false;
+
             await _maintenanceRepository.DeleteAsync(id, cancellationToken);
             var result = await _unitOfWork.SaveChangesAsync(cancellationToken);
             return result > 0;
+        }
+
+        // Obtener mantenimiento por Id
+        public async Task<MaintenanceDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
+            var maintenance = await _maintenanceRepository.GetByIdAsync(id, cancellationToken);
+            return maintenance is null ? null : _mapper.Map<MaintenanceDto>(maintenance);
+        }
+
+        // Obtener todos los mantenimientos
+        public async Task<IEnumerable<MaintenanceDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var maintenances = await _maintenanceRepository.GetAllAsync(cancellationToken);
+            return _mapper.Map<IEnumerable<MaintenanceDto>>(maintenances);
         }
     }
 }
