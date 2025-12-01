@@ -1,15 +1,15 @@
 using FluentValidation;
-using Application.DTOs.Employee;
+using Application.DTOs.Responsible;
 
-namespace Application.Validators.Employee
+namespace Application.Validators.Responsible
 {
-    public class CreateEmployeeDtoValidator : AbstractValidator<CreateEmployeeDto>
+    public class CreateResponsibleDtoValidator : AbstractValidator<CreateResponsibleDto>
     {
-        public CreateEmployeeDtoValidator()
+        public CreateResponsibleDtoValidator()
         {
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("Employee name is required")
-                .MaximumLength(100).WithMessage("Employee name cannot exceed 100 characters");
+                .NotEmpty().WithMessage("Responsible name is required")
+                .MaximumLength(100).WithMessage("Responsible name cannot exceed 100 characters");
 
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email is required")
