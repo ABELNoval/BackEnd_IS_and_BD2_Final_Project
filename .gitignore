@@ -1,0 +1,86 @@
+# Build results
+bin/
+obj/
+[Bb]uild/
+[Ll]ogs/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.exe
+*.dll
+*.pdb
+*.cache
+*.log
+*.vspscc
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# VS Code settings
+.vscode/
+
+# Visual Studio settings
+.vs/
+
+# ASP.NET runtime files
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+*.nuget.props
+*.nuget.targets
+
+# Entity Framework Core Migrations snapshot files
+Migrations/*Designer.cs
+
+# Test results
+TestResult*/
+*.TestResults/
+*.trx
+*.coverage
+*.coveragexml
+
+# Publish output
+*.publishsettings
+*.pubxml
+*.pubxml.user
+publish/
+
+# User-specific files
+*.userprefs
+*.dbmdl
+*.jfm
+
+# Resharper
+_ReSharper*/
+*.[Rr]e[Ss]harper
+*.DotSettings.user
+
+# Rider
+.idea/
+
+# Cache
+*.tmp
+*.bak
+*.swp
+*.swo
+
+# DotCover
+*.dotCover
+
+# Others
+*.db
+*.mdf
+*.ldf
+*.sqlite
+
+# Configuraciones de desarrollo
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Production.json
