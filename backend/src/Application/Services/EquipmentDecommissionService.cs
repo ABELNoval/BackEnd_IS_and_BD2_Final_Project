@@ -8,12 +8,12 @@ namespace Application.Services
 {
     public class EquipmentDecommissionService : IEquipmentDecommissionService
     {
-        private readonly ITechnicalDowntimeRepository _decommissionRepository;
+        private readonly IEquipmentDecommissionRepository _decommissionRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
         public EquipmentDecommissionService(
-            ITechnicalDowntimeRepository decommissionRepository,
+            IEquipmentDecommissionRepository decommissionRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper)
         {

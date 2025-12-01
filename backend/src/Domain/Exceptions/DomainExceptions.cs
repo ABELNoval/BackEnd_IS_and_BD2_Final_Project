@@ -42,6 +42,13 @@ public class InvalidEntityException : DomainException
 /// </summary>
 public class InvalidValueObjectException : DomainException
 {
+    private string v;
+
+    public InvalidValueObjectException(string message, string v) : base(message)
+    {
+        this.v = v;
+    }
+
     public InvalidValueObjectException(string valueObjectName, string value, string reason)
         : base($"Invalid {valueObjectName} '{value}': {reason}")
     {
