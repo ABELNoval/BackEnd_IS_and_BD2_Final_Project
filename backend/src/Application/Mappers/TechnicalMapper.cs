@@ -22,7 +22,7 @@ namespace Application.Mappers
                 .ConstructUsing(dto => Technical.Create(
                     dto.Name,
                     Email.Create(dto.Email),
-                    PasswordHash.Create(dto.Password),
+                    PasswordHash.CreateFromPlainText(dto.Password),
                     dto.Experience,
                     dto.Specialty
                 ));

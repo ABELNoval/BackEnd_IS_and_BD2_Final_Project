@@ -20,7 +20,7 @@ namespace Application.Mappers
                 .ConstructUsing(dto => Responsible.Create(
                     dto.Name,
                     Email.Create(dto.Email),
-                    PasswordHash.Create(dto.Password)
+                    PasswordHash.CreateFromPlainText(dto.Password)
                 ));
 
             // UpdateDTO → Entity

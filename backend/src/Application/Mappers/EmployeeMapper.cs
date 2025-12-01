@@ -21,7 +21,7 @@ namespace Application.Mappers
                 .ConstructUsing(dto => Employee.Create(
                     dto.Name,
                     Email.Create(dto.Email),
-                    PasswordHash.Create(dto.Password) 
+                    PasswordHash.CreateFromPlainText(dto.Password) 
                 ));
 
             // UpdateDTO → Entity
