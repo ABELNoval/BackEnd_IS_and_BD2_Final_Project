@@ -9,9 +9,5 @@ namespace Application.Interfaces.Services
         Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
         Task<EmployeeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IEnumerable<EmployeeDto>> GetAllAsync(CancellationToken cancellationToken = default);
-        Task<EmployeeDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default);
-        Task<EmployeeDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
-        Task<IEnumerable<EmployeeDto>> GetAllPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default);
-        Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default);
     }
 }

@@ -18,11 +18,5 @@ namespace Application.Interfaces.Services
 
         // Obtener todos los mantenimientos
         Task<IEnumerable<MaintenanceDto>> GetAllAsync(CancellationToken cancellationToken = default);
-
-        // Obtener mantenimientos por técnico
-        Task<IEnumerable<MaintenanceDto>> GetByTechnicalIdAsync(Guid technicalId, CancellationToken cancellationToken = default);
-
-        // Obtener mantenimientos por equipo
-        Task<IEnumerable<MaintenanceDto>> GetByEquipmentIdAsync(Guid equipmentId, CancellationToken cancellationToken = default);
     }
 }
