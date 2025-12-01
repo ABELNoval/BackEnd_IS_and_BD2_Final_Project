@@ -8,26 +8,26 @@ namespace Application.Validators.Technical
         public UpdateTechnicalDtoValidator()
         {
             RuleFor(x => x.Id)
-                .NotEmpty().WithMessage("El ID del técnico es requerido")
-                .NotEqual(Guid.Empty).WithMessage("El ID del técnico no puede estar vacío");
+                .NotEmpty().WithMessage("Technical ID is required")
+                .NotEqual(Guid.Empty).WithMessage("Technical ID cannot be empty");
 
             RuleFor(x => x.Name)
-                .NotEmpty().WithMessage("El nombre del técnico es requerido")
-                .MaximumLength(100).WithMessage("El nombre no puede exceder 100 caracteres");
+                .NotEmpty().WithMessage("Technical name is required")
+                .MaximumLength(100).WithMessage("Name cannot exceed 100 characters");
 
             RuleFor(x => x.Email)
-                .NotEmpty().WithMessage("El email es requerido")
-                .EmailAddress().WithMessage("Debe ser una dirección de email válida")
-                .MaximumLength(150).WithMessage("El email no puede exceder 150 caracteres");
+                .NotEmpty().WithMessage("Email is required")
+                .EmailAddress().WithMessage("Valid email address is required")
+                .MaximumLength(150).WithMessage("Email cannot exceed 150 characters");
 
             RuleFor(x => x.Experience)
-                .GreaterThanOrEqualTo(0).WithMessage("La experiencia no puede ser negativa")
-                .LessThanOrEqualTo(50).WithMessage("La experiencia no puede exceder 50 años");
+                .GreaterThanOrEqualTo(0).WithMessage("Experience cannot be negative")
+                .LessThanOrEqualTo(50).WithMessage("Experience cannot exceed 50 years");
 
             RuleFor(x => x.Specialty)
-                .NotEmpty().WithMessage("La especialidad es requerida")
-                .MaximumLength(100).WithMessage("La especialidad no puede exceder 100 caracteres")
-                .Matches("^[a-zA-ZáéíóúÁÉÍÓÚñÑ ]+$").WithMessage("La especialidad solo puede contener letras y espacios");
+                .NotEmpty().WithMessage("Specialty is required")
+                .MaximumLength(100).WithMessage("Specialty cannot exceed 100 characters")
+                .Matches("^[a-zA-Z\\s]+$").WithMessage("Specialty can only contain letters and spaces");
         }
     }
 }

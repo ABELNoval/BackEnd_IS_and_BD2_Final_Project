@@ -8,36 +8,37 @@ namespace Application.Validators.EquipmentDecommission
         public CreateEquipmentDecommissionDtoValidator()
         {
             RuleFor(x => x.EquipmentId)
-                .NotEmpty().WithMessage("El ID del equipo es requerido")
-                .NotEqual(Guid.Empty).WithMessage("El ID del equipo no puede estar vacío");
+                .NotEmpty().WithMessage("Equipment ID is required")
+                .NotEqual(Guid.Empty).WithMessage("Equipment ID cannot be empty");
 
             RuleFor(x => x.TechnicalId)
-                .NotEmpty().WithMessage("El ID del técnico es requerido")
-                .NotEqual(Guid.Empty).WithMessage("El ID del técnico no puede estar vacío");
+                .NotEmpty().WithMessage("Technical ID is required")
+                .NotEqual(Guid.Empty).WithMessage("Technical ID cannot be empty");
 
             RuleFor(x => x.DepartmentId)
-                .NotEmpty().WithMessage("El ID del departamento es requerido")
-                .NotEqual(Guid.Empty).WithMessage("El ID del departamento no puede estar vacío");
+                .NotEmpty().WithMessage("Department ID is required")
+                .NotEqual(Guid.Empty).WithMessage("Department ID cannot be empty");
 
             RuleFor(x => x.DestinyTypeId)
-                .NotEmpty().WithMessage("El tipo de destino es requerido")
-                .InclusiveBetween(1, 3).WithMessage("El tipo de destino debe ser válido (1: Departamento, 2: Desecho, 3: Almacén)");
+                .NotEmpty().WithMessage("Destiny type is required")
+                .InclusiveBetween(1, 3).WithMessage("Destiny type must be valid (1: Department, 2: Disposal, 3: Warehouse)");
 
             RuleFor(x => x.RecipientId)
-                .NotEmpty().WithMessage("El ID del receptor es requerido")
-                .NotEqual(Guid.Empty).WithMessage("El ID del receptor no puede estar vacío");
+                .NotEmpty().WithMessage("Recipient ID is required")
+                .NotEqual(Guid.Empty).WithMessage("Recipient ID cannot be empty");
 
             RuleFor(x => x.DecommissionDate)
-                .NotEmpty().WithMessage("La fecha de baja es requerida")
-                .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("La fecha de baja no puede ser futura");
+                .NotEmpty().WithMessage("Decommission date is required")
+                .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("Decommission date cannot be in the future");
 
             RuleFor(x => x.Reason)
-                .NotEmpty().WithMessage("La razón de la baja es requerida")
-                .MaximumLength(500).WithMessage("La razón no puede exceder 500 caracteres")
-                .Must(reason => reason.ToLower().Contains("fallo técnico irreparable") || 
-                               reason.ToLower().Contains("obsolescencia") ||
-                               reason.ToLower().Contains("otras"))
-                .WithMessage("La razón debe incluir causas válidas como 'fallo técnico irreparable', 'obsolescencia' u 'otras'");
+                .NotEmpty().WithMessage("Decommission reason is required")
+                .MaximumLength(500).WithMessage("Reason cannot exceed 500 characters")
+                .Must(reason => reason.ToLower().Contains("technical failure") || 
+                               reason.ToLower().Contains("irreparable failure") ||
+                               reason.ToLower().Contains("obsolescence") ||
+                               reason.ToLower().Contains("other"))
+                .WithMessage("Reason must include valid causes like 'technical failure', 'irreparable failure', 'obsolescence' or 'other'");
         }
     }
 }
