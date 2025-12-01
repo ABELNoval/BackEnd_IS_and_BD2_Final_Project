@@ -1,5 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
+using Application.Mappers;
+using Application.Interfaces.Services;
+using Application.Services;
+using AutoMapper;
 
 namespace Application
 {
@@ -7,8 +10,21 @@ namespace Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            // 🔹 Registro global de AutoMapper (escanea todos los Profiles del proyecto Application)
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            services.AddAutoMapper(typeof(AssessmentMapper).Assembly);
+
+            // SERVICIOS
+            services.AddScoped<IAssessmentService, AssessmentService>();
+            services.AddScoped<IMaintenanceService, MaintenanceService>();
+            services.AddScoped<ITransferService, TransferService>();
+            services.AddScoped<IEquipmentDecommissionService, EquipmentDecommissionService>();
+            services.AddScoped<IDepartmentService, DepartmentService>();
+            services.AddScoped<ISectionService, SectionService>();
+            services.AddScoped<ITechnicalService, TechnicalService>();
+            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IDirectorService, DirectorService>();
+            services.AddScoped<IEquipmentService, EquipmentService>();
+            services.AddScoped<IEquipmentTypeService, EquipmentTypeService>();
+            services.AddScoped<IResponsibleService, ResponsibleService>();
 
             return services;
         }
