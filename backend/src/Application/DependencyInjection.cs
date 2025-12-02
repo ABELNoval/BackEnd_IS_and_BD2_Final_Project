@@ -3,6 +3,7 @@ using Application.Mappers;
 using Application.Interfaces.Services;
 using Application.Services;
 using AutoMapper;
+using System.Reflection;
 
 namespace Application
 {
@@ -11,20 +12,27 @@ namespace Application
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
             services.AddAutoMapper(typeof(AssessmentMapper).Assembly);
+          
+            // 🔹 Registrar AutoMapper
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
-            // SERVICIOS
-            services.AddScoped<IAssessmentService, AssessmentService>();
-            services.AddScoped<IMaintenanceService, MaintenanceService>();
-            services.AddScoped<ITransferService, TransferService>();
-            services.AddScoped<IEquipmentDecommissionService, EquipmentDecommissionService>();
+            // 🔹 Registrar servicios de aplicación
+            services.AddScoped<IEquipmentService, EquipmentService>();
             services.AddScoped<IDepartmentService, DepartmentService>();
             services.AddScoped<ISectionService, SectionService>();
-            services.AddScoped<ITechnicalService, TechnicalService>();
-            services.AddScoped<IEmployeeService, EmployeeService>();
-            services.AddScoped<IDirectorService, DirectorService>();
-            services.AddScoped<IEquipmentService, EquipmentService>();
             services.AddScoped<IEquipmentTypeService, EquipmentTypeService>();
             services.AddScoped<IResponsibleService, ResponsibleService>();
+            services.AddScoped<IMaintenanceService, MaintenanceService>();
+            services.AddScoped<IDirectorService, DirectorService>();
+            services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<ITechnicalService, TechnicalService>();
+            services.AddScoped<ITransferService, TransferService>();
+            services.AddScoped<IEquipmentDecommissionService, EquipmentDecommissionService>();
+            services.AddScoped<IAssessmentService, AssessmentService>();
+            // services.AddScoped<IUserService, UserService>();
+
+            // AuthService va aquí porque es lógicamente un servicio de aplicación
+            services.AddScoped<IAuthService, AuthService>();
 
             return services;
         }

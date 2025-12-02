@@ -12,6 +12,11 @@ namespace Domain.Enumerations
 
         private LocationType(int id, string name) : base(id, name) { }
 
+        public static LocationType FromId(int id)
+        {
+            return FromValue<LocationType>(id);
+        }
+
         public static IEnumerable<LocationType> GetAll()
         {
             yield return Department;

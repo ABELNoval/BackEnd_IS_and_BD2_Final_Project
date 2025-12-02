@@ -24,358 +24,261 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Assessment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
+                        .HasColumnType("char(36)");
 
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                    b.Property<DateTime>("AssessmentDate")
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Coment")
+                    b.Property<string>("Comment")
                         .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("coment");
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("date");
+                    b.Property<Guid>("DirectorId")
+                        .HasColumnType("char(36)");
 
-                    b.Property<int>("DirectorId")
-                        .HasColumnType("int")
-                        .HasColumnName("directorid");
+                    b.Property<decimal>("Score")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)")
+                        .HasColumnName("Score");
 
-                    b.Property<float>("Punctuation")
-                        .HasColumnType("float")
-                        .HasColumnName("punctuation");
-
-                    b.Property<int>("TechnicalId")
-                        .HasColumnType("int")
-                        .HasColumnName("technicalid");
+                    b.Property<Guid>("TechnicalId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Date");
-
-                    b.HasIndex("DirectorId");
+                    b.HasIndex("AssessmentDate");
 
                     b.HasIndex("TechnicalId");
 
-                    b.ToTable("assessments");
+                    b.ToTable("Assessments", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Department", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("name");
+                        .HasColumnType("varchar(100)");
 
-                    b.Property<int>("ResponsibleId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ResponsibleId")
+                        .HasColumnType("char(36)");
 
-                    b.Property<int>("SectionId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ResponsibleId");
-
-                    b.HasIndex("SectionId");
-
-                    b.ToTable("departments");
-                });
-
-            modelBuilder.Entity("Domain.Entities.DestinyType", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("type");
+                    b.Property<Guid>("SectionId")
+                        .HasColumnType("char(36)");
 
                     b.HasKey("Id");
 
-                    b.ToTable("destinytypes");
+                    b.ToTable("Departments", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.Equipment", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime>("AcquisitionDate")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("acquisitiondate");
+                        .HasColumnType("datetime(6)");
 
-                    b.Property<int>("DepartmentId")
-                        .HasColumnType("int")
-                        .HasColumnName("departmentid");
+                    b.Property<Guid?>("DepartmentId")
+                        .HasColumnType("char(36)");
 
-                    b.Property<int>("EquipmentTypeId")
+                    b.Property<Guid>("EquipmentTypeId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("LocationType")
                         .HasColumnType("int")
-                        .HasColumnName("equipmenttypeid");
+                        .HasColumnName("LocationTypeId");
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("name");
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
 
-                    b.Property<string>("State")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("state");
+                    b.Property<int>("State")
+                        .HasColumnType("int")
+                        .HasColumnName("StateId");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("DepartmentId");
+                    b.ToTable("Equipments", (string)null);
+                });
 
-                    b.HasIndex("EquipmentTypeId");
+            modelBuilder.Entity("Domain.Entities.EquipmentDecommission", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
 
-                    b.ToTable("equipments");
+                    b.Property<DateTime>("DecommissionDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<int>("DestinyTypeId")
+                        .HasColumnType("int")
+                        .HasColumnName("DestinyTypeId");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<Guid>("RecipientId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("TechnicalId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DecommissionDate");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.ToTable("EquipmentDecommissions", (string)null);
                 });
 
             modelBuilder.Entity("Domain.Entities.EquipmentType", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("name");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("equipmenttypes");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Maintenance", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<float>("Cost")
-                        .HasColumnType("float")
-                        .HasColumnName("cost");
-
-                    b.Property<DateTime>("DateTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("datetime");
-
-                    b.Property<int>("EquipmentId")
-                        .HasColumnType("int")
-                        .HasColumnName("equipmentid");
-
-                    b.Property<int>("TechnicalId")
-                        .HasColumnType("int")
-                        .HasColumnName("technicalid");
-
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("type");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DateTime");
-
-                    b.HasIndex("EquipmentId");
-
-                    b.HasIndex("TechnicalId");
-
-                    b.ToTable("maintenances");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Role", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("name");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("roles");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Section", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("ID"));
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("name");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("sections");
-                });
-
-            modelBuilder.Entity("Domain.Entities.TechnicalDowntime", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Cause")
-                        .IsRequired()
-                        .HasColumnType("longtext")
-                        .HasColumnName("cause");
-
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("date");
-
-                    b.Property<int>("DepartmentId")
-                        .HasColumnType("int")
-                        .HasColumnName("departmentid");
-
-                    b.Property<int>("DestinyTypeId")
-                        .HasColumnType("int")
-                        .HasColumnName("destinytypeid");
-
-                    b.Property<int>("EquipmentId")
-                        .HasColumnType("int")
-                        .HasColumnName("equipmentid");
-
-                    b.Property<int>("TechnicalId")
-                        .HasColumnType("int")
-                        .HasColumnName("technicalid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Date");
-
-                    b.HasIndex("DepartmentId");
-
-                    b.HasIndex("DestinyTypeId");
-
-                    b.HasIndex("EquipmentId");
-
-                    b.HasIndex("TechnicalId");
-
-                    b.ToTable("technicaldowntimes");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Transfer", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DateTime")
-                        .HasColumnType("datetime(6)")
-                        .HasColumnName("datetime");
-
-                    b.Property<int>("DestinyId")
-                        .HasColumnType("int")
-                        .HasColumnName("destinyid");
-
-                    b.Property<int>("EquipmentId")
-                        .HasColumnType("int")
-                        .HasColumnName("equipmentid");
-
-                    b.Property<int>("OriginId")
-                        .HasColumnType("int")
-                        .HasColumnName("originid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("DateTime");
-
-                    b.HasIndex("DestinyId");
-
-                    b.HasIndex("EquipmentId");
-
-                    b.HasIndex("OriginId");
-
-                    b.ToTable("transfers");
-                });
-
-            modelBuilder.Entity("Domain.Entities.User", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
-                        .HasColumnName("id");
-
-                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Gmail")
-                        .IsRequired()
-                        .HasMaxLength(150)
-                        .HasColumnType("varchar(150)")
-                        .HasColumnName("gmail");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Password")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("varchar(255)")
-                        .HasColumnName("password");
-
-                    b.Property<int>("RoleId")
-                        .HasColumnType("int")
-                        .HasColumnName("roleid");
+                        .HasColumnType("varchar(100)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Gmail")
+                    b.HasIndex("Name")
                         .IsUnique();
 
-                    b.HasIndex("RoleId");
+                    b.ToTable("EquipmentTypes", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Maintenance", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<decimal>("Cost")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("MaintenanceDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("MaintenanceTypeId")
+                        .HasColumnType("int")
+                        .HasColumnName("MaintenanceTypeId");
+
+                    b.Property<Guid>("TechnicalId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.HasIndex("MaintenanceDate");
+
+                    b.ToTable("Maintenances", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Section", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Sections", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.Transfer", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("EquipmentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("ResponsibleId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("SourceDepartmentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("TargetDepartmentId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("TransferDate")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EquipmentId");
+
+                    b.HasIndex("TransferDate");
+
+                    b.ToTable("Transfers", (string)null);
+                });
+
+            modelBuilder.Entity("Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("varchar(150)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int")
+                        .HasColumnName("RoleId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
 
                     b.ToTable("Users", (string)null);
 
@@ -393,12 +296,6 @@ namespace Infrastructure.Migrations
                 {
                     b.HasBaseType("Domain.Entities.User");
 
-                    b.Property<int?>("DepartmentId")
-                        .HasColumnType("int")
-                        .HasColumnName("departmentid");
-
-                    b.HasIndex("DepartmentId");
-
                     b.ToTable("Employees", (string)null);
                 });
 
@@ -407,14 +304,12 @@ namespace Infrastructure.Migrations
                     b.HasBaseType("Domain.Entities.User");
 
                     b.Property<int>("Experience")
-                        .HasColumnType("int")
-                        .HasColumnName("experience");
+                        .HasColumnType("int");
 
                     b.Property<string>("Specialty")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("specialty");
+                        .HasColumnType("varchar(100)");
 
                     b.ToTable("Technicals", (string)null);
                 });
@@ -428,151 +323,38 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Assessment", b =>
                 {
-                    b.HasOne("Domain.Entities.Director", "Director")
-                        .WithMany()
-                        .HasForeignKey("DirectorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Technical", "Technical")
-                        .WithMany()
+                    b.HasOne("Domain.Entities.Technical", null)
+                        .WithMany("Assessments")
                         .HasForeignKey("TechnicalId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Director");
-
-                    b.Navigation("Technical");
                 });
 
-            modelBuilder.Entity("Domain.Entities.Department", b =>
+            modelBuilder.Entity("Domain.Entities.EquipmentDecommission", b =>
                 {
-                    b.HasOne("Domain.Entities.Responsible", "Responsible")
-                        .WithMany()
-                        .HasForeignKey("ResponsibleId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                    b.HasOne("Domain.Entities.Equipment", null)
+                        .WithMany("Decommissions")
+                        .HasForeignKey("EquipmentId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.Entities.Section", "Section")
-                        .WithMany("Departaments")
-                        .HasForeignKey("SectionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Responsible");
-
-                    b.Navigation("Section");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Equipment", b =>
-                {
-                    b.HasOne("Domain.Entities.Department", "Department")
-                        .WithMany("Equipments")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.EquipmentType", "EquipmentType")
-                        .WithMany("Equipments")
-                        .HasForeignKey("EquipmentTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Department");
-
-                    b.Navigation("EquipmentType");
                 });
 
             modelBuilder.Entity("Domain.Entities.Maintenance", b =>
                 {
-                    b.HasOne("Domain.Entities.Equipment", "Equipment")
-                        .WithMany()
+                    b.HasOne("Domain.Entities.Equipment", null)
+                        .WithMany("Maintenances")
                         .HasForeignKey("EquipmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.Entities.Technical", "Technical")
-                        .WithMany()
-                        .HasForeignKey("TechnicalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Equipment");
-
-                    b.Navigation("Technical");
-                });
-
-            modelBuilder.Entity("Domain.Entities.TechnicalDowntime", b =>
-                {
-                    b.HasOne("Domain.Entities.Department", "Department")
-                        .WithMany()
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.DestinyType", "DestinyType")
-                        .WithMany("TechnicalDowntimes")
-                        .HasForeignKey("DestinyTypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Equipment", "Equipment")
-                        .WithMany()
-                        .HasForeignKey("EquipmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Technical", "Technical")
-                        .WithMany()
-                        .HasForeignKey("TechnicalId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Department");
-
-                    b.Navigation("DestinyType");
-
-                    b.Navigation("Equipment");
-
-                    b.Navigation("Technical");
                 });
 
             modelBuilder.Entity("Domain.Entities.Transfer", b =>
                 {
-                    b.HasOne("Domain.Entities.Department", "Destiny")
-                        .WithMany()
-                        .HasForeignKey("DestinyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Domain.Entities.Equipment", "Equipment")
-                        .WithMany()
+                    b.HasOne("Domain.Entities.Equipment", null)
+                        .WithMany("Transfers")
                         .HasForeignKey("EquipmentId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("Domain.Entities.Department", "Origin")
-                        .WithMany()
-                        .HasForeignKey("OriginId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Destiny");
-
-                    b.Navigation("Equipment");
-
-                    b.Navigation("Origin");
-                });
-
-            modelBuilder.Entity("Domain.Entities.User", b =>
-                {
-                    b.HasOne("Domain.Entities.Role", "Role")
-                        .WithMany("Users")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Domain.Entities.Director", b =>
@@ -586,18 +368,11 @@ namespace Infrastructure.Migrations
 
             modelBuilder.Entity("Domain.Entities.Employee", b =>
                 {
-                    b.HasOne("Domain.Entities.Department", "Department")
-                        .WithMany("Employees")
-                        .HasForeignKey("DepartmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("Domain.Entities.User", null)
                         .WithOne()
                         .HasForeignKey("Domain.Entities.Employee", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("Domain.Entities.Technical", b =>
@@ -618,31 +393,18 @@ namespace Infrastructure.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Domain.Entities.Department", b =>
+            modelBuilder.Entity("Domain.Entities.Equipment", b =>
                 {
-                    b.Navigation("Employees");
+                    b.Navigation("Decommissions");
 
-                    b.Navigation("Equipments");
+                    b.Navigation("Maintenances");
+
+                    b.Navigation("Transfers");
                 });
 
-            modelBuilder.Entity("Domain.Entities.DestinyType", b =>
+            modelBuilder.Entity("Domain.Entities.Technical", b =>
                 {
-                    b.Navigation("TechnicalDowntimes");
-                });
-
-            modelBuilder.Entity("Domain.Entities.EquipmentType", b =>
-                {
-                    b.Navigation("Equipments");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Role", b =>
-                {
-                    b.Navigation("Users");
-                });
-
-            modelBuilder.Entity("Domain.Entities.Section", b =>
-                {
-                    b.Navigation("Departaments");
+                    b.Navigation("Assessments");
                 });
 #pragma warning restore 612, 618
         }

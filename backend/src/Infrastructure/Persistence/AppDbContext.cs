@@ -79,19 +79,11 @@ namespace Infrastructure.Persistence
             {
                 entity.ToTable("Equipments");
 
-                entity.Property(e => e.State)
-                    .HasConversion(
-                        v => v.Id,
-                        v => EquipmentState.GetAll().First(s => s.Id == v)
-                    )
+                entity.Property(e => e.StateId)
                     .HasColumnName("StateId")
                     .IsRequired();
 
-                entity.Property(e => e.LocationType)
-                    .HasConversion(
-                        v => v.Id,
-                        v => LocationType.GetAll().First(l => l.Id == v)
-                    )
+                entity.Property(e => e.LocationTypeId)
                     .HasColumnName("LocationTypeId")
                     .IsRequired();
 

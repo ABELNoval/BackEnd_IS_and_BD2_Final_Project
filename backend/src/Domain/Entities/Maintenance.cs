@@ -52,6 +52,9 @@ public class Maintenance : Entity
 
     private void Validate()
     {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Maintenance), "Maintenance ID cannot be empty");
+
         if (EquipmentId == Guid.Empty)
             throw new InvalidEntityException(nameof(Maintenance), "Equipment ID cannot be empty");
 

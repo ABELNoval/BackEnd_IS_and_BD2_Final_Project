@@ -10,14 +10,14 @@ namespace Application.Services
 {
     public class EquipmentDecommissionService : IEquipmentDecommissionService
     {
-        private readonly ITechnicalDowntimeRepository _decommissionRepository;
+        private readonly IEquipmentDecommissionRepository _decommissionRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IValidator<CreateEquipmentDecommissionDto> _createValidator;
         private readonly IValidator<UpdateEquipmentDecommissionDto> _updateValidator;
 
         public EquipmentDecommissionService(
-            ITechnicalDowntimeRepository decommissionRepository,
+            IEquipmentDecommissionRepository decommissionRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<CreateEquipmentDecommissionDto> createValidator,

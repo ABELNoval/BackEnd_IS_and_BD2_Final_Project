@@ -3,6 +3,6 @@ using Domain.Enumerations;
 
 namespace Domain.Interfaces;
 
-public interface ITechnicalDowntimeRepository : IRepository<EquipmentDecommission>
+public interface IEquipmentDecommissionRepository : IRepository<EquipmentDecommission>
 {
 }
