@@ -1,8 +1,10 @@
 using Application.DTOs.Director;
 using Application.Interfaces.Services;
+using Application.Validators.Director;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -11,19 +13,32 @@ namespace Application.Services
         private readonly IDirectorRepository _directorRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IValidator<CreateDirectorDto> _createValidator;
+        private readonly IValidator<UpdateDirectorDto> _updateValidator;
 
         public DirectorService(
             IDirectorRepository directorRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IValidator<CreateDirectorDto> createValidator,
+            IValidator<UpdateDirectorDto> updateValidator)
         {
             _directorRepository = directorRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         public async Task<DirectorDto> CreateAsync(CreateDirectorDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var entity = _mapper.Map<Director>(dto);
             await _directorRepository.AddAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -32,6 +47,13 @@ namespace Application.Services
 
         public async Task<DirectorDto?> UpdateAsync(UpdateDirectorDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var existing = await _directorRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
@@ -44,6 +66,12 @@ namespace Application.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var existing = await _directorRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
                 return false;
@@ -55,6 +83,12 @@ namespace Application.Services
 
         public async Task<DirectorDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var entity = await _directorRepository.GetByIdAsync(id, cancellationToken);
             return entity == null ? null : _mapper.Map<DirectorDto>(entity);
         }
@@ -63,29 +97,6 @@ namespace Application.Services
         {
             var entities = await _directorRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<DirectorDto>>(entities);
-        }
-
-        public async Task<DirectorDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            var entity = await _directorRepository.GetByNameAsync(name, cancellationToken);
-            return entity == null ? null : _mapper.Map<DirectorDto>(entity);
-        }
-
-        public async Task<DirectorDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
-        {
-            var entity = await _directorRepository.GetByEmailAsync(email, cancellationToken);
-            return entity == null ? null : _mapper.Map<DirectorDto>(entity);
-        }
-
-        public async Task<IEnumerable<DirectorDto>> GetAllPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-        {
-            var entities = await _directorRepository.GetAllPagedAsync(pageNumber, pageSize, cancellationToken);
-            return _mapper.Map<IEnumerable<DirectorDto>>(entities);
-        }
-
-        public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
-        {
-            return await _directorRepository.ExistsByEmailAsync(email, cancellationToken);
         }
     }
 }

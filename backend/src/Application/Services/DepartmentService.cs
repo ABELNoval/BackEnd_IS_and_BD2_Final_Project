@@ -1,8 +1,10 @@
 using Application.DTOs.Department;
 using Application.Interfaces.Services;
+using Application.Validators.Department;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -11,19 +13,32 @@ namespace Application.Services
         private readonly IDepartmentRepository _departmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IValidator<CreateDepartmentDto> _createValidator;
+        private readonly IValidator<UpdateDepartmentDto> _updateValidator;
 
         public DepartmentService(
             IDepartmentRepository departmentRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IValidator<CreateDepartmentDto> createValidator,
+            IValidator<UpdateDepartmentDto> updateValidator)
         {
             _departmentRepository = departmentRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         public async Task<DepartmentDto> CreateAsync(CreateDepartmentDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var entity = _mapper.Map<Department>(dto);
             await _departmentRepository.AddAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -32,6 +47,13 @@ namespace Application.Services
 
         public async Task<DepartmentDto?> UpdateAsync(UpdateDepartmentDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var existing = await _departmentRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
@@ -44,6 +66,12 @@ namespace Application.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var existing = await _departmentRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
                 return false;
@@ -55,6 +83,12 @@ namespace Application.Services
 
         public async Task<DepartmentDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var entity = await _departmentRepository.GetByIdAsync(id, cancellationToken);
             return entity == null ? null : _mapper.Map<DepartmentDto>(entity);
         }
@@ -62,30 +96,6 @@ namespace Application.Services
         public async Task<IEnumerable<DepartmentDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var entities = await _departmentRepository.GetAllAsync(cancellationToken);
-            return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<DepartmentDto>> GetBySectionIdAsync(Guid sectionId, CancellationToken cancellationToken = default)
-        {
-            var entities = await _departmentRepository.GetBySectionIdAsync(sectionId);
-            return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<DepartmentDto>> GetByResponsibleIdAsync(Guid responsibleId, CancellationToken cancellationToken = default)
-        {
-            var entities = await _departmentRepository.GetByResponsibleIdAsync(responsibleId);
-            return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
-        }
-
-        public async Task<DepartmentDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            var entity = await _departmentRepository.GetByNameAsync(name);
-            return entity == null ? null : _mapper.Map<DepartmentDto>(entity);
-        }
-
-        public async Task<IEnumerable<DepartmentDto>> GetAllPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-        {
-            var entities = await _departmentRepository.GetAllPagedAsync(pageNumber, pageSize);
             return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
         }
     }

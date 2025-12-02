@@ -1,8 +1,10 @@
 using Application.DTOs.Section;
 using Application.Interfaces.Services;
+using Application.Validators.Section;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -11,19 +13,32 @@ namespace Application.Services
         private readonly ISectionRepository _sectionRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IValidator<CreateSectionDto> _createValidator;
+        private readonly IValidator<UpdateSectionDto> _updateValidator;
 
         public SectionService(
             ISectionRepository sectionRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IValidator<CreateSectionDto> createValidator,
+            IValidator<UpdateSectionDto> updateValidator)
         {
             _sectionRepository = sectionRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         public async Task<SectionDto> CreateAsync(CreateSectionDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var entity = _mapper.Map<Section>(dto);
             await _sectionRepository.AddAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -32,6 +47,13 @@ namespace Application.Services
 
         public async Task<SectionDto?> UpdateAsync(UpdateSectionDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var existing = await _sectionRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
@@ -44,6 +66,12 @@ namespace Application.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var existing = await _sectionRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
                 return false;
@@ -55,6 +83,12 @@ namespace Application.Services
 
         public async Task<SectionDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var entity = await _sectionRepository.GetByIdAsync(id, cancellationToken);
             return entity == null ? null : _mapper.Map<SectionDto>(entity);
         }
@@ -63,40 +97,6 @@ namespace Application.Services
         {
             var entities = await _sectionRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<SectionDto>>(entities);
-        }
-
-        public async Task<SectionDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            var entity = await _sectionRepository.GetByNameAsync(name, cancellationToken);
-            return entity == null ? null : _mapper.Map<SectionDto>(entity);
-        }
-
-        public async Task<IEnumerable<SectionDto>> GetAllPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
-        {
-            var entities = await _sectionRepository.GetAllPagedAsync(page, pageSize, cancellationToken);
-            return _mapper.Map<IEnumerable<SectionDto>>(entities);
-        }
-
-        public async Task<IEnumerable<SectionDto>> SearchByNameAsync(string searchTerm, CancellationToken cancellationToken = default)
-        {
-            var entities = await _sectionRepository.SearchByNameAsync(searchTerm, cancellationToken);
-            return _mapper.Map<IEnumerable<SectionDto>>(entities);
-        }
-
-        public async Task<IEnumerable<SectionDto>> GetAllOrderedByNameAsync(CancellationToken cancellationToken = default)
-        {
-            var entities = await _sectionRepository.GetAllOrderedByNameAsync(cancellationToken);
-            return _mapper.Map<IEnumerable<SectionDto>>(entities);
-        }
-
-        public async Task<int> GetDepartmentCountBySectionIdAsync(Guid sectionId, CancellationToken cancellationToken = default)
-        {
-            return await _sectionRepository.GetDepartmentCountBySectionIdAsync(sectionId, cancellationToken);
-        }
-
-        public async Task<bool> HasDepartmentsAsync(Guid sectionId, CancellationToken cancellationToken = default)
-        {
-            return await _sectionRepository.HasDepartmentsAsync(sectionId, cancellationToken);
         }
     }
 }

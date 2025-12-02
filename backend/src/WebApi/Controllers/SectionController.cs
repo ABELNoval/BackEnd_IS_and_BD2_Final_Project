@@ -16,7 +16,7 @@ namespace WebApi.Controllers
         }
 
         // ================================
-        // GET: api/section
+        // GET: api/section - OBTENER TODOS
         // ================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SectionDto>>> GetAll(CancellationToken cancellationToken)
@@ -26,7 +26,7 @@ namespace WebApi.Controllers
         }
 
         // ================================
-        // GET: api/section/{id}
+        // GET: api/section/{id} - OBTENER POR ID
         // ================================
         [HttpGet("{id:guid}")]
         public async Task<ActionResult<SectionDto>> GetById(Guid id, CancellationToken cancellationToken)
@@ -39,7 +39,7 @@ namespace WebApi.Controllers
         }
 
         // ================================
-        // POST: api/section
+        // POST: api/section - CREAR NUEVO
         // ================================
         [HttpPost]
         public async Task<ActionResult<SectionDto>> Create(CreateSectionDto dto, CancellationToken cancellationToken)
@@ -49,7 +49,7 @@ namespace WebApi.Controllers
         }
 
         // ================================
-        // PUT: api/section/{id}
+        // PUT: api/section/{id} - ACTUALIZAR EXISTENTE
         // ================================
         [HttpPut("{id:guid}")]
         public async Task<ActionResult<SectionDto>> Update(Guid id, UpdateSectionDto dto, CancellationToken cancellationToken)
@@ -65,7 +65,7 @@ namespace WebApi.Controllers
         }
 
         // ================================
-        // DELETE: api/section/{id}
+        // DELETE: api/section/{id} - ELIMINAR
         // ================================
         [HttpDelete("{id:guid}")]
         public async Task<ActionResult> Delete(Guid id, CancellationToken cancellationToken)
@@ -75,62 +75,6 @@ namespace WebApi.Controllers
                 return NotFound($"Section with id {id} not found.");
 
             return NoContent();
-        }
-
-        // ===========================================================
-        // 🔍 EXTRA ENDPOINTS
-        // ===========================================================
-
-        [HttpGet("byName/{name}")]
-        public async Task<ActionResult<SectionDto>> GetByName(string name, CancellationToken cancellationToken)
-        {
-            var result = await _sectionService.GetByNameAsync(name, cancellationToken);
-            if (result == null)
-                return NotFound($"No section found with name '{name}'.");
-
-            return Ok(result);
-        }
-
-        [HttpGet("search")]
-        public async Task<ActionResult<IEnumerable<SectionDto>>> Search([FromQuery] string term, CancellationToken cancellationToken)
-        {
-            var result = await _sectionService.SearchByNameAsync(term, cancellationToken);
-            return Ok(result);
-        }
-
-        [HttpGet("ordered")]
-        public async Task<ActionResult<IEnumerable<SectionDto>>> GetOrdered(CancellationToken cancellationToken)
-        {
-            var result = await _sectionService.GetAllOrderedByNameAsync(cancellationToken);
-            return Ok(result);
-        }
-
-        [HttpGet("{id:guid}/departmentCount")]
-        public async Task<ActionResult<int>> GetDepartmentCount(Guid id, CancellationToken cancellationToken)
-        {
-            var count = await _sectionService.GetDepartmentCountBySectionIdAsync(id, cancellationToken);
-            return Ok(count);
-        }
-
-        [HttpGet("{id:guid}/hasDepartments")]
-        public async Task<ActionResult<bool>> HasDepartments(Guid id, CancellationToken cancellationToken)
-        {
-            var has = await _sectionService.HasDepartmentsAsync(id, cancellationToken);
-            return Ok(has);
-        }
-
-        // ================================
-        // PAGINACIÓN
-        // GET: api/section/paged?page=1&pageSize=10
-        // ================================
-        [HttpGet("paged")]
-        public async Task<ActionResult<IEnumerable<SectionDto>>> GetPaged(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            CancellationToken cancellationToken = default)
-        {
-            var result = await _sectionService.GetAllPagedAsync(page, pageSize, cancellationToken);
-            return Ok(result);
         }
     }
 }

@@ -18,14 +18,5 @@ namespace Application.Interfaces.Services
 
         // Obtener todas las evaluaciones
         Task<IEnumerable<AssessmentDTO>> GetAllAsync(CancellationToken cancellationToken = default);
-
-        // Obtener evaluaciones por técnico
-        Task<IEnumerable<AssessmentDTO>> GetByTechnicalIdAsync(Guid technicalId, CancellationToken cancellationToken = default);
-
-        // Obtener evaluaciones por director
-        Task<IEnumerable<AssessmentDTO>> GetByDirectorIdAsync(Guid directorId, CancellationToken cancellationToken = default);
-
-        // Obtener evaluaciones por rango de fechas
-        Task<IEnumerable<AssessmentDTO>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default);
     }
 }

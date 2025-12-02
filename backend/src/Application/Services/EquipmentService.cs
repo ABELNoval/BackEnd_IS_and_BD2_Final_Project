@@ -1,8 +1,10 @@
 using Application.DTOs.Equipment;
 using Application.Interfaces.Services;
+using Application.Validators.Equipment;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -11,19 +13,32 @@ namespace Application.Services
         private readonly IEquipmentRepository _equipmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IValidator<CreateEquipmentDto> _createValidator;
+        private readonly IValidator<UpdateEquipmentDto> _updateValidator;
 
         public EquipmentService(
             IEquipmentRepository equipmentRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IValidator<CreateEquipmentDto> createValidator,
+            IValidator<UpdateEquipmentDto> updateValidator)
         {
             _equipmentRepository = equipmentRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         public async Task<EquipmentDto> CreateAsync(CreateEquipmentDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var entity = _mapper.Map<Equipment>(dto);
             await _equipmentRepository.AddAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -32,6 +47,13 @@ namespace Application.Services
 
         public async Task<EquipmentDto?> UpdateAsync(UpdateEquipmentDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var existing = await _equipmentRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
@@ -44,6 +66,12 @@ namespace Application.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var existing = await _equipmentRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
                 return false;
@@ -55,13 +83,13 @@ namespace Application.Services
 
         public async Task<EquipmentDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            var entity = await _equipmentRepository.GetByIdAsync(id, cancellationToken);
-            return entity == null ? null : _mapper.Map<EquipmentDto>(entity);
-        }
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
 
-        public async Task<EquipmentDto?> GetByIdWithDetailsAsync(Guid id, CancellationToken cancellationToken = default)
-        {
-            var entity = await _equipmentRepository.GetByIdWithDetailsAsync(id, cancellationToken);
+            var entity = await _equipmentRepository.GetByIdAsync(id, cancellationToken);
             return entity == null ? null : _mapper.Map<EquipmentDto>(entity);
         }
 
@@ -69,76 +97,6 @@ namespace Application.Services
         {
             var entities = await _equipmentRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<EquipmentDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            var entity = await _equipmentRepository.GetByNameAsync(name, cancellationToken);
-            return entity == null ? null : _mapper.Map<EquipmentDto>(entity);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetByEquipmentTypeIdAsync(Guid equipmentTypeId, CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetByEquipmentTypeIdAsync(equipmentTypeId, cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetByDepartmentIdAsync(Guid departmentId, CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetByDepartmentIdAsync(departmentId, cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetByStateAsync(int stateId, CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetByStateAsync(stateId, cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetByLocationTypeAsync(int locationTypeId, CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetByLocationTypeAsync(locationTypeId, cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetByAcquisitionDateRangeAsync(DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetByAcquisitionDateRangeAsync(startDate, endDate, cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetAllPagedAsync(int page, int pageSize, CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetAllPagedAsync(page, pageSize, cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetOperativeByDepartmentIdAsync(Guid departmentId, CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetOperativeByDepartmentIdAsync(departmentId, cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetEquipmentUnderMaintenanceAsync(CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetEquipmentUnderMaintenanceAsync(cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<IEnumerable<EquipmentDto>> GetWarehouseEquipmentAsync(CancellationToken cancellationToken = default)
-        {
-            var entities = await _equipmentRepository.GetWarehouseEquipmentAsync(cancellationToken);
-            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
-        }
-
-        public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            return await _equipmentRepository.ExistsByNameAsync(name, cancellationToken);
-        }
-
-        public async Task<int> CountByStateAsync(int stateId, CancellationToken cancellationToken = default)
-        {
-            return await _equipmentRepository.CountByStateAsync(stateId, cancellationToken);
         }
     }
 }
