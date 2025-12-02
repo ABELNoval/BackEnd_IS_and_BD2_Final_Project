@@ -67,35 +67,5 @@ namespace Web.Controllers
             var success = await _directorService.DeleteAsync(id, cancellationToken);
             return success ? NoContent() : NotFound();
         }
-
-        // ===== Extra endpoints =====
-
-        [HttpGet("by-name/{name}")]
-        public async Task<IActionResult> GetByName(string name, CancellationToken cancellationToken)
-        {
-            var result = await _directorService.GetByNameAsync(name, cancellationToken);
-            return result == null ? NotFound() : Ok(result);
-        }
-
-        [HttpGet("by-email/{email}")]
-        public async Task<IActionResult> GetByEmail(string email, CancellationToken cancellationToken)
-        {
-            var result = await _directorService.GetByEmailAsync(email, cancellationToken);
-            return result == null ? NotFound() : Ok(result);
-        }
-
-        [HttpGet("exists/{email}")]
-        public async Task<IActionResult> ExistsByEmail(string email, CancellationToken cancellationToken)
-        {
-            var exists = await _directorService.ExistsByEmailAsync(email, cancellationToken);
-            return Ok(new { exists });
-        }
-
-        [HttpGet("paged/{page:int}/{size:int}")]
-        public async Task<IActionResult> GetPaged(int page, int size, CancellationToken cancellationToken)
-        {
-            var result = await _directorService.GetAllPagedAsync(page, size, cancellationToken);
-            return Ok(result);
-        }
     }
 }

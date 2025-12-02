@@ -40,7 +40,7 @@ namespace Application.Services
             }
 
             var entity = _mapper.Map<Technical>(dto);
-            await _technicalRepository.AddAsync(entity, cancellationToken);
+            await _technicalRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<TechnicalDto>(entity);
         }
@@ -59,7 +59,7 @@ namespace Application.Services
                 return null;
 
             _mapper.Map(dto, existing);
-            _technicalRepository.Update(existing);
+            await _technicalRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<TechnicalDto>(existing);
         }

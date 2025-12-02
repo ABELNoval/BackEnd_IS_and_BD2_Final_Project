@@ -47,7 +47,7 @@ namespace Application.Services
                 dto.Comment
             );
 
-            await _repository.AddAsync(entity, cancellationToken);
+            await _repository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<AssessmentDTO>(entity);
@@ -71,7 +71,7 @@ namespace Application.Services
             existing.UpdateScore(dto.Score);
             existing.UpdateComment(dto.Comment);
 
-            _repository.Update(existing);
+            await _repository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<AssessmentDTO>(existing);

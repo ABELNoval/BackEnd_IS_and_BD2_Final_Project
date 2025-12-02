@@ -28,7 +28,7 @@ namespace Infrastructure.Persistence.Repositories
             return await _dbSet.ToListAsync(cancellationToken);
         }
 
-        public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+        public async Task CreateAsync(T entity, CancellationToken cancellationToken = default)
         {
             await _dbSet.AddAsync(entity, cancellationToken);
             await _context.SaveChangesAsync(cancellationToken);

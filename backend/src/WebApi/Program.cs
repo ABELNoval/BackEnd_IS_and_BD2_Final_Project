@@ -5,6 +5,9 @@ using Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using FluentValidation;
+using Application.Validators.Generic;
+using Application.Validators.Assessment;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,7 +52,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddAuthorization();
+//builder.Services.AddAuthorization();
 
 // CORS para React
 builder.Services.AddCors(options =>
@@ -62,6 +65,13 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod();
         });
 });
+
+// Register all validators defined in the Application.Validators assembly
+builder.Services.AddValidatorsFromAssemblyContaining<UpdateAssessmentDtoValidator>();
+
+// Register a fallback validator for any requested DTO validator, to avoid DI resolution failures
+// when specific CreateXDto validators are not yet implemented.
+builder.Services.AddSingleton(typeof(IValidator<>), typeof(Application.Validators.Generic.NoOpValidator<>));
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

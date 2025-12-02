@@ -11,7 +11,6 @@ namespace Infrastructure.Persistence.Repositories
     public class AssessmentRepository : BaseRepository<Assessment>, IAssessmentRepository
     {
         public AssessmentRepository(AppDbContext context) : base(context) { }
-
         
     }
 }

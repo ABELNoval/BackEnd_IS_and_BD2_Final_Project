@@ -41,7 +41,7 @@ namespace Application.Services
             }
 
             var entity = _mapper.Map<EquipmentDecommission>(dto);
-            await _decommissionRepository.AddAsync(entity, cancellationToken);
+            await _decommissionRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<EquipmentDecommissionDto>(entity);
@@ -62,7 +62,7 @@ namespace Application.Services
                 return null;
 
             _mapper.Map(dto, existing);
-            _decommissionRepository.Update(existing);
+            await _decommissionRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<EquipmentDecommissionDto>(existing);

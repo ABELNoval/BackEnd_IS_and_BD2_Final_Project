@@ -67,19 +67,5 @@ namespace Web.Controllers
             var success = await _assessmentService.DeleteAsync(id, cancellationToken);
             return success ? NoContent() : NotFound();
         }
-
-        // ===== Extra endpoints =====
-
-        [HttpGet("director/{directorId}")]
-        public async Task<IActionResult> GeByDirectorId(Guid directorId, CancellationToken cancellationToken)
-        {
-            return Ok(await _assessmentService.GetByDirectorIdAsync(directorId, cancellationToken));
-        }
-
-        [HttpGet("technical/{technicalId}")]
-        public async Task<IActionResult> GeByTechnicalId(Guid technicalId, CancellationToken cancellationToken)
-        {
-            return Ok(await _assessmentService.GetByTechnicalIdAsync(technicalId, cancellationToken));
-        }
     }
 }

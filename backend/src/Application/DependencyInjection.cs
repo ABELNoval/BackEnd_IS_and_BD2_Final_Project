@@ -32,7 +32,7 @@ namespace Application
             // services.AddScoped<IUserService, UserService>();
 
             // AuthService va aquí porque es lógicamente un servicio de aplicación
-            services.AddScoped<IAuthService, AuthService>();
+            //services.AddScoped<IAuthService, AuthService>();
 
             return services;
         }

@@ -42,7 +42,7 @@ namespace Application.Services
 
             var entity = _mapper.Map<Transfer>(dto);
 
-            await _transferRepository.AddAsync(entity, cancellationToken);
+            await _transferRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<TransferDto>(entity);
@@ -63,7 +63,7 @@ namespace Application.Services
                 return null;
 
             _mapper.Map(dto, existing);
-            _transferRepository.Update(existing);
+            await _transferRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<TransferDto>(existing);

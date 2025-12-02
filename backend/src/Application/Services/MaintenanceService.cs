@@ -41,7 +41,7 @@ namespace Application.Services
             }
 
             var entity = _mapper.Map<Maintenance>(dto);
-            await _maintenanceRepository.AddAsync(entity, cancellationToken);
+            await _maintenanceRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<MaintenanceDto>(entity);
@@ -62,7 +62,7 @@ namespace Application.Services
                 return null;
 
             _mapper.Map(dto, existing);
-            _maintenanceRepository.Update(existing);
+            await _maintenanceRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<MaintenanceDto>(existing);

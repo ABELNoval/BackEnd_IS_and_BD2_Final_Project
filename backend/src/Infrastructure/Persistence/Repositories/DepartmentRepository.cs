@@ -12,6 +12,5 @@ namespace Infrastructure.Persistence.Repositories
     {
         public DepartmentRepository(AppDbContext context) : base(context) { }
 
-        
     }
 }
