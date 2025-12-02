@@ -57,6 +57,9 @@ public class Transfer : Entity
 
     private void Validate()
     {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Transfer), "Transfer ID cannot be empty");
+
         ValidateEquipmentId();
         ValidateDepartmentIds();
         ValidateResponsibleId();

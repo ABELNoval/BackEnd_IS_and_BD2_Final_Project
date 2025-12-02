@@ -64,21 +64,32 @@ public class EquipmentDecommission : Entity
     {
         const int MaxReasonLength = 500;
 
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Decommission ID cannot be empty");
+
         if (EquipmentId == Guid.Empty)
             throw new InvalidEntityException(nameof(EquipmentDecommission), "Equipment ID cannot be empty");
 
         if (TechnicalId == Guid.Empty)
             throw new InvalidEntityException(nameof(EquipmentDecommission), "Technical ID cannot be empty");
 
-        if (DepartmentId == Guid.Empty)
-            throw new InvalidEntityException(nameof(EquipmentDecommission), "Department ID cannot be empty");
-
-        if (RecipientId == Guid.Empty)
-            throw new InvalidEntityException(nameof(EquipmentDecommission), "Recipient ID cannot be empty");
-
         var validDestinyType = DestinyType.FromId(DestinyTypeId);
         if (validDestinyType == null)
             throw new InvalidEntityException(nameof(EquipmentDecommission), $"Invalid destiny type ID: {DestinyTypeId}");
+
+        if (validDestinyType.Id == DestinyType.Department.Id)
+        {
+            if (DepartmentId == Guid.Empty)
+                throw new InvalidEntityException(nameof(EquipmentDecommission), "Department ID cannot be empty for department destiny");
+        }
+        else
+        {
+            if (DepartmentId != Guid.Empty)
+                throw new InvalidEntityException(nameof(EquipmentDecommission), "Department ID must be empty for disposal/warehouse destiny");
+        }
+
+        if (RecipientId == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Recipient ID cannot be empty");
 
         if (DecommissionDate > DateTime.UtcNow)
             throw new InvalidEntityException(nameof(EquipmentDecommission), "Decommission date cannot be in the future");

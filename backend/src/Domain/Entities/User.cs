@@ -32,6 +32,9 @@ public abstract class User : Entity
     {
         const int MaxNameLength = 100;
 
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(User), "User ID cannot be empty");
+
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(User), "Name cannot be empty");
 

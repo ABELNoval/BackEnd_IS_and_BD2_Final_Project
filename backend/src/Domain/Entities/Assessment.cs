@@ -113,6 +113,11 @@ public class Assessment : Entity
 
     private void ValidateAssessment()
     {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                "Assessment ID cannot be empty");
+
         if (TechnicalId == Guid.Empty)
             throw new InvalidEntityException(
                 nameof(Assessment),
