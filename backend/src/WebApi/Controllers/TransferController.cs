@@ -68,26 +68,5 @@ namespace Web.Controllers
             var success = await _transferService.DeleteAsync(id, cancellationToken);
             return success ? NoContent() : NotFound();
         }
-
-        // ===== Extra endpoints =====
-
-        [HttpGet("sourceDepartment/{departmentId}")]
-        public async Task<IActionResult> GetBySourceDepartmentId(Guid departmentId, CancellationToken cancellationToken)
-        {
-            return Ok(await _transferService.GetBySourceDepartmentIdAsync(departmentId, cancellationToken)); 
-        }
-
-        [HttpGet("targetDepartment/{departmentId}")]
-        public async Task<IActionResult> GetByTargetDepartmentId(Guid departmentId, CancellationToken cancellationToken)
-        {
-            return Ok(await _transferService.GetByTargetDepartmentIdAsync(departmentId, cancellationToken)); 
-        }
-
-        [HttpGet("equipment/{equipmentId}")]
-        public async Task<IActionResult> GetByEquipmentId(Guid equipmentId, CancellationToken cancellationToken)
-        {
-            return Ok(await _transferService.GetByEquipmentIdAsync(equipmentId, cancellationToken));
-        }
-
     }
 }

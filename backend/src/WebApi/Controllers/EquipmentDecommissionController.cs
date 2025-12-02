@@ -67,25 +67,5 @@ namespace Web.Controllers
             var success = await _equipmentDecommissionService.DeleteAsync(id, cancellationToken);
             return success ? NoContent() : NotFound();
         }
-
-        // ===== Extra endpoints =====
-
-        [HttpGet("technical/{technicalId}")]
-        public async Task<IActionResult> GetByTechnicalId(Guid technicalId, CancellationToken cancellationToken)
-        {
-            return Ok(await _equipmentDecommissionService.GetByTechnicalIdAsync(technicalId, cancellationToken)); 
-        }
-
-        [HttpGet("equipment/{equipmentId}")]
-        public async Task<IActionResult> GetByEquipmentId(Guid equipmentId, CancellationToken cancellationToken)
-        {
-            return Ok(await _equipmentDecommissionService.GetByEquipmentIdAsync(equipmentId, cancellationToken));
-        }
-
-        [HttpGet("department/{departmentId}")]
-        public async Task<IActionResult> GetByDepartmentId(Guid departmentId, CancellationToken cancellationToken)
-        {
-            return Ok(await _equipmentDecommissionService.GetByDepartmentIdAsync(departmentId, cancellationToken));
-        }
     }
 }

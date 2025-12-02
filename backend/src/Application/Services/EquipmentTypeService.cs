@@ -40,7 +40,7 @@ namespace Application.Services
             }
 
             var entity = _mapper.Map<EquipmentType>(dto);
-            await _equipmentTypeRepository.AddAsync(entity, cancellationToken);
+            await _equipmentTypeRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<EquipmentTypeDto>(entity);
         }
@@ -59,7 +59,7 @@ namespace Application.Services
                 return null;
 
             _mapper.Map(dto, existing);
-            _equipmentTypeRepository.Update(existing);
+            await _equipmentTypeRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<EquipmentTypeDto>(existing);
         }

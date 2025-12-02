@@ -68,19 +68,5 @@ namespace Web.Controllers
             return success ? NoContent() : NotFound();
         }
 
-        // ===== Extra endpoints =====
-
-        [HttpGet("technical/{technicalId}")]
-        public async Task<IActionResult> GetByTechnicalId(Guid technicalId, CancellationToken cancellationToken)
-        {
-            return Ok(await _maintenanceService.GetByTechnicalIdAsync(technicalId, cancellationToken)); 
-        }
-
-        [HttpGet("equipment/{equipmentId}")]
-        public async Task<IActionResult> GetByEquipmentId(Guid equipmentId, CancellationToken cancellationToken)
-        {
-            return Ok(await _maintenanceService.GetByEquipmentIdAsync(equipmentId, cancellationToken));
-        }
-
     }
 }

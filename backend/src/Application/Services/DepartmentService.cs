@@ -40,7 +40,7 @@ namespace Application.Services
             }
 
             var entity = _mapper.Map<Department>(dto);
-            await _departmentRepository.AddAsync(entity, cancellationToken);
+            await _departmentRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<DepartmentDto>(entity);
         }
@@ -59,7 +59,7 @@ namespace Application.Services
                 return null;
 
             _mapper.Map(dto, existing);
-            _departmentRepository.Update(existing);
+            await _departmentRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<DepartmentDto>(existing);
         }

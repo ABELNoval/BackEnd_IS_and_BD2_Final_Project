@@ -25,7 +25,9 @@ namespace Application.Mappers
                     dto.Name,
                     dto.AcquisitionDate,
                     dto.EquipmentTypeId,
-                    dto.DepartmentId
+                    dto.DepartmentId,
+                    dto.State,
+                    dto.LocationType
                 ));
 
             // UpdateDTO → Entity

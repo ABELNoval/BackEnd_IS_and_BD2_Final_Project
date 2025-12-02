@@ -40,7 +40,7 @@ namespace Application.Services
             }
 
             var entity = _mapper.Map<Section>(dto);
-            await _sectionRepository.AddAsync(entity, cancellationToken);
+            await _sectionRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<SectionDto>(entity);
         }
@@ -59,7 +59,7 @@ namespace Application.Services
                 return null;
 
             _mapper.Map(dto, existing);
-            _sectionRepository.Update(existing);
+            await _sectionRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<SectionDto>(existing);
         }
