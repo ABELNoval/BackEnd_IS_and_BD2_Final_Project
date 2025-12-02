@@ -21,14 +21,24 @@ public class Equipment : Entity
     public string Name { get; private set; }
 
     /// <summary>
-    /// Current state of the equipment
+    /// Current state ID of the equipment
     /// </summary>
-    public EquipmentState State { get; private set; }
+    public int StateId { get; private set; }
 
     /// <summary>
-    /// Current location type of the equipment
+    /// Current location type ID of the equipment
     /// </summary>
-    public LocationType LocationType { get; private set; }
+    public int LocationTypeId { get; private set; }
+
+    /// <summary>
+    /// Calculated property to get the EquipmentState object
+    /// </summary>
+    public EquipmentState State => EquipmentState.FromId(StateId);
+
+    /// <summary>
+    /// Calculated property to get the LocationType object
+    /// </summary>
+    public LocationType LocationType => LocationType.FromId(LocationTypeId);
 
     /// <summary>
     /// Date when the equipment was acquired
@@ -61,26 +71,28 @@ public class Equipment : Entity
     public IReadOnlyCollection<Maintenance> Maintenances => _maintenances.AsReadOnly();
 
     // EF Core constructor
-    private Equipment() 
+    private Equipment()
     {
         Name = string.Empty;
-        State = EquipmentState.Operative;
-        LocationType = LocationType.Warehouse;
+        StateId = EquipmentState.Operative.Id;
+        LocationTypeId = LocationType.Warehouse.Id;
     }
 
     private Equipment(
         string name,
         DateTime acquisitionDate,
         Guid equipmentTypeId,
-        Guid? departmentId)
+        Guid? departmentId,
+        int stateId,
+        int locationTypeId)
     {
         GenerateId();
         Name = name;
         AcquisitionDate = acquisitionDate;
         EquipmentTypeId = equipmentTypeId;
         DepartmentId = departmentId;
-        State = EquipmentState.Operative;
-        LocationType = departmentId.HasValue ? LocationType.Department : LocationType.Warehouse;
+        StateId = stateId;
+        LocationTypeId = locationTypeId;
 
         ValidateEquipment();
     }
@@ -92,9 +104,11 @@ public class Equipment : Entity
         string name,
         DateTime acquisitionDate,
         Guid equipmentTypeId,
-        Guid? departmentId = null)
+        Guid? departmentId,
+        int stateId,
+        int locationTypeId)
     {
-        return new Equipment(name, acquisitionDate, equipmentTypeId, departmentId);
+        return new Equipment(name, acquisitionDate, equipmentTypeId, departmentId, stateId, locationTypeId);
     }
 
     /// <summary>
@@ -111,11 +125,14 @@ public class Equipment : Entity
     {
         ValidateCanBeDecommissioned();
 
-        // Create the decommission record BEFORE applying the strategy
+        Guid departmentForDecommission = Guid.Empty;
+        if (destinationStrategy is Domain.Strategies.DepartmentDestinationStrategy deptStrategy)
+            departmentForDecommission = deptStrategy.TargetDepartmentId ?? Guid.Empty;
+
         var decommission = EquipmentDecommission.Create(
             equipmentId: Id,
             technicalId: technicalId,
-            departmentId: DepartmentId ?? Guid.Empty,
+            departmentId: departmentForDecommission,
             destinyTypeId: destinationStrategy.DestinyTypeId,
             recipientId: responsibleId,
             decommissionDate: decommissionDate,
@@ -127,7 +144,8 @@ public class Equipment : Entity
 
         // Add to collection after successful application
         _decommissions.Add(decommission);
-        State = EquipmentState.Decommissioned;
+        if (StateId != EquipmentState.Disposed.Id)
+            StateId = EquipmentState.Decommissioned.Id;
     }
 
     /// <summary>
@@ -152,7 +170,7 @@ public class Equipment : Entity
 
         _transfers.Add(transfer);
         DepartmentId = targetDepartmentId;
-        LocationType = LocationType.Department;
+        LocationTypeId = LocationType.Department.Id;
     }
 
     /// <summary>
@@ -175,7 +193,7 @@ public class Equipment : Entity
             cost: cost);
 
         _maintenances.Add(maintenance);
-        State = EquipmentState.UnderMaintenance;
+        StateId = EquipmentState.UnderMaintenance.Id;
     }
 
     /// <summary>
@@ -183,15 +201,11 @@ public class Equipment : Entity
     /// </summary>
     public void CompleteMaintenance()
     {
-        if (State != EquipmentState.UnderMaintenance)
+        if (StateId != EquipmentState.UnderMaintenance.Id)
             throw new BusinessRuleViolationException(
                 "CompleteMaintenanceOnNonMaintainedEquipment",
                 "Equipment must be under maintenance to complete maintenance");
-
-        // Equipment returns to operative state after maintenance
-        // Note: Disposed/Decommissioned equipment cannot reach this point
-        // because AddMaintenance() validates and prevents maintenance on such equipment
-        State = EquipmentState.Operative;
+        StateId = EquipmentState.Operative.Id;
     }
 
     #region Internal Methods (Called by Strategies)
@@ -203,8 +217,8 @@ public class Equipment : Entity
     internal void MoveToDisposal()
     {
         DepartmentId = null;
-        LocationType = LocationType.Disposal;
-        State = EquipmentState.Disposed;
+        LocationTypeId = LocationType.Disposal.Id;
+        StateId = EquipmentState.Disposed.Id;
     }
 
     /// <summary>
@@ -214,20 +228,20 @@ public class Equipment : Entity
     internal void MoveToWarehouse()
     {
         DepartmentId = null;
-        LocationType = LocationType.Warehouse;
+        LocationTypeId = LocationType.Warehouse.Id;
     }
 
     /// <summary>
     /// Moves equipment to a department.
     /// Called by DepartmentDestinationStrategy.
     /// </summary>
-    internal void MoveToDepartment(Guid departmentId)
+    public void MoveToDepartment(Guid departmentId)
     {
         if (departmentId == Guid.Empty)
             throw new ArgumentException("Department ID cannot be empty", nameof(departmentId));
 
         DepartmentId = departmentId;
-        LocationType = LocationType.Department;
+        LocationTypeId = LocationType.Department.Id;
     }
 
     #endregion
@@ -236,27 +250,50 @@ public class Equipment : Entity
 
     private const int MaxNameLength = 200;
 
-    private void ValidateEquipment()
+    public void ValidateEquipment()
     {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Equipment), "Equipment ID cannot be empty");
+
         if (string.IsNullOrWhiteSpace(Name))
-            throw new InvalidEntityException(
-                nameof(Equipment),
-                "Name cannot be empty");
+            throw new InvalidEntityException(nameof(Equipment), "Name cannot be empty");
 
         if (Name.Length > MaxNameLength)
-            throw new InvalidEntityException(
-                nameof(Equipment),
-                $"Name cannot exceed {MaxNameLength} characters");
+            throw new InvalidEntityException(nameof(Equipment), $"Name cannot exceed {MaxNameLength} characters");
 
         if (AcquisitionDate > DateTime.UtcNow)
-            throw new InvalidEntityException(
-                nameof(Equipment),
-                "Acquisition date cannot be in the future");
+            throw new InvalidEntityException(nameof(Equipment), "Acquisition date cannot be in the future");
 
         if (EquipmentTypeId == Guid.Empty)
-            throw new InvalidEntityException(
-                nameof(Equipment),
-                "Equipment type ID cannot be empty");
+            throw new InvalidEntityException(nameof(Equipment), "Equipment type ID cannot be empty");
+
+        try
+        {
+            EquipmentState.FromId(StateId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new InvalidEntityException(nameof(Equipment), $"Invalid state ID: {StateId}");
+        }
+        try
+        {
+            LocationType.FromId(LocationTypeId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new InvalidEntityException(nameof(Equipment), $"Invalid location type ID: {LocationTypeId}");
+        }
+
+        if (LocationType == LocationType.Department)
+        {
+            if (!DepartmentId.HasValue || DepartmentId.Value == Guid.Empty)
+                throw new InvalidEntityException(nameof(Equipment), "If LocationType is Department, DepartmentId must be set and not empty.");
+        }
+        else
+        {
+            if (DepartmentId.HasValue)
+                throw new InvalidEntityException(nameof(Equipment), "If LocationType is Warehouse or Disposal, DepartmentId must be null.");
+        }
     }
 
     private void ValidateCanBeDecommissioned()

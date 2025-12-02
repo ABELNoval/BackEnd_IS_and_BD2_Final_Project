@@ -18,7 +18,7 @@ public class Department : Entity
     private Department(string name, Guid sectionId, Guid responsibleId)
     {
         GenerateId();
-        Name = name.Trim();
+        Name = name?.Trim();
         SectionId = sectionId;
         ResponsibleId = responsibleId;
         Validate();
@@ -32,6 +32,9 @@ public class Department : Entity
     private void Validate()
     {
         const int MaxNameLength = 100;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Department), "Department ID cannot be empty");
 
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(Department), "Name cannot be empty");
