@@ -20,7 +20,7 @@ public class Technical : User
         : base(name, email, passwordHash, Role.Technical.Id)
     {
         Experience = experience;
-        Specialty = specialty.Trim();
+        Specialty = specialty?.Trim();
         ValidateTechnical();
     }
 

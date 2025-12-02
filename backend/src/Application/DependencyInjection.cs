@@ -1,7 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
-using System.Reflection;
+using Application.Mappers;
 using Application.Interfaces.Services;
 using Application.Services;
+using AutoMapper;
+using System.Reflection;
 
 namespace Application
 {
@@ -9,6 +11,8 @@ namespace Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
+            services.AddAutoMapper(typeof(AssessmentMapper).Assembly);
+          
             // 🔹 Registrar AutoMapper
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
 

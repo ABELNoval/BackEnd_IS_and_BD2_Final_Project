@@ -1,8 +1,10 @@
 using Application.DTOs.Employee;
 using Application.Interfaces.Services;
+using Application.Validators.Employee;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using FluentValidation;
 
 namespace Application.Services
 {
@@ -11,19 +13,32 @@ namespace Application.Services
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly IValidator<CreateEmployeeDto> _createValidator;
+        private readonly IValidator<UpdateEmployeeDto> _updateValidator;
 
         public EmployeeService(
             IEmployeeRepository employeeRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper)
+            IMapper mapper,
+            IValidator<CreateEmployeeDto> createValidator,
+            IValidator<UpdateEmployeeDto> updateValidator)
         {
             _employeeRepository = employeeRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
         }
 
         public async Task<EmployeeDto> CreateAsync(CreateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var entity = _mapper.Map<Employee>(dto);
             await _employeeRepository.AddAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -32,6 +47,13 @@ namespace Application.Services
 
         public async Task<EmployeeDto?> UpdateAsync(UpdateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
+            // Validar DTO usando FluentValidation
+            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+            {
+                throw new ValidationException(validationResult.Errors);
+            }
+
             var existing = await _employeeRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
@@ -44,6 +66,12 @@ namespace Application.Services
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var existing = await _employeeRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
                 return false;
@@ -55,6 +83,12 @@ namespace Application.Services
 
         public async Task<EmployeeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
+            // Validación básica del ID
+            if (id == Guid.Empty)
+            {
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+            }
+
             var entity = await _employeeRepository.GetByIdAsync(id, cancellationToken);
             return entity == null ? null : _mapper.Map<EmployeeDto>(entity);
         }
@@ -63,29 +97,6 @@ namespace Application.Services
         {
             var entities = await _employeeRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<EmployeeDto>>(entities);
-        }
-
-        public async Task<EmployeeDto?> GetByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            var entity = await _employeeRepository.GetByNameAsync(name, cancellationToken);
-            return entity == null ? null : _mapper.Map<EmployeeDto>(entity);
-        }
-
-        public async Task<EmployeeDto?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
-        {
-            var entity = await _employeeRepository.GetByEmailAsync(email, cancellationToken);
-            return entity == null ? null : _mapper.Map<EmployeeDto>(entity);
-        }
-
-        public async Task<IEnumerable<EmployeeDto>> GetAllPagedAsync(int pageNumber, int pageSize, CancellationToken cancellationToken = default)
-        {
-            var entities = await _employeeRepository.GetAllPagedAsync(pageNumber, pageSize, cancellationToken);
-            return _mapper.Map<IEnumerable<EmployeeDto>>(entities);
-        }
-
-        public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
-        {
-            return await _employeeRepository.ExistsByEmailAsync(email, cancellationToken);
         }
     }
 }

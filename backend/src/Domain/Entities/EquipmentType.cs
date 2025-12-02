@@ -19,7 +19,7 @@ public class EquipmentType : Entity
     private EquipmentType(string name)
     {
         GenerateId();
-        Name = name.Trim();
+        Name = name?.Trim();
         Validate();
     }
 
@@ -31,6 +31,9 @@ public class EquipmentType : Entity
     private void Validate()
     {
         const int MaxNameLength = 100;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentType), "EquipmentType ID cannot be empty");
 
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(EquipmentType), "Name cannot be empty");

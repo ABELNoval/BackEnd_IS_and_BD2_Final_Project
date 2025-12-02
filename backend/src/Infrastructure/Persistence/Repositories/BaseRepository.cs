@@ -1,41 +1,53 @@
 using Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace Infrastructure.Persistence.Repositories;
-
-public class BaseRepository<T> : IRepository<T> where T : class
+namespace Infrastructure.Persistence.Repositories
 {
-    protected readonly AppDbContext _context;
-
-    public BaseRepository(AppDbContext context)
+    public abstract class BaseRepository<T> : IRepository<T> where T : class
     {
-        _context = context;
-    }
+        protected readonly AppDbContext _context;
+        protected readonly DbSet<T> _dbSet;
 
-    public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        return await _context.Set<T>().FindAsync(new object[] { id }, cancellationToken);
-    }
+        public BaseRepository(AppDbContext context)
+        {
+            _context = context;
+            _dbSet = context.Set<T>();
+        }
 
-    public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
-    {
-        return await _context.Set<T>().ToListAsync(cancellationToken);
-    }
+        public async Task<T?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
+        }
 
-    public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
-    {
-        await _context.Set<T>().AddAsync(entity, cancellationToken);
-    }
+        public async Task<IEnumerable<T>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            return await _dbSet.ToListAsync(cancellationToken);
+        }
 
-    public void Update(T entity)
-    {
-        _context.Set<T>().Update(entity);
-    }
+        public async Task AddAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            await _dbSet.AddAsync(entity, cancellationToken);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
 
-    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
-    {
-        var entity = await GetByIdAsync(id, cancellationToken);
-        if (entity != null)
-            _context.Set<T>().Remove(entity);
+        public async Task UpdateAsync(T entity, CancellationToken cancellationToken = default)
+        {
+            _dbSet.Update(entity);
+            await _context.SaveChangesAsync(cancellationToken);
+        }
+
+        public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            var entity = await GetByIdAsync(id, cancellationToken);
+            if (entity != null)
+            {
+                _dbSet.Remove(entity);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+        }
     }
 }

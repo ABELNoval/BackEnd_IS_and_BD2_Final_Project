@@ -16,7 +16,7 @@ public class Section : Entity
     private Section(string name)
     {
         GenerateId();
-        Name = name.Trim();
+        Name = name?.Trim();
         Validate();
     }
 
@@ -28,6 +28,9 @@ public class Section : Entity
     private void Validate()
     {
         const int MaxNameLength = 100;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Section), "Section ID cannot be empty");
 
         if (string.IsNullOrWhiteSpace(Name))
             throw new InvalidEntityException(nameof(Section), "Name cannot be empty");

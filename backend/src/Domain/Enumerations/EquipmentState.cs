@@ -13,6 +13,11 @@ namespace Domain.Enumerations
 
         private EquipmentState(int id, string name) : base(id, name) { }
 
+        public static EquipmentState FromId(int id)
+        {
+            return FromValue<EquipmentState>(id);
+        }
+
         public static IEnumerable<EquipmentState> GetAll()
         {
             yield return Operative;
