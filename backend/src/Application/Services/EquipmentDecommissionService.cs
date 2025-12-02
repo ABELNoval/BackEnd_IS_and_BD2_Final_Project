@@ -105,5 +105,11 @@ namespace Application.Services
             var entities = await _decommissionRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<EquipmentDecommissionDto>>(entities);
         }
+
+        public async Task<IEnumerable<EquipmentDecommissionDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            var entities = await _decommissionRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<EquipmentDecommissionDto>>(entities);
+        }
     }
 }

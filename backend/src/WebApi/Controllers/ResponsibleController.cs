@@ -76,5 +76,23 @@ namespace WebApi.Controllers
 
             return NoContent();
         }
+
+        // ============================================================
+        // POST: api/responsible/filter
+        // ============================================================
+        [HttpPost("filter")]
+        public async Task<ActionResult> Filter([FromBody] List<string> request, CancellationToken cancellationToken)
+        {
+            string query = "";
+
+            if (request != null && request.Count > 0)
+            {
+                query = string.Join(" AND ", request);
+            }
+
+            var result = await _responsibleService.FilterAsync(query, cancellationToken);
+
+            return Ok(result);
+        }
     }
 }

@@ -106,5 +106,11 @@ namespace Application.Services
             var entities = await _transferRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<TransferDto>>(entities);
         }
+
+        public async Task<IEnumerable<TransferDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            var entities = await _transferRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<TransferDto>>(entities);
+        }
     }
 }

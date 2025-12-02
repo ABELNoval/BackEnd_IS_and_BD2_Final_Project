@@ -67,5 +67,23 @@ namespace Web.Controllers
             var deleted = await _technicalService.DeleteAsync(id, cancellationToken);
             return deleted ? NoContent() : NotFound();
         }
+
+        // ================================
+        // POST: api/technical/filter
+        // ================================
+        [HttpPost("filter")]
+        public async Task<IActionResult> Filter([FromBody] List<string> request, CancellationToken cancellationToken)
+        {
+            string query = "";
+
+            if (request != null && request.Count > 0)
+            {
+                query = string.Join(" AND ", request);
+            }
+
+            var result = await _technicalService.FilterAsync(query, cancellationToken);
+
+            return Ok(result);
+        }
     }
 }

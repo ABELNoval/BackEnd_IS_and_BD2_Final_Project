@@ -68,5 +68,22 @@ namespace Web.Controllers
             return success ? NoContent() : NotFound();
         }
 
+        // =========================================
+        // POST: api/maintenance/filter
+        // =========================================
+        [HttpPost("filter")]
+        public async Task<IActionResult> Filter([FromBody] List<string> request, CancellationToken cancellationToken)
+        {
+            string query = "";
+
+            if (request != null && request.Count > 0)
+            {
+                query = string.Join(" AND ", request);
+            }
+
+            var result = await _maintenanceService.FilterAsync(query, cancellationToken);
+
+            return Ok(result);
+        }
     }
 }

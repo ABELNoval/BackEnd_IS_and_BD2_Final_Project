@@ -1,4 +1,5 @@
 using Application.DTOs.Equipment;
+using Domain.Entities;
 
 namespace Application.Interfaces.Services
 {
@@ -9,5 +10,6 @@ namespace Application.Interfaces.Services
         Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
         Task<EquipmentDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IEnumerable<EquipmentDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<EquipmentDto>> FilterAsync(string query, CancellationToken cancellationToken = default);
     }
 }

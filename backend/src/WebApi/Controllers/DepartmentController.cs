@@ -76,5 +76,24 @@ namespace WebApi.Controllers
 
             return NoContent();
         }
+
+        // =========================================
+        // GET: api/department/filter
+        // =========================================
+        [HttpPost("filter")]
+        public async Task<IActionResult> Filter([FromBody] List<string> request)
+        {
+            string query = "";
+
+            if (request != null && request.Count > 0)
+            {
+                query = string.Join(" AND ", request);
+            }
+
+            var result = await _departmentService.FilterAsync(query);
+
+            return Ok(result);
+        }
+
     }
 }

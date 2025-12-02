@@ -98,5 +98,11 @@ namespace Application.Services
             var entities = await _responsibleRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<ResponsibleDto>>(entities);
         }
+
+        public async Task<IEnumerable<ResponsibleDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            var entities = await _responsibleRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<ResponsibleDto>>(entities);
+        }
     }
 }

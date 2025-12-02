@@ -105,5 +105,11 @@ namespace Application.Services
             var maintenances = await _maintenanceRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<MaintenanceDto>>(maintenances);
         }
+
+        public async Task<IEnumerable<MaintenanceDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            var entities = await _maintenanceRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<MaintenanceDto>>(entities);
+        }
     }
 }

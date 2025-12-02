@@ -18,5 +18,8 @@ namespace Application.Interfaces.Services
 
         // Obtener todas las evaluaciones
         Task<IEnumerable<AssessmentDTO>> GetAllAsync(CancellationToken cancellationToken = default);
+
+        // Obtener los resultados de filtrar
+        Task<IEnumerable<AssessmentDTO>> FilterAsync(string query, CancellationToken cancellationToken = default);
     }
 }
