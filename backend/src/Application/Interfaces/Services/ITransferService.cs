@@ -18,5 +18,6 @@ namespace Application.Interfaces.Services
 
         // Obtener todas las transferencias
         Task<IEnumerable<TransferDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<TransferDto>> FilterAsync(string query, CancellationToken cancellationToken = default);
     }
 }

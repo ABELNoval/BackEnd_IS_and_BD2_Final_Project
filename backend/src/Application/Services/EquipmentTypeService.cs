@@ -98,5 +98,11 @@ namespace Application.Services
             var entities = await _equipmentTypeRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<EquipmentTypeDto>>(entities);
         }
+
+        public async Task<IEnumerable<EquipmentTypeDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            var entities = await _equipmentTypeRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<EquipmentTypeDto>>(entities);
+        }
     }
 }

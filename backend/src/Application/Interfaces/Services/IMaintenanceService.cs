@@ -1,4 +1,5 @@
 using Application.DTOs.Maintenance;
+using Domain.Entities;
 
 namespace Application.Interfaces.Services
 {
@@ -18,5 +19,6 @@ namespace Application.Interfaces.Services
 
         // Obtener todos los mantenimientos
         Task<IEnumerable<MaintenanceDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<MaintenanceDto>> FilterAsync(string query, CancellationToken cancellationToken = default);
     }
 }

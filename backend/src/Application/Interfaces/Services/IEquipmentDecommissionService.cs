@@ -18,5 +18,6 @@ namespace Application.Interfaces.Services
 
         // Obtener todas las bajas técnicas
         Task<IEnumerable<EquipmentDecommissionDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<EquipmentDecommissionDto>> FilterAsync(string query, CancellationToken cancellationToken = default);
     }
 }

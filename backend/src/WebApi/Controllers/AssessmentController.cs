@@ -67,5 +67,24 @@ namespace Web.Controllers
             var success = await _assessmentService.DeleteAsync(id, cancellationToken);
             return success ? NoContent() : NotFound();
         }
+
+        // =========================================
+        // GET: api/assessment/filter
+        // =========================================
+        [HttpPost("filter")]
+        public async Task<IActionResult> Filter([FromBody] List<string> request)
+        {
+            string query = "";
+
+            if (request != null && request.Count > 0)
+            {
+                query = string.Join(" AND ", request);
+            }
+
+            var result = await _assessmentService.FilterAsync(query);
+
+            return Ok(result);
+        }
+
     }
 }

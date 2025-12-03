@@ -68,5 +68,23 @@ namespace Web.Controllers
             var success = await _transferService.DeleteAsync(id, cancellationToken);
             return success ? NoContent() : NotFound();
         }
+
+        // =========================================
+        // POST: api/transfer/filter
+        // =========================================
+        [HttpPost("filter")]
+        public async Task<IActionResult> Filter([FromBody] List<string> request, CancellationToken cancellationToken)
+        {
+            string query = "";
+
+            if (request != null && request.Count > 0)
+            {
+                query = string.Join(" AND ", request);
+            }
+
+            var result = await _transferService.FilterAsync(query, cancellationToken);
+
+            return Ok(result);
+        }
     }
 }

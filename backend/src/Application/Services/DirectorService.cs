@@ -98,5 +98,11 @@ namespace Application.Services
             var entities = await _directorRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<DirectorDto>>(entities);
         }
+
+        public async Task<IEnumerable<DirectorDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            var entities = await _directorRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<DirectorDto>>(entities);
+        }
     }
 }

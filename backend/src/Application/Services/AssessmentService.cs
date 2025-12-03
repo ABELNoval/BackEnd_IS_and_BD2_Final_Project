@@ -114,5 +114,10 @@ namespace Application.Services
             var list = await _repository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<AssessmentDTO>>(list);
         }
+
+        public Task<IEnumerable<AssessmentDTO>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
