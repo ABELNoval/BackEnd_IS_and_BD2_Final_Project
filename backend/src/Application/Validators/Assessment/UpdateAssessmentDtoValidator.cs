@@ -9,11 +9,10 @@ namespace Application.Validators.Assessment
         public UpdateAssessmentDtoValidator()
         {
             RuleFor(x => x.Id)
-                .NotEmpty().WithMessage("Assessment ID is required")
-                .NotEqual(Guid.Empty).WithMessage("Assessment ID cannot be empty");
+                .NotEmpty().WithMessage("Assessment ID is required");
 
             RuleFor(x => x.Score)
-                .NotEmpty().WithMessage("Score is required")
+                .NotNull().WithMessage("Score is required")
                 .InclusiveBetween(0, 100).WithMessage("Score must be between 0 and 100");
 
             RuleFor(x => x.Comment)

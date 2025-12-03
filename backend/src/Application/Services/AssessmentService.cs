@@ -115,9 +115,10 @@ namespace Application.Services
             return _mapper.Map<IEnumerable<AssessmentDTO>>(list);
         }
 
-        public Task<IEnumerable<AssessmentDTO>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        public async Task<IEnumerable<AssessmentDTO>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            var entities = await _repository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<AssessmentDTO>>(entities);
         }
     }
 }

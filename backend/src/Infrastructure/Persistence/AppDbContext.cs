@@ -239,9 +239,6 @@ namespace Infrastructure.Persistence
 
                 entity.Property(d => d.SectionId)
                     .IsRequired();
-
-                entity.Property(d => d.ResponsibleId)
-                    .IsRequired();
             });
 
             /// <summary>
@@ -253,6 +250,10 @@ namespace Infrastructure.Persistence
 
                 entity.Property(s => s.Name)
                     .HasMaxLength(100)
+                    .IsRequired();
+
+                // use 's' variable name for clarity
+                entity.Property(s => s.ResponsibleId)
                     .IsRequired();
             });
 

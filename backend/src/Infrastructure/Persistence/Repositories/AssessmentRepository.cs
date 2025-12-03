@@ -57,55 +57,5 @@ namespace Infrastructure.Persistence.Repositories
 
             return (data, total, pages);
         }
-
-        public async Task<IEnumerable<Assessment>> GetByTechnicalIdAsync(Guid technicalId, CancellationToken cancellationToken = default)
-        {
-            return await _context.Assessments
-                .Where(a => a.TechnicalId == technicalId)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Assessment>> GetByDirectorIdAsync(Guid directorId, CancellationToken cancellationToken = default)
-        {
-            return await _context.Assessments
-                .Where(a => a.DirectorId == directorId)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Assessment>> GetByScoreRangeAsync(
-            decimal minScore, decimal maxScore, CancellationToken cancellationToken = default)
-        {
-            return await _context.Assessments
-                .Where(a => a.Score.Value >= minScore && a.Score.Value <= maxScore)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Assessment>> GetByDateRangeAsync(
-            DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
-        {
-            return await _context.Assessments
-                .Where(a => a.AssessmentDate >= startDate && a.AssessmentDate <= endDate)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<decimal> GetAverageScoreByTechnicalIdAsync(Guid technicalId, CancellationToken cancellationToken = default)
-        {
-            var assessments = await GetByTechnicalIdAsync(technicalId, cancellationToken);
-            return assessments.Any() 
-                ? assessments.Average(a => a.Score.Value) 
-                : 0;
-        }
-
-        public async Task<int> CountAssessmentsByDirectorAsync(Guid directorId, CancellationToken cancellationToken = default)
-        {
-            return await _context.Assessments
-                .CountAsync(a => a.DirectorId == directorId, cancellationToken);
-        }
-
-        public async Task<bool> HasLowScoreAssessmentsAsync(Guid technicalId, CancellationToken cancellationToken = default)
-        {
-            return await _context.Assessments
-                .AnyAsync(a => a.TechnicalId == technicalId && a.Score.Value < 60, cancellationToken);
-        }
     }
 }

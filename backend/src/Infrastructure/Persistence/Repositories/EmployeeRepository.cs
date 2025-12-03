@@ -50,46 +50,5 @@ namespace Infrastructure.Persistence.Repositories
 
             return (data, total, pages);
         }
-
-        public async Task<IEnumerable<Employee>> SearchByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            return await _context.Employees
-                .Where(e => e.Name.Contains(name))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Employee>> GetByRoleIdAsync(int roleId, CancellationToken cancellationToken = default)
-        {
-            return await _context.Employees
-                .Where(e => e.RoleId == roleId)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Employee>> GetEmployeesWithoutDepartmentResponsibilityAsync(CancellationToken cancellationToken = default)
-        {
-            return await _context.Employees
-                .Where(e => !_context.Departments.Any(d => d.ResponsibleId == e.Id))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Employee>> GetByEmailDomainAsync(string domain, CancellationToken cancellationToken = default)
-        {
-            return await _context.Employees
-                .Where(e => e.Email.Value.EndsWith($"@{domain}"))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
-        {
-            return await _context.Employees
-                .AnyAsync(e => e.Email.Value == email, cancellationToken);
-        }
-
-        public async Task<IEnumerable<Employee>> GetByCreationDateRangeAsync(
-            DateTime startDate, DateTime endDate, CancellationToken cancellationToken = default)
-        {
-            return await _context.Employees
-                .ToListAsync(cancellationToken); 
-        }
     }
 }

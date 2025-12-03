@@ -26,47 +26,5 @@ namespace Infrastructure.Persistence.Repositories
 
             return await baseQuery.ToListAsync(cancellationToken);
         }
-
-        public async Task<IEnumerable<EquipmentType>> SearchByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            return await _context.EquipmentTypes
-                .Where(et => et.Name.Contains(name))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<bool> ExistsByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            return await _context.EquipmentTypes
-                .AnyAsync(et => et.Name == name, cancellationToken);
-        }
-
-        public async Task<IEnumerable<EquipmentType>> GetWithEquipmentCountAsync(CancellationToken cancellationToken = default)
-        {
-            var equipmentTypes = await _context.EquipmentTypes.ToListAsync(cancellationToken);
-            
-            return equipmentTypes;
-        }
-
-        public async Task<IEnumerable<EquipmentType>> GetTypesWithoutEquipmentAsync(CancellationToken cancellationToken = default)
-        {
-            return await _context.EquipmentTypes
-                .Where(et => !_context.Equipments.Any(e => e.EquipmentTypeId == et.Id))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<EquipmentType>> GetAllOrderedByNameAsync(CancellationToken cancellationToken = default)
-        {
-            return await _context.EquipmentTypes
-                .OrderBy(et => et.Name)
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<EquipmentType>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
-        {
-            var idSet = new HashSet<Guid>(ids);
-            return await _context.EquipmentTypes
-                .Where(et => idSet.Contains(et.Id))
-                .ToListAsync(cancellationToken);
-        }
     }
 }
