@@ -16,8 +16,8 @@ namespace Application.Mappers
                 .ForMember(dest => dest.AcquisitionDate, opt => opt.MapFrom(src => src.AcquisitionDate))
                 .ForMember(dest => dest.EquipmentTypeId, opt => opt.MapFrom(src => src.EquipmentTypeId))
                 .ForMember(dest => dest.DepartmentId, opt => opt.MapFrom(src => src.DepartmentId))
-                .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.Name))
-                .ForMember(dest => dest.LocationType, opt => opt.MapFrom(src => src.LocationType.Name));
+                .ForMember(dest => dest.StateId, opt => opt.MapFrom(src => src.StateId))          
+                .ForMember(dest => dest.LocationTypeId, opt => opt.MapFrom(src => src.LocationTypeId));
 
             // CreateDTO → Entity
             CreateMap<CreateEquipmentDto, Equipment>()
@@ -26,8 +26,8 @@ namespace Application.Mappers
                     dto.AcquisitionDate,
                     dto.EquipmentTypeId,
                     dto.DepartmentId,
-                    dto.State,
-                    dto.LocationType
+                    dto.StateId,
+                    dto.LocationTypeId
                 ));
 
             // UpdateDTO → Entity

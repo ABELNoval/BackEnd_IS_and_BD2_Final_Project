@@ -20,12 +20,7 @@ namespace Application.Mappers
 
             // UpdateDTO → Entity
             CreateMap<UpdateEquipmentTypeDto, EquipmentType>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .AfterMap((src, dest) =>
-                {
-                    var nameProperty = dest.GetType().GetProperty("Name");
-                    nameProperty?.SetValue(dest, src.Name);
-                });
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));          
         }
     }
 }
