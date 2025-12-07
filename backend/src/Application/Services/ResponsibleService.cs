@@ -5,6 +5,7 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
 using FluentValidation;
+using Domain.ValueObjects;
 
 namespace Application.Services
 {
@@ -32,37 +33,43 @@ namespace Application.Services
 
         public async Task<ResponsibleDto> CreateAsync(CreateResponsibleDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = _mapper.Map<Responsible>(dto);
+            var email = Email.Create(dto.Email);               
+            var password = PasswordHash.Create(dto.Password);   
+
+            var entity = Responsible.Create(dto.Name, email, password, dto.DepartmentId);
+
             await _responsibleRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<ResponsibleDto>(entity);
         }
 
         public async Task<ResponsibleDto?> UpdateAsync(UpdateResponsibleDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _responsibleRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            existing.Update(
+                dto.Name,
+                Email.Create(dto.Email),               
+                PasswordHash.Create(dto.Password)      
+            );
+
             await _responsibleRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<ResponsibleDto>(existing);
         }
+
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {

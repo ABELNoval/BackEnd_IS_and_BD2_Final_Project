@@ -47,4 +47,12 @@ public class Section : Entity
     }
 
     public bool HasResponsible(Guid responsibleId) => ResponsibleId == responsibleId;
+
+    public void Update(string name, Guid responsibleId)
+{
+    Name = name?.Trim();
+    ResponsibleId = responsibleId;
+    Validate();
+}
+
 }

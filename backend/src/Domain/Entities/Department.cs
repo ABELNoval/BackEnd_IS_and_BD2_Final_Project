@@ -45,4 +45,16 @@ public class Department : Entity
     }
 
     public bool BelongsToSection(Guid sectionId) => SectionId == sectionId;
+
+    public void Update(string name, Guid sectionId)
+    {
+        if (!string.IsNullOrWhiteSpace(name))
+            Name = name.Trim();
+
+        if (sectionId != Guid.Empty)
+            SectionId = sectionId;
+
+        Validate();
+    }
+
 }

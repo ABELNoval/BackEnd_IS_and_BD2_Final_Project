@@ -60,18 +60,19 @@ namespace Application.Services
             if (existing == null)
                 return null;
 
-            // Actualizar propiedades desde el DTO
-            var nameProperty = existing.GetType().GetProperty(nameof(Director.Name));
-            nameProperty?.SetValue(existing, dto.Name?.Trim());
-
-            var emailProperty = existing.GetType().GetProperty(nameof(Director.Email));
-            emailProperty?.SetValue(existing, Email.Create(dto.Email));
+            // Usar el método de dominio correcto
+            existing.Update(
+                dto.Name,
+                Email.Create(dto.Email),
+                PasswordHash.Create(dto.Password)
+            );
 
             await _directorRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<DirectorDto>(existing);
         }
+
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {

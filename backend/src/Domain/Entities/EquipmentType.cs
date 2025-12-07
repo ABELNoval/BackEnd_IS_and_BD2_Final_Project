@@ -41,4 +41,17 @@ public class EquipmentType : Entity
         if (Name.Length > MaxNameLength)
             throw new InvalidEntityException(nameof(EquipmentType), $"Name cannot exceed {MaxNameLength} characters");
     }
+
+    public void Update(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidEntityException(nameof(EquipmentType), "Name cannot be empty");
+
+        const int MaxNameLength = 100;
+        if (name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(EquipmentType), $"Name cannot exceed {MaxNameLength} characters");
+
+        Name = name.Trim();
+    }
+
 }
