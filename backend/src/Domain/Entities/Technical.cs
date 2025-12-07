@@ -52,4 +52,12 @@ public class Technical : User
         var assessment = Assessment.Create(Id, directorId, scoreValue, comment);
         _assessments.Add(assessment);
     }
+
+    public void Update(string name, int experience, string specialty, Email email, PasswordHash passwordHash)
+    {
+        Experience = experience;
+        Specialty = specialty?.Trim() ?? string.Empty;
+        UpdateCommon(name, email, passwordHash);
+        ValidateTechnical();
+    }
 }

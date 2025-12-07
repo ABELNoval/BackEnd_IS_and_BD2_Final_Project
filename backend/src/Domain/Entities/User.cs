@@ -28,6 +28,31 @@ public abstract class User : Entity
         Validate();
     }
 
+    protected void UpdateCommon(string name, Email email, PasswordHash passwordHash)
+    {
+        SetName(name);
+
+        if (email is not null)
+            Email = email;
+
+        if (passwordHash is not null)
+            PasswordHash = passwordHash;
+
+        Validate();
+    }
+
+    private void SetName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new InvalidEntityException(nameof(User), "Name cannot be empty");
+
+        if (name.Length > 100)
+            throw new InvalidEntityException(nameof(User), "Name cannot exceed 100 characters");
+
+        Name = name.Trim();
+    }
+
+
     private void Validate()
     {
         const int MaxNameLength = 100;
