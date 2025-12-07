@@ -35,9 +35,12 @@ namespace Application.Mappers
                 .AfterMap((src, dest) =>
                 {
                     // Actualizar email usando reflection
-                    var email = Email.Create(src.Email);
-                    var emailProperty = dest.GetType().GetProperty("Email");
-                    emailProperty?.SetValue(dest, email);
+                    // var email = Email.Create(src.Email);
+                    // var emailProperty = dest.GetType().GetProperty("Email");
+                    // emailProperty?.SetValue(dest, email);
+                    // var password = PasswordHash.Create(src.Password);
+                    // var passwordProperty = dest.Gettype().GetProperty("Password");
+                    // passwordProperty?.SetValue(dest, password);
                 });
         }
     }

@@ -35,6 +35,9 @@ namespace Application.Mappers
                     // var emailProperty = dest.GetType().GetProperty("Email");
                     // Console.WriteLine(emailProperty?.ToString());
                     // emailProperty?.SetValue(dest, email);
+                    // var password = PasswordHash.Create(src.Password);
+                    // var passwordProperty = dest.Gettype().GetProperty("Password");
+                    // passwordProperty?.SetValue(dest, password);
                     dest.SetDepartmentId(src.DepartmentId);
                 });
         }
