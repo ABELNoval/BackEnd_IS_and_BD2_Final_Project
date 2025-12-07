@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Domain.Interfaces
 {
     public interface IEquipmentTypeRepository : IRepository<EquipmentType>
-    {
+    { 
         /// <summary>
         /// Filtra tipos de equipo usando Dynamic LINQ
         /// </summary>
