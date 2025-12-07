@@ -8,7 +8,7 @@ namespace Domain.ValueObjects;
 /// </summary>
 public sealed record Email
 {
-    public string Value { get; }
+    public string Value { get;}
 
     private Email(string value)
     {
