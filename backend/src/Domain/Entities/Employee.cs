@@ -20,4 +20,11 @@ public class Employee : User
     {
         return new Employee(name, email, passwordHash, Role.Employee.Id, departmentId);
     }
+
+    public void SetDepartmentId(Guid departmentId) => DepartmentId = departmentId;
+
+    public void Update(string name, Email email, PasswordHash passwordHash)
+    {
+        UpdateCommon(name, email, passwordHash);
+    }
 }
