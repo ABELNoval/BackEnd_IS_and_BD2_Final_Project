@@ -14,14 +14,16 @@ namespace Application.Mappers
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email.Value))
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.GetRole().Name));
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.GetRole().Name))
+                .ForMember(dest => dest.DepartmentId, opt => opt.MapFrom(src => src.DepartmentId));
 
             // CreateDTO → Entity
             CreateMap<CreateEmployeeDto, Employee>()
                 .ConstructUsing(dto => Employee.Create(
                     dto.Name,
                     Email.Create(dto.Email),
-                    PasswordHash.Create(dto.Password) 
+                    PasswordHash.Create(dto.Password),
+                    dto.DepartmentId
                 ));
 
             // UpdateDTO → Entity
@@ -29,9 +31,11 @@ namespace Application.Mappers
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .AfterMap((src, dest) =>
                 {
-                    var email = Email.Create(src.Email);
-                    var emailProperty = dest.GetType().GetProperty("Email");
-                    emailProperty?.SetValue(dest, email);
+                    // var email = Email.Create(src.Email);
+                    // var emailProperty = dest.GetType().GetProperty("Email");
+                    // Console.WriteLine(emailProperty?.ToString());
+                    // emailProperty?.SetValue(dest, email);
+                    dest.SetDepartmentId(src.DepartmentId);
                 });
         }
     }

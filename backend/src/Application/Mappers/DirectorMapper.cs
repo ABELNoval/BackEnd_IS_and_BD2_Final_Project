@@ -29,9 +29,9 @@ namespace Application.Mappers
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .AfterMap((src, dest) =>
                 {
-                    var email = Email.Create(src.Email);
-                    var emailProperty = dest.GetType().GetProperty("Email");
-                    emailProperty?.SetValue(dest, email);
+                    // var email = Email.Create(src.Email);
+                    // var emailProperty = dest.GetType().GetProperty("Email");
+                    // emailProperty?.SetValue(dest, email);
                 });
         }
     }

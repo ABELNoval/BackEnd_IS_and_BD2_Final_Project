@@ -169,6 +169,14 @@ namespace Infrastructure.Persistence
             });
 
             /// <summary>
+            /// Configures Employee entity with specialty and experience constraints.
+            /// </summary>
+            modelBuilder.Entity<Employee>(entity =>
+            {
+                entity.Property(p => p.DepartmentId).IsRequired();
+            });
+
+            /// <summary>
             /// Configures Maintenance entity with cost precision and date indexing.
             /// </summary>
             modelBuilder.Entity<Maintenance>(entity =>
@@ -239,9 +247,6 @@ namespace Infrastructure.Persistence
 
                 entity.Property(d => d.SectionId)
                     .IsRequired();
-
-                entity.Property(d => d.ResponsibleId)
-                    .IsRequired();
             });
 
             /// <summary>
@@ -253,6 +258,10 @@ namespace Infrastructure.Persistence
 
                 entity.Property(s => s.Name)
                     .HasMaxLength(100)
+                    .IsRequired();
+
+                // use 's' variable name for clarity
+                entity.Property(s => s.ResponsibleId)
                     .IsRequired();
             });
 

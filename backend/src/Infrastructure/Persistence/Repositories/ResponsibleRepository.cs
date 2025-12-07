@@ -15,7 +15,6 @@ namespace Infrastructure.Persistence.Repositories
     {
         public ResponsibleRepository(AppDbContext context) : base(context) { }
 
-
         public async Task<IEnumerable<Responsible>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
             IQueryable<Responsible> baseQuery = _context.Responsibles;
@@ -50,63 +49,6 @@ namespace Infrastructure.Persistence.Repositories
                 .ToListAsync(cancellationToken);
 
             return (data, total, pages);
-        }
-
-        public async Task<IEnumerable<Responsible>> SearchByNameAsync(string name, CancellationToken cancellationToken = default)
-        {
-            return await _context.Responsibles
-                .Where(r => r.Name.Contains(name))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Responsible>> GetResponsiblesWithDepartmentsAsync(CancellationToken cancellationToken = default)
-        {
-            return await _context.Responsibles
-                .Where(r => _context.Departments.Any(d => d.ResponsibleId == r.Id))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<IEnumerable<Responsible>> GetResponsiblesWithoutDepartmentsAsync(CancellationToken cancellationToken = default)
-        {
-            return await _context.Responsibles
-                .Where(r => !_context.Departments.Any(d => d.ResponsibleId == r.Id))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<Dictionary<Guid, int>> GetDepartmentCountByResponsibleAsync(CancellationToken cancellationToken = default)
-        {
-            var result = new Dictionary<Guid, int>();
-            
-            var responsibles = await _context.Responsibles.ToListAsync(cancellationToken);
-
-            foreach (var responsible in responsibles)
-            {
-                var count = await _context.Departments
-                    .CountAsync(d => d.ResponsibleId == responsible.Id, cancellationToken);
-                result[responsible.Id] = count;
-            }
-
-            return result;
-        }
-
-        public async Task<IEnumerable<Responsible>> GetByEmailDomainAsync(string domain, CancellationToken cancellationToken = default)
-        {
-            return await _context.Responsibles
-                .Where(r => r.Email.Value.EndsWith($"@{domain}"))
-                .ToListAsync(cancellationToken);
-        }
-
-        public async Task<bool> HasAssignedDepartmentsAsync(Guid responsibleId, CancellationToken cancellationToken = default)
-        {
-            return await _context.Departments
-                .AnyAsync(d => d.ResponsibleId == responsibleId, cancellationToken);
-        }
-
-        public async Task<IEnumerable<Responsible>> GetActiveResponsiblesAsync(CancellationToken cancellationToken = default)
-        {
-            return await _context.Responsibles
-                .Where(r => _context.Departments.Any(d => d.ResponsibleId == r.Id))
-                .ToListAsync(cancellationToken);
         }
     }
 }

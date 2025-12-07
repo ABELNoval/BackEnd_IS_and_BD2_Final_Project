@@ -14,10 +14,5 @@ namespace Application.DTOs.Assessment
 
         public DateTime AssessmentDate { get; set; }
 
-        // For More Information
-        // public string? DirectorName { get; set; }
-        // public string? TechnicalName { get; set; }
-        // public string? TechnicalSpecialty { get; set; }
-
     }
 }

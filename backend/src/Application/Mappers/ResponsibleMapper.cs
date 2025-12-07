@@ -13,14 +13,16 @@ namespace Application.Mappers
             CreateMap<Responsible, ResponsibleDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email.Value));
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email.Value))
+                .ForMember(dest => dest.DepartmentId, opt => opt.MapFrom(src => src.DepartmentId));
 
             // CreateDTO → Entity
             CreateMap<CreateResponsibleDto, Responsible>()
                 .ConstructUsing(dto => Responsible.Create(
                     dto.Name,
                     Email.Create(dto.Email),
-                    PasswordHash.Create(dto.Password)
+                    PasswordHash.Create(dto.Password),
+                    dto.DepartmentId
                 ));
 
             // UpdateDTO → Entity
@@ -28,9 +30,10 @@ namespace Application.Mappers
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .AfterMap((src, dest) =>
                 {
-                    var email = Email.Create(src.Email);
-                    var emailProperty = dest.GetType().GetProperty("Email");
-                    emailProperty?.SetValue(dest, email);
+                    // var email = Email.Create(src.Email);
+                    // var emailProperty = dest.GetType().GetProperty("Email");
+                    // emailProperty?.SetValue(dest, email);
+                    dest.SetDepartmentId(src.DepartmentId);
                 });
         }
     }

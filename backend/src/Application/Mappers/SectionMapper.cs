@@ -11,11 +11,12 @@ namespace Application.Mappers
             // Entity → DTO
             CreateMap<Section, SectionDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.ResponsibleId, opt => opt.MapFrom(src => src.ResponsibleId));
                
             // CreateDTO → Entity
             CreateMap<CreateSectionDto, Section>()
-                .ConstructUsing(dto => Section.Create(dto.Name));
+                .ConstructUsing(dto => Section.Create(dto.Name, dto.ResponsibleId));
 
             // UpdateDTO → Entity
             CreateMap<UpdateSectionDto, Section>()
@@ -24,6 +25,10 @@ namespace Application.Mappers
                 {
                     var nameProperty = dest.GetType().GetProperty("Name");
                     nameProperty?.SetValue(dest, src.Name);
+
+                    // ResponsibleId has private setter - set by reflection
+                    var responsibleProperty = dest.GetType().GetProperty(nameof(Section.ResponsibleId));
+                    responsibleProperty?.SetValue(dest, src.ResponsibleId);
                 });
         }
     }

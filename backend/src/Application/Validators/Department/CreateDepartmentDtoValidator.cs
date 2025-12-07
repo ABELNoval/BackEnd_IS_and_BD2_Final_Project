@@ -12,12 +12,7 @@ namespace Application.Validators.Department
                 .MaximumLength(100).WithMessage("Department name cannot exceed 100 characters");
 
             RuleFor(x => x.SectionId)
-                .NotEmpty().WithMessage("Section ID is required")
-                .NotEqual(Guid.Empty).WithMessage("Section ID cannot be empty");
-
-            RuleFor(x => x.ResponsibleId)
-                .NotEmpty().WithMessage("Responsible ID is required")
-                .NotEqual(Guid.Empty).WithMessage("Responsible ID cannot be empty");
+                .NotEmpty().WithMessage("Section ID is required");
         }
     }
 }

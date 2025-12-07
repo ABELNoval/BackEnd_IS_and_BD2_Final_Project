@@ -10,14 +10,15 @@ public class Responsible : Employee
     // EF Core constructor
     private Responsible() { }
 
-    private Responsible(string name, Email email, PasswordHash passwordHash)
-        : base(name, email, passwordHash, Role.Responsible.Id) { }
+
+    private Responsible(string name, Email email, PasswordHash passwordHash, Guid DepartmentId)
+        : base(name, email, passwordHash, Role.Responsible.Id, DepartmentId) { }
 
     /// <summary>
     /// Creates a new Responsible instance.
     /// </summary>
-    public new static Responsible Create(string name, Email email, PasswordHash passwordHash)
+    public new static Responsible Create(string name, Email email, PasswordHash passwordHash, Guid departmentId)
     {
-        return new Responsible(name, email, passwordHash);
+        return new Responsible(name, email, passwordHash, departmentId);
     }
 }

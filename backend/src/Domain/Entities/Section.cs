@@ -10,19 +10,23 @@ namespace Domain.Entities;
 public class Section : Entity
 {
     public string Name { get; private set; } = string.Empty;
+    public Guid ResponsibleId { get; private set; } // moved here
 
     protected Section() { }
 
-    private Section(string name)
+    // Updated constructor to accept responsibleId
+    private Section(string name, Guid responsibleId)
     {
         GenerateId();
         Name = name?.Trim();
+        ResponsibleId = responsibleId;
         Validate();
     }
 
-    public static Section Create(string name)
+    // Updated Create signature
+    public static Section Create(string name, Guid responsibleId)
     {
-        return new Section(name);
+        return new Section(name, responsibleId);
     }
 
     private void Validate()
@@ -37,5 +41,10 @@ public class Section : Entity
 
         if (Name.Length > MaxNameLength)
             throw new InvalidEntityException(nameof(Section), $"Name cannot exceed {MaxNameLength} characters");
+
+        if (ResponsibleId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Section), "Responsible ID cannot be empty");
     }
+
+    public bool HasResponsible(Guid responsibleId) => ResponsibleId == responsibleId;
 }

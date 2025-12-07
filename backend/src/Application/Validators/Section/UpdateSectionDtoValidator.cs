@@ -8,12 +8,14 @@ namespace Application.Validators.Section
         public UpdateSectionDtoValidator()
         {
             RuleFor(x => x.Id)
-                .NotEmpty().WithMessage("Section ID is required")
-                .NotEqual(Guid.Empty).WithMessage("Section ID cannot be empty");
+                .NotEmpty().WithMessage("Section ID is required");
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Section name is required")
                 .MaximumLength(100).WithMessage("Section name cannot exceed 100 characters");
+
+            RuleFor(x => x.ResponsibleId)
+                .NotEmpty().WithMessage("Responsible ID is required");
         }
     }
 }
