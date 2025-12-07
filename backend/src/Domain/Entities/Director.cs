@@ -15,4 +15,9 @@ public class Director : User
     {
         return new Director(name, email, passwordHash);
     }
+
+    public void Update(string name, Email email, PasswordHash passwordHash)
+    {
+        UpdateCommon(name, email, passwordHash);
+    }
 }

@@ -4,6 +4,7 @@ using Application.Validators.Director;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 using FluentValidation;
 
 namespace Application.Services
@@ -32,35 +33,43 @@ namespace Application.Services
 
         public async Task<DirectorDto> CreateAsync(CreateDirectorDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = _mapper.Map<Director>(dto);
+            // Crear entidad directamente desde el DTO
+            var entity = Director.Create(
+                dto.Name,
+                Email.Create(dto.Email),
+                PasswordHash.Create(dto.Password)
+            );
+
             await _directorRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<DirectorDto>(entity);
         }
 
         public async Task<DirectorDto?> UpdateAsync(UpdateDirectorDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _directorRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            // Actualizar propiedades desde el DTO
+            var nameProperty = existing.GetType().GetProperty(nameof(Director.Name));
+            nameProperty?.SetValue(existing, dto.Name?.Trim());
+
+            var emailProperty = existing.GetType().GetProperty(nameof(Director.Email));
+            emailProperty?.SetValue(existing, Email.Create(dto.Email));
+
             await _directorRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<DirectorDto>(existing);
         }
 

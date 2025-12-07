@@ -16,35 +16,8 @@ namespace Application.Mappers
                 .ForMember(dest => dest.AcquisitionDate, opt => opt.MapFrom(src => src.AcquisitionDate))
                 .ForMember(dest => dest.EquipmentTypeId, opt => opt.MapFrom(src => src.EquipmentTypeId))
                 .ForMember(dest => dest.DepartmentId, opt => opt.MapFrom(src => src.DepartmentId))
-                .ForMember(dest => dest.State, opt => opt.MapFrom(src => src.State.Name))
-                .ForMember(dest => dest.LocationType, opt => opt.MapFrom(src => src.LocationType.Name));
-
-            // CreateDTO → Entity
-            CreateMap<CreateEquipmentDto, Equipment>()
-                .ConstructUsing(dto => Equipment.Create(
-                    dto.Name,
-                    dto.AcquisitionDate,
-                    dto.EquipmentTypeId,
-                    dto.DepartmentId,
-                    dto.State,
-                    dto.LocationType
-                ));
-
-            // UpdateDTO → Entity
-            CreateMap<UpdateEquipmentDto, Equipment>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .AfterMap((src, dest) =>
-                {
-
-                    var acquisitionDateProperty = dest.GetType().GetProperty("AcquisitionDate");
-                    acquisitionDateProperty?.SetValue(dest, src.AcquisitionDate);
-
-                    var equipmentTypeIdProperty = dest.GetType().GetProperty("EquipmentTypeId");
-                    equipmentTypeIdProperty?.SetValue(dest, src.EquipmentTypeId);
-
-                    var departmentIdProperty = dest.GetType().GetProperty("DepartmentId");
-                    departmentIdProperty?.SetValue(dest, src.DepartmentId);
-                });
+                .ForMember(dest => dest.StateId, opt => opt.MapFrom(src => src.StateId))          
+                .ForMember(dest => dest.LocationTypeId, opt => opt.MapFrom(src => src.LocationTypeId));
         }
     }
 }

@@ -22,4 +22,9 @@ public class Employee : User
     }
 
     public void SetDepartmentId(Guid departmentId) => DepartmentId = departmentId;
+
+    public void Update(string name, Email email, PasswordHash passwordHash)
+    {
+        UpdateCommon(name, email, passwordHash);
+    }
 }

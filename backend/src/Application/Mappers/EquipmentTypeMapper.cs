@@ -12,20 +12,7 @@ namespace Application.Mappers
             CreateMap<EquipmentType, EquipmentTypeDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.EquipmentCount, opt => opt.Ignore()); // Se llena desde repositorio
-
-            // CreateDTO → Entity
-            CreateMap<CreateEquipmentTypeDto, EquipmentType>()
-                .ConstructUsing(dto => EquipmentType.Create(dto.Name));
-
-            // UpdateDTO → Entity
-            CreateMap<UpdateEquipmentTypeDto, EquipmentType>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .AfterMap((src, dest) =>
-                {
-                    var nameProperty = dest.GetType().GetProperty("Name");
-                    nameProperty?.SetValue(dest, src.Name);
-                });
+                .ForMember(dest => dest.EquipmentCount, opt => opt.Ignore());       
         }
     }
 }

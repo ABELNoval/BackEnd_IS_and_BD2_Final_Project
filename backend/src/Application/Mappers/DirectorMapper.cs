@@ -16,23 +16,7 @@ namespace Application.Mappers
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email.Value))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.GetRole().Name));
 
-            // CreateDTO → Entity
-            CreateMap<CreateDirectorDto, Director>()
-                .ConstructUsing(dto => Director.Create(
-                    dto.Name,
-                    Email.Create(dto.Email),
-                    PasswordHash.Create(dto.Password)
-                ));
-
-            // UpdateDTO → Entity
-            CreateMap<UpdateDirectorDto, Director>()
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .AfterMap((src, dest) =>
-                {
-                    // var email = Email.Create(src.Email);
-                    // var emailProperty = dest.GetType().GetProperty("Email");
-                    // emailProperty?.SetValue(dest, email);
-                });
+            
         }
     }
 }
