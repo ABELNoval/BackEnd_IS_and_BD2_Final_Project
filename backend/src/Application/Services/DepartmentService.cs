@@ -32,35 +32,37 @@ namespace Application.Services
 
         public async Task<DepartmentDto> CreateAsync(CreateDepartmentDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = _mapper.Map<Department>(dto);
+            var entity = Department.Create(dto.Name, dto.SectionId);
+
             await _departmentRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<DepartmentDto>(entity);
         }
 
         public async Task<DepartmentDto?> UpdateAsync(UpdateDepartmentDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _departmentRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            var nameProperty = existing.GetType().GetProperty(nameof(Department.Name));
+            nameProperty?.SetValue(existing, dto.Name?.Trim());
+
+            var sectionIdProperty = existing.GetType().GetProperty(nameof(Department.SectionId));
+            sectionIdProperty?.SetValue(existing, dto.SectionId);
+
             await _departmentRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<DepartmentDto>(existing);
         }
 
