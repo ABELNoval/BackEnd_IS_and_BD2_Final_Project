@@ -169,6 +169,14 @@ namespace Infrastructure.Persistence
             });
 
             /// <summary>
+            /// Configures Employee entity with specialty and experience constraints.
+            /// </summary>
+            modelBuilder.Entity<Employee>(entity =>
+            {
+                entity.Property(p => p.DepartmentId).IsRequired();
+            });
+
+            /// <summary>
             /// Configures Maintenance entity with cost precision and date indexing.
             /// </summary>
             modelBuilder.Entity<Maintenance>(entity =>

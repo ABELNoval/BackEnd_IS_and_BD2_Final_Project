@@ -12,17 +12,17 @@ public class DestinyType : Enumeration
     /// <summary>
     /// Equipment is moved to a specific department
     /// </summary>
-    public static readonly DestinyType Department = new(1, "departamento");
+    public static readonly DestinyType Department = new(1, "Department");
 
     /// <summary>
     /// Equipment is disposed/scrapped
     /// </summary>
-    public static readonly DestinyType Disposal = new(2, "desecho");
+    public static readonly DestinyType Disposal = new(2, "Disposal");
 
     /// <summary>
     /// Equipment is moved to warehouse/storage
     /// </summary>
-    public static readonly DestinyType Warehouse = new(3, "almacén");
+    public static readonly DestinyType Warehouse = new(3, "Warehouse");
 
     private DestinyType(int id, string name) : base(id, name)
     {

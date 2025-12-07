@@ -11,22 +11,22 @@ public class MaintenanceType : Enumeration
     /// <summary>
     /// Preventive maintenance - scheduled regular maintenance
     /// </summary>
-    public static readonly MaintenanceType Preventive = new(1, "Preventivo");
+    public static readonly MaintenanceType Preventive = new(1, "Preventive");
 
     /// <summary>
     /// Corrective maintenance - fixing failures or issues
     /// </summary>
-    public static readonly MaintenanceType Corrective = new(2, "Correctivo");
+    public static readonly MaintenanceType Corrective = new(2, "Corrective");
 
     /// <summary>
     /// Predictive maintenance - based on condition monitoring
     /// </summary>
-    public static readonly MaintenanceType Predictive = new(3, "Predictivo");
+    public static readonly MaintenanceType Predictive = new(3, "Predictive");
 
     /// <summary>
     /// Emergency maintenance - urgent repairs
     /// </summary>
-    public static readonly MaintenanceType Emergency = new(4, "Emergencia");
+    public static readonly MaintenanceType Emergency = new(4, "Emergency");
 
     private MaintenanceType(int id, string name) : base(id, name)
     {

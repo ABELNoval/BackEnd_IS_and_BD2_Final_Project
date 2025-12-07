@@ -29,8 +29,6 @@ namespace Application.Mappers
                     // SectionId has private setter - set by reflection
                     var sectionIdProperty = dest.GetType().GetProperty(nameof(Department.SectionId));
                     sectionIdProperty?.SetValue(dest, src.SectionId);
-
-                    // ResponsibleId handling removed (moved to Section)
                 });
         }
     }

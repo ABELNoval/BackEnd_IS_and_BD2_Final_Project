@@ -36,6 +36,7 @@ namespace Application.Services
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
             {
+                
                 throw new ValidationException(validationResult.Errors);
             }
 
