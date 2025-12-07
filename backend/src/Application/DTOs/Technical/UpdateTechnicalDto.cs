@@ -7,5 +7,6 @@ namespace Application.DTOs.Technical
         public string Email { get; set; } = string.Empty;
         public int Experience { get; set; }
         public string Specialty { get; set; } = string.Empty;
+        public string? Password { get; set; }
     }
 }

@@ -5,6 +5,7 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
 using FluentValidation;
+using Domain.ValueObjects;
 
 namespace Application.Services
 {
@@ -47,22 +48,29 @@ namespace Application.Services
 
         public async Task<EquipmentDto?> UpdateAsync(UpdateEquipmentDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _equipmentRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            existing.Update(
+                dto.Name,
+                dto.AcquisitionDate,
+                dto.EquipmentTypeId,
+                dto.DepartmentId,
+                dto.StateId,
+                dto.LocationTypeId
+            );
+
             await _equipmentRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<EquipmentDto>(existing);
         }
+
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {

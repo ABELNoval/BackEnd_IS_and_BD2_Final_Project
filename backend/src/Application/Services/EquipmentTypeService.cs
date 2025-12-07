@@ -47,22 +47,21 @@ namespace Application.Services
 
         public async Task<EquipmentTypeDto?> UpdateAsync(UpdateEquipmentTypeDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _equipmentTypeRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            existing.Update(dto.Name);
             await _equipmentTypeRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<EquipmentTypeDto>(existing);
         }
+
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {

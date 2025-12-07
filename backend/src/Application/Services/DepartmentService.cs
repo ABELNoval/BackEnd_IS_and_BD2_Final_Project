@@ -54,17 +54,14 @@ namespace Application.Services
             if (existing == null)
                 return null;
 
-            var nameProperty = existing.GetType().GetProperty(nameof(Department.Name));
-            nameProperty?.SetValue(existing, dto.Name?.Trim());
-
-            var sectionIdProperty = existing.GetType().GetProperty(nameof(Department.SectionId));
-            sectionIdProperty?.SetValue(existing, dto.SectionId);
+            existing.Update(dto.Name, dto.SectionId);
 
             await _departmentRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<DepartmentDto>(existing);
         }
+
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {

@@ -5,6 +5,8 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
 using FluentValidation;
+using Domain.ValueObjects;
+
 
 namespace Application.Services
 {
@@ -32,38 +34,51 @@ namespace Application.Services
 
         public async Task<TechnicalDto> CreateAsync(CreateTechnicalDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
-                
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = _mapper.Map<Technical>(dto);
+            var entity = Technical.Create(
+                dto.Name,
+                Email.Create(dto.Email),
+                PasswordHash.Create(dto.Password),
+                dto.Experience,
+                dto.Specialty
+            );
+
             await _technicalRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<TechnicalDto>(entity);
         }
 
+
         public async Task<TechnicalDto?> UpdateAsync(UpdateTechnicalDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _technicalRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            existing.Update(
+                dto.Name,
+                dto.Experience,
+                dto.Specialty,
+                Email.Create(dto.Email),
+                string.IsNullOrWhiteSpace(dto.Password) 
+                    ? existing.PasswordHash   
+                    : PasswordHash.Create(dto.Password)
+            );
+
             await _technicalRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<TechnicalDto>(existing);
         }
+
 
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {

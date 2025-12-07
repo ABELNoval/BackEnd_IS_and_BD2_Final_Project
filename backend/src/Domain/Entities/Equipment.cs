@@ -348,6 +348,19 @@ public class Equipment : Entity
     }
 
     #endregion
+
+    public void Update(string name, DateTime acquisitionDate, Guid equipmentTypeId, Guid? departmentId, int stateId, int locationTypeId)
+    {
+        Name = name;
+        AcquisitionDate = acquisitionDate;
+        EquipmentTypeId = equipmentTypeId;
+        DepartmentId = departmentId;
+        StateId = stateId;
+        LocationTypeId = locationTypeId;
+
+        ValidateEquipment();
+    }
+
 }
 
 
