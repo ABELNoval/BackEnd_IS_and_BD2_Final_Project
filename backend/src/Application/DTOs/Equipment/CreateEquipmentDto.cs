@@ -6,7 +6,7 @@ namespace Application.DTOs.Equipment
         public DateTime AcquisitionDate { get; set; }
         public Guid EquipmentTypeId { get; set; }
         public Guid? DepartmentId { get; set; }
-        public int State { get; set; }
-        public int LocationType { get; set; }
+        public int StateId { get; set; }          
+        public int LocationTypeId { get; set; } 
     }
 }

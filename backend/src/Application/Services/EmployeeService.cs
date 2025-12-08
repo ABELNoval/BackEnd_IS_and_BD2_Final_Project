@@ -4,6 +4,7 @@ using Application.Validators.Employee;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 using FluentValidation;
 
 namespace Application.Services
@@ -32,35 +33,43 @@ namespace Application.Services
 
         public async Task<EmployeeDto> CreateAsync(CreateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = _mapper.Map<Employee>(dto);
+            var entity = Employee.Create(
+                dto.Name,
+                Email.Create(dto.Email),
+                PasswordHash.Create(dto.Password),
+                dto.DepartmentId
+            );
+
             await _employeeRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<EmployeeDto>(entity);
         }
 
         public async Task<EmployeeDto?> UpdateAsync(UpdateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _employeeRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            existing.Update(
+                dto.Name,
+                Email.Create(dto.Email),
+                PasswordHash.Create(dto.Password)
+            );
+            existing.SetDepartmentId(dto.DepartmentId);
+
             await _employeeRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
+
             return _mapper.Map<EmployeeDto>(existing);
         }
 
