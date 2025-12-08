@@ -1,0 +1,1398 @@
+using Domain.Common;
+using Domain.Exceptions;
+using Domain.ValueObjects;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents a performance assessment given by a Director to a Technical employee.
+/// This entity belongs to the Technical aggregate.
+/// </summary>
+public class Assessment : Entity
+{
+    /// <summary>
+    /// ID of the Technical being assessed (Aggregate Root)
+    /// </summary>
+    public Guid TechnicalId { get; private set; }
+
+    /// <summary>
+    /// ID of the Director who performed the assessment (Different Aggregate - Only ID)
+    /// </summary>
+    public Guid DirectorId { get; private set; }
+
+    /// <summary>
+    /// Performance score (0-100) as a Value Object
+    /// </summary>
+    public PerformanceScore Score { get; private set; }
+
+    /// <summary>
+    /// Comment about the assessment (required)
+    /// </summary>
+    public string Comment { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Date and time when the assessment was created
+    /// </summary>
+    public DateTime AssessmentDate { get; private set; }
+
+    /// <summary>
+    /// Parameterless constructor for EF Core
+    /// </summary>
+    protected Assessment() 
+    {
+        Score = PerformanceScore.Create(0); // Default value for EF Core
+    }
+
+    /// <summary>
+    /// Private constructor with validation (Always-Valid pattern)
+    /// </summary>
+    private Assessment(
+        Guid technicalId,
+        Guid directorId,
+        PerformanceScore score,
+        string comment)
+    {
+        GenerateId();
+        TechnicalId = technicalId;
+        DirectorId = directorId;
+        Score = score;
+        Comment = comment.Trim();
+        AssessmentDate = DateTime.UtcNow;
+
+        ValidateAssessment();
+    }
+
+    /// <summary>
+    /// Creates a new Assessment instance
+    /// </summary>
+    /// <param name="technicalId">ID of the technical being assessed</param>
+    /// <param name="directorId">ID of the director performing the assessment</param>
+    /// <param name="scoreValue">Performance score value (0-100)</param>
+    /// <param name="comment">Comment about the assessment (required)</param>
+    /// <returns>A new valid Assessment instance</returns>
+    public static Assessment Create(
+        Guid technicalId,
+        Guid directorId,
+        decimal scoreValue,
+        string comment)
+    {
+        var score = PerformanceScore.Create(scoreValue);
+        return new Assessment(technicalId, directorId, score, comment);
+    }
+
+    /// <summary>
+    /// Creates a new Assessment instance with a PerformanceScore object
+    /// </summary>
+    public static Assessment Create(
+        Guid technicalId,
+        Guid directorId,
+        PerformanceScore score,
+        string comment)
+    {
+        return new Assessment(technicalId, directorId, score, comment);
+    }
+
+    /// <summary>
+    /// Updates the assessment score
+    /// </summary>
+    public void UpdateScore(decimal newScoreValue)
+    {
+        Score = PerformanceScore.Create(newScoreValue);
+    }
+
+    /// <summary>
+    /// Updates the assessment comment
+    /// </summary>
+    public void UpdateComment(string newComment)
+    {
+        ValidateComment(newComment);
+        Comment = newComment.Trim();
+    }
+
+    #region Validation Methods
+
+    private void ValidateAssessment()
+    {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                "Assessment ID cannot be empty");
+
+        if (TechnicalId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                "Technical ID cannot be empty");
+
+        if (DirectorId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                "Director ID cannot be empty");
+
+        ValidateComment(Comment);
+    }
+
+    private void ValidateComment(string comment)
+    {
+        const int MaxCommentLength = 500;
+
+        if (string.IsNullOrWhiteSpace(comment))
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                "Comment cannot be empty");
+
+        if (comment.Length > MaxCommentLength)
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                $"Comment cannot exceed {MaxCommentLength} characters. Current length: {comment.Length}");
+    }
+
+    #endregion
+
+    public override string ToString()
+    {
+        return $"Assessment [{Score}] by Director {DirectorId} on {AssessmentDate:yyyy-MM-dd}";
+    }
+}
+
+
+
+
+using Domain.Common;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents a department in the organization.
+/// Departments are organizational units that own equipment.
+/// </summary>
+public class Department : Entity
+{
+    public string Name { get; private set; } = string.Empty;
+    public Guid SectionId { get; private set; }
+
+    protected Department() { }
+
+    private Department(string name, Guid sectionId)
+    {
+        GenerateId();
+        Name = name?.Trim();
+        SectionId = sectionId;
+        Validate();
+    }
+
+    public static Department Create(string name, Guid sectionId)
+    {
+        return new Department(name, sectionId);
+    }
+
+    private void Validate()
+    {
+        const int MaxNameLength = 100;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Department), "Department ID cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(Name))
+            throw new InvalidEntityException(nameof(Department), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(Department), $"Name cannot exceed {MaxNameLength} characters");
+
+        if (SectionId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Department), "Section ID cannot be empty");
+    }
+
+    public bool BelongsToSection(Guid sectionId) => SectionId == sectionId;
+}
+
+
+
+namespace Domain.Entities;
+using Domain.ValueObjects;
+/// <summary>
+/// Director user type.
+/// Can assess technicals and approve equipment operations.
+/// </summary>
+public class Director : User
+{
+    private Director() { }
+
+    private Director(string name, Email email, PasswordHash passwordHash)
+        : base(name, email, passwordHash, Role.Director.Id) { }
+
+    public static Director Create(string name, Email email, PasswordHash passwordHash)
+    {
+        return new Director(name, email, passwordHash);
+    }
+}
+
+
+
+namespace Domain.Entities;
+using Domain.ValueObjects;  
+/// <summary>
+/// Employee user type.
+/// Base class for regular employees and responsibles.
+/// </summary>
+public class Employee : User
+{
+    // EF Core constructor
+    protected Employee() { }
+    public Guid DepartmentId { get; private set; }
+
+    protected Employee(string name, Email email, PasswordHash passwordHash, int roleId, Guid departmentId)
+        : base(name, email, passwordHash, roleId) => SetDepartmentId(departmentId);
+
+    /// <summary>
+    /// Creates a new Employee instance.
+    /// </summary>
+    public static Employee Create(string name, Email email, PasswordHash passwordHash, Guid departmentId)
+    {
+        return new Employee(name, email, passwordHash, Role.Employee.Id, departmentId);
+    }
+
+    public void SetDepartmentId(Guid departmentId) => DepartmentId = departmentId;
+}
+
+
+
+using Domain.Common;
+using Domain.Enumerations;
+using Domain.Exceptions;
+using Domain.Strategies;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents a piece of equipment in the system.
+/// This is an aggregate root that manages equipment lifecycle, location, and associated operations.
+/// </summary>
+public class Equipment : Entity
+{
+    private readonly List<EquipmentDecommission> _decommissions = new();
+    private readonly List<Transfer> _transfers = new();
+    private readonly List<Maintenance> _maintenances = new();
+
+    /// <summary>
+    /// Equipment name/identifier
+    /// </summary>
+    public string Name { get; private set; }
+
+    /// <summary>
+    /// Current state ID of the equipment
+    /// </summary>
+    public int StateId { get; private set; }
+
+    /// <summary>
+    /// Current location type ID of the equipment
+    /// </summary>
+    public int LocationTypeId { get; private set; }
+
+    /// <summary>
+    /// Calculated property to get the EquipmentState object
+    /// </summary>
+    public EquipmentState State => EquipmentState.FromId(StateId);
+
+    /// <summary>
+    /// Calculated property to get the LocationType object
+    /// </summary>
+    public LocationType LocationType => LocationType.FromId(LocationTypeId);
+
+    /// <summary>
+    /// Date when the equipment was acquired
+    /// </summary>
+    public DateTime AcquisitionDate { get; private set; }
+
+    /// <summary>
+    /// ID of the equipment type
+    /// </summary>
+    public Guid EquipmentTypeId { get; private set; }
+
+    /// <summary>
+    /// ID of the current department (null if in warehouse or disposed)
+    /// </summary>
+    public Guid? DepartmentId { get; private set; }
+
+    /// <summary>
+    /// Collection of decommission records
+    /// </summary>
+    public IReadOnlyCollection<EquipmentDecommission> Decommissions => _decommissions.AsReadOnly();
+
+    /// <summary>
+    /// Collection of transfer records
+    /// </summary>
+    public IReadOnlyCollection<Transfer> Transfers => _transfers.AsReadOnly();
+
+    /// <summary>
+    /// Collection of maintenance records
+    /// </summary>
+    public IReadOnlyCollection<Maintenance> Maintenances => _maintenances.AsReadOnly();
+
+    // EF Core constructor
+    private Equipment()
+    {
+        Name = string.Empty;
+        StateId = EquipmentState.Operative.Id;
+        LocationTypeId = LocationType.Warehouse.Id;
+    }
+
+    private Equipment(
+        string name,
+        DateTime acquisitionDate,
+        Guid equipmentTypeId,
+        Guid? departmentId,
+        int stateId,
+        int locationTypeId)
+    {
+        GenerateId();
+        Name = name;
+        AcquisitionDate = acquisitionDate;
+        EquipmentTypeId = equipmentTypeId;
+        DepartmentId = departmentId;
+        StateId = stateId;
+        LocationTypeId = locationTypeId;
+
+        ValidateEquipment();
+    }
+
+    /// <summary>
+    /// Creates a new equipment instance
+    /// </summary>
+    public static Equipment Create(
+        string name,
+        DateTime acquisitionDate,
+        Guid equipmentTypeId,
+        Guid? departmentId,
+        int stateId,
+        int locationTypeId)
+    {
+        return new Equipment(name, acquisitionDate, equipmentTypeId, departmentId, stateId, locationTypeId);
+    }
+
+    /// <summary>
+    /// Adds a decommission record to the equipment.
+    /// Uses Strategy Pattern to delegate destination-specific logic.
+    /// Equipment doesn't need to know about destination types - it delegates to the strategy.
+    /// </summary>
+    public void AddDecommission(
+        IDestinationStrategy destinationStrategy,
+        Guid responsibleId,
+        Guid technicalId,
+        DateTime decommissionDate,
+        string reason)
+    {
+        ValidateCanBeDecommissioned();
+
+        Guid departmentForDecommission = Guid.Empty;
+        if (destinationStrategy is Domain.Strategies.DepartmentDestinationStrategy deptStrategy)
+            departmentForDecommission = deptStrategy.TargetDepartmentId ?? Guid.Empty;
+
+        var decommission = EquipmentDecommission.Create(
+            equipmentId: Id,
+            technicalId: technicalId,
+            departmentId: departmentForDecommission,
+            destinyTypeId: destinationStrategy.DestinyTypeId,
+            recipientId: responsibleId,
+            decommissionDate: decommissionDate,
+            reason: reason);
+
+        // Apply the destination strategy (Tell, Don't Ask)
+        // The strategy knows what to do with the equipment
+        destinationStrategy.ApplyTo(this);
+
+        // Add to collection after successful application
+        _decommissions.Add(decommission);
+        if (StateId != EquipmentState.Disposed.Id)
+            StateId = EquipmentState.Decommissioned.Id;
+    }
+
+    /// <summary>
+    /// Adds a transfer record and updates the equipment's department.
+    /// Only references by ID - no aggregate crossing.
+    /// </summary>
+    public void AddTransfer(
+        Guid targetDepartmentId,
+        Guid responsibleId,
+        DateTime transferDate)
+    {
+        ValidateCanBeTransferred(targetDepartmentId);
+
+        var sourceDepartmentId = DepartmentId!.Value;
+
+        var transfer = Transfer.Create(
+            equipmentId: Id,
+            sourceDepartmentId: sourceDepartmentId,
+            targetDepartmentId: targetDepartmentId,
+            responsibleId: responsibleId,
+            transferDate: transferDate);
+
+        _transfers.Add(transfer);
+        DepartmentId = targetDepartmentId;
+        LocationTypeId = LocationType.Department.Id;
+    }
+
+    /// <summary>
+    /// Adds a maintenance record to the equipment.
+    /// Equipment can only be maintained if not disposed.
+    /// </summary>
+    public void AddMaintenance(
+        Guid technicalId,
+        DateTime maintenanceDate,
+        int maintenanceTypeId,
+        decimal cost)
+    {
+        ValidateCanBeMaintained();
+
+        var maintenance = Maintenance.Create(
+            equipmentId: Id,
+            technicalId: technicalId,
+            maintenanceDate: maintenanceDate,
+            maintenanceTypeId: maintenanceTypeId,
+            cost: cost);
+
+        _maintenances.Add(maintenance);
+        StateId = EquipmentState.UnderMaintenance.Id;
+    }
+
+    /// <summary>
+    /// Marks maintenance as completed and returns equipment to operative state
+    /// </summary>
+    public void CompleteMaintenance()
+    {
+        if (StateId != EquipmentState.UnderMaintenance.Id)
+            throw new BusinessRuleViolationException(
+                "CompleteMaintenanceOnNonMaintainedEquipment",
+                "Equipment must be under maintenance to complete maintenance");
+        StateId = EquipmentState.Operative.Id;
+    }
+
+    #region Internal Methods (Called by Strategies)
+
+    /// <summary>
+    /// Moves equipment to disposal.
+    /// Called by DisposalDestinationStrategy.
+    /// </summary>
+    internal void MoveToDisposal()
+    {
+        DepartmentId = null;
+        LocationTypeId = LocationType.Disposal.Id;
+        StateId = EquipmentState.Disposed.Id;
+    }
+
+    /// <summary>
+    /// Moves equipment to warehouse.
+    /// Called by WarehouseDestinationStrategy.
+    /// </summary>
+    internal void MoveToWarehouse()
+    {
+        DepartmentId = null;
+        LocationTypeId = LocationType.Warehouse.Id;
+    }
+
+    /// <summary>
+    /// Moves equipment to a department.
+    /// Called by DepartmentDestinationStrategy.
+    /// </summary>
+    public void MoveToDepartment(Guid departmentId)
+    {
+        if (departmentId == Guid.Empty)
+            throw new ArgumentException("Department ID cannot be empty", nameof(departmentId));
+
+        DepartmentId = departmentId;
+        LocationTypeId = LocationType.Department.Id;
+    }
+
+    #endregion
+
+    #region Validation Methods
+
+    private const int MaxNameLength = 200;
+
+    public void ValidateEquipment()
+    {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Equipment), "Equipment ID cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(Name))
+            throw new InvalidEntityException(nameof(Equipment), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(Equipment), $"Name cannot exceed {MaxNameLength} characters");
+
+        if (AcquisitionDate > DateTime.UtcNow)
+            throw new InvalidEntityException(nameof(Equipment), "Acquisition date cannot be in the future");
+
+        if (EquipmentTypeId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Equipment), "Equipment type ID cannot be empty");
+
+        try
+        {
+            EquipmentState.FromId(StateId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new InvalidEntityException(nameof(Equipment), $"Invalid state ID: {StateId}");
+        }
+        try
+        {
+            LocationType.FromId(LocationTypeId);
+        }
+        catch (InvalidOperationException)
+        {
+            throw new InvalidEntityException(nameof(Equipment), $"Invalid location type ID: {LocationTypeId}");
+        }
+
+        if (LocationType == LocationType.Department)
+        {
+            if (!DepartmentId.HasValue || DepartmentId.Value == Guid.Empty)
+                throw new InvalidEntityException(nameof(Equipment), "If LocationType is Department, DepartmentId must be set and not empty.");
+        }
+        else
+        {
+            if (DepartmentId.HasValue)
+                throw new InvalidEntityException(nameof(Equipment), "If LocationType is Warehouse or Disposal, DepartmentId must be null.");
+        }
+    }
+
+    private void ValidateCanBeDecommissioned()
+    {
+        if (State == EquipmentState.Disposed)
+            throw new EquipmentAlreadyDisposedException(Id);
+
+        if (State == EquipmentState.Decommissioned)
+            throw new EquipmentAlreadyDecommissionedException(Id);
+
+        if (State == EquipmentState.UnderMaintenance)
+            throw new BusinessRuleViolationException(
+                "DecommissionEquipmentUnderMaintenance",
+                "Cannot decommission equipment that is under maintenance");
+    }
+
+    private void ValidateCanBeTransferred(Guid targetDepartmentId)
+    {
+        if (State == EquipmentState.Disposed)
+            throw new EquipmentDisposedException(Id, "Cannot transfer disposed equipment");
+
+        if (State == EquipmentState.UnderMaintenance)
+            throw new BusinessRuleViolationException(
+                "TransferEquipmentUnderMaintenance",
+                "Cannot transfer equipment that is under maintenance");
+
+        if (!DepartmentId.HasValue)
+            throw new BusinessRuleViolationException(
+                "TransferEquipmentWithoutDepartment",
+                "Equipment must be assigned to a department to be transferred");
+
+        if (DepartmentId.Value == targetDepartmentId)
+            throw new BusinessRuleViolationException(
+                "TransferToSameDepartment",
+                "Cannot transfer equipment to the same department");
+
+        if (targetDepartmentId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Equipment),
+                "Target department ID cannot be empty");
+    }
+
+    private void ValidateCanBeMaintained()
+    {
+        if (State == EquipmentState.Disposed)
+            throw new EquipmentDisposedException(Id, "Cannot maintain disposed equipment");
+
+        if (State == EquipmentState.Decommissioned)
+            throw new BusinessRuleViolationException(
+                "MaintainDecommissionedEquipment",
+                "Cannot maintain decommissioned equipment");
+    }
+
+    #endregion
+}
+
+
+
+using Domain.Common;
+using Domain.Enumerations;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents equipment decommissioning/disposal.
+/// Records when equipment is taken out of service.
+/// </summary>
+public class EquipmentDecommission : Entity
+{
+    public Guid EquipmentId { get; private set; }
+    public Guid TechnicalId { get; private set; }
+    public Guid DepartmentId { get; private set; }
+    public int DestinyTypeId { get; private set; }
+    public Guid RecipientId { get; private set; }
+    public DateTime DecommissionDate { get; private set; }
+    public string Reason { get; private set; } = string.Empty;
+
+    protected EquipmentDecommission() { }
+
+    private EquipmentDecommission(
+        Guid equipmentId,
+        Guid technicalId,
+        Guid departmentId,
+        int destinyTypeId,
+        Guid recipientId,
+        DateTime decommissionDate,
+        string reason)
+    {
+        GenerateId();
+        EquipmentId = equipmentId;
+        TechnicalId = technicalId;
+        DepartmentId = departmentId;
+        DestinyTypeId = destinyTypeId;
+        RecipientId = recipientId;
+        DecommissionDate = decommissionDate;
+        Reason = reason.Trim();
+
+        Validate();
+    }
+
+    public static EquipmentDecommission Create(
+        Guid equipmentId,
+        Guid technicalId,
+        Guid departmentId,
+        int destinyTypeId,
+        Guid recipientId,
+        DateTime decommissionDate,
+        string reason)
+    {
+        return new EquipmentDecommission(
+            equipmentId, 
+            technicalId, 
+            departmentId, 
+            destinyTypeId, 
+            recipientId, 
+            decommissionDate, 
+            reason);
+    }
+
+    private void Validate()
+    {
+        const int MaxReasonLength = 500;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Decommission ID cannot be empty");
+
+        if (EquipmentId == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Equipment ID cannot be empty");
+
+        if (TechnicalId == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Technical ID cannot be empty");
+
+        var validDestinyType = DestinyType.FromId(DestinyTypeId);
+        if (validDestinyType == null)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), $"Invalid destiny type ID: {DestinyTypeId}");
+
+        if (validDestinyType.Id == DestinyType.Department.Id)
+        {
+            if (DepartmentId == Guid.Empty)
+                throw new InvalidEntityException(nameof(EquipmentDecommission), "Department ID cannot be empty for department destiny");
+        }
+        else
+        {
+            if (DepartmentId != Guid.Empty)
+                throw new InvalidEntityException(nameof(EquipmentDecommission), "Department ID must be empty for disposal/warehouse destiny");
+        }
+
+        if (RecipientId == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Recipient ID cannot be empty");
+
+        if (DecommissionDate > DateTime.UtcNow)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Decommission date cannot be in the future");
+
+        if (string.IsNullOrWhiteSpace(Reason))
+            throw new InvalidEntityException(nameof(EquipmentDecommission), "Reason cannot be empty");
+
+        if (Reason.Length > MaxReasonLength)
+            throw new InvalidEntityException(nameof(EquipmentDecommission), $"Reason cannot exceed {MaxReasonLength} characters");
+    }
+
+    public bool WasDecommissionedBy(Guid technicalId) => TechnicalId == technicalId;
+    
+    public bool InvolvesDepartment(Guid departmentId) => DepartmentId == departmentId;
+    
+    public bool IsEquipmentDecommission(Guid equipmentId) => EquipmentId == equipmentId;
+    
+    public bool HasDestinyType(DestinyType destinyType) => DestinyTypeId == destinyType.Id;
+}
+
+
+
+using Domain.Common;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents a type/category of equipment.
+/// Equipment types are managed entities that can be created by users.
+/// </summary>
+public class EquipmentType : Entity
+{
+    public string Name { get; private set; }
+
+    protected EquipmentType() 
+    {
+        Name = string.Empty;
+    }
+
+    private EquipmentType(string name)
+    {
+        GenerateId();
+        Name = name?.Trim();
+        Validate();
+    }
+
+    public static EquipmentType Create(string name)
+    {
+        return new EquipmentType(name);
+    }
+
+    private void Validate()
+    {
+        const int MaxNameLength = 100;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(EquipmentType), "EquipmentType ID cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(Name))
+            throw new InvalidEntityException(nameof(EquipmentType), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(EquipmentType), $"Name cannot exceed {MaxNameLength} characters");
+    }
+}
+
+
+
+using Domain.Common;
+using Domain.Enumerations;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents equipment maintenance.
+/// Records date, type, cost and responsible technical.
+/// </summary>
+public class Maintenance : Entity
+{
+    public Guid EquipmentId { get; private set; }
+    public Guid TechnicalId { get; private set; }
+    public DateTime MaintenanceDate { get; private set; }
+    public int MaintenanceTypeId { get; private set; }
+    public decimal Cost { get; private set; }
+
+    protected Maintenance() { }
+
+    private Maintenance(
+        Guid equipmentId,
+        Guid technicalId,
+        DateTime maintenanceDate,
+        int maintenanceTypeId,
+        decimal cost)
+    {
+        GenerateId();
+        EquipmentId = equipmentId;
+        TechnicalId = technicalId;
+        MaintenanceDate = maintenanceDate;
+        MaintenanceTypeId = maintenanceTypeId;
+        Cost = cost;
+
+        Validate();
+    }
+
+    public static Maintenance Create(
+        Guid equipmentId,
+        Guid technicalId,
+        DateTime maintenanceDate,
+        int maintenanceTypeId,
+        decimal cost)
+    {
+        return new Maintenance(
+            equipmentId,
+            technicalId,
+            maintenanceDate,
+            maintenanceTypeId,
+            cost);
+    }
+
+    private void Validate()
+    {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Maintenance), "Maintenance ID cannot be empty");
+
+        if (EquipmentId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Maintenance), "Equipment ID cannot be empty");
+
+        if (TechnicalId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Maintenance), "Technical ID cannot be empty");
+
+        if (MaintenanceDate > DateTime.UtcNow)
+            throw new InvalidEntityException(nameof(Maintenance), "Maintenance date cannot be in the future");
+
+        var validMaintenanceType = MaintenanceType.FromId(MaintenanceTypeId);
+        if (validMaintenanceType == null)
+            throw new InvalidEntityException(nameof(Maintenance), $"Invalid maintenance type ID: {MaintenanceTypeId}");
+
+        if (Cost < 0)
+            throw new InvalidEntityException(nameof(Maintenance), "Cost cannot be negative");
+    }
+
+    public bool WasPerformedBy(Guid technicalId) => TechnicalId == technicalId;
+    
+    public bool IsForEquipment(Guid equipmentId) => EquipmentId == equipmentId;
+    
+    public bool HasMaintenanceType(MaintenanceType maintenanceType) => 
+        MaintenanceTypeId == maintenanceType.Id;
+}
+
+
+
+namespace Domain.Entities;
+using Domain.ValueObjects;
+/// <summary>
+/// Responsible user type (inherits from Employee).
+/// Employee with additional responsibilities: manages department operations and authorizes transfers.
+/// Each department has one responsible.
+/// </summary>
+public class Responsible : Employee
+{
+    // EF Core constructor
+    private Responsible() { }
+
+
+    private Responsible(string name, Email email, PasswordHash passwordHash, Guid DepartmentId)
+        : base(name, email, passwordHash, Role.Responsible.Id, DepartmentId) { }
+
+    /// <summary>
+    /// Creates a new Responsible instance.
+    /// </summary>
+    public new static Responsible Create(string name, Email email, PasswordHash passwordHash, Guid departmentId)
+    {
+        return new Responsible(name, email, passwordHash, departmentId);
+    }
+}
+
+
+
+using Domain.Common;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// User roles in the Technical Equipment Management System.
+/// This is a type-safe enumeration with predefined values.
+/// </summary>
+public class Role : Enumeration
+{
+    public static readonly Role Administrator = new(1, "Administrator");
+    public static readonly Role Director = new(2, "Director");
+    public static readonly Role Technical = new(3, "Technical");
+    public static readonly Role Employee = new(4, "Employee");
+    public static readonly Role Responsible = new(5, "Responsible");
+    public static readonly Role Receptor = new(6, "Receptor");
+
+    private Role(int id, string name) : base(id, name) { }
+
+    /// <summary>
+    /// Gets all available roles
+    /// </summary>
+    public static IEnumerable<Role> GetAll()
+    {
+        yield return Administrator;
+        yield return Director;
+        yield return Technical;
+        yield return Employee;
+        yield return Responsible;
+        yield return Receptor;
+    }
+
+    /// <summary>
+    /// Gets a role by ID
+    /// </summary>
+    public static Role? FromId(int id)
+    {
+        return GetAll().FirstOrDefault(r => r.Id == id);
+    }
+
+    /// <summary>
+    /// Gets a role by name
+    /// </summary>
+    public static Role? FromName(string name)
+    {
+        return GetAll().FirstOrDefault(r => r.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+    }
+}
+
+
+
+
+using Domain.Common;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Represents a section in the organization.
+/// Sections group multiple departments.
+/// </summary>
+public class Section : Entity
+{
+    public string Name { get; private set; } = string.Empty;
+    public Guid ResponsibleId { get; private set; } // moved here
+
+    protected Section() { }
+
+    // Updated constructor to accept responsibleId
+    private Section(string name, Guid responsibleId)
+    {
+        GenerateId();
+        Name = name?.Trim();
+        ResponsibleId = responsibleId;
+        Validate();
+    }
+
+    // Updated Create signature
+    public static Section Create(string name, Guid responsibleId)
+    {
+        return new Section(name, responsibleId);
+    }
+
+    private void Validate()
+    {
+        const int MaxNameLength = 100;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Section), "Section ID cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(Name))
+            throw new InvalidEntityException(nameof(Section), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(Section), $"Name cannot exceed {MaxNameLength} characters");
+
+        if (ResponsibleId == Guid.Empty)
+            throw new InvalidEntityException(nameof(Section), "Responsible ID cannot be empty");
+    }
+
+    public bool HasResponsible(Guid responsibleId) => ResponsibleId == responsibleId;
+}
+
+
+
+using Domain.Exceptions;
+using Domain.ValueObjects;
+namespace Domain.Entities;
+
+/// <summary>
+/// Technical user type.
+/// Can perform maintenance on equipment and receive assessments from directors.
+/// </summary>
+public class Technical : User
+{
+    private readonly List<Assessment> _assessments = new();
+
+    public IReadOnlyCollection<Assessment> Assessments => _assessments.AsReadOnly();
+    public int Experience { get; private set; }
+    public string Specialty { get; private set; } = string.Empty;
+
+    private Technical() { }
+
+    private Technical(string name, Email email, PasswordHash passwordHash, int experience, string specialty)
+        : base(name, email, passwordHash, Role.Technical.Id)
+    {
+        Experience = experience;
+        Specialty = specialty?.Trim();
+        ValidateTechnical();
+    }
+
+    public static Technical Create(string name, Email email, PasswordHash passwordHash, int experience, string specialty)
+    {
+        return new Technical(name, email, passwordHash, experience, specialty);
+    }
+
+    private void ValidateTechnical()
+    {
+        if (Experience < 0)
+            throw new InvalidEntityException(nameof(Technical), "Experience cannot be negative");
+
+        if (string.IsNullOrWhiteSpace(Specialty))
+            throw new InvalidEntityException(nameof(Technical), "Specialty cannot be empty");
+    }
+
+    /// <summary>
+    /// Adds an assessment from a director.
+    /// References director by ID only.
+    /// </summary>
+    public void AddAssessment(Guid directorId, decimal scoreValue, string comment)
+    {
+        if (directorId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Assessment),
+                "Director ID cannot be empty");
+
+        var assessment = Assessment.Create(Id, directorId, scoreValue, comment);
+        _assessments.Add(assessment);
+    }
+}
+
+
+
+
+using Domain.Common;
+using Domain.Exceptions;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Transfer of equipment between departments.
+/// Entity within the Equipment aggregate. References other aggregates by ID only.
+/// </summary>
+public class Transfer : Entity
+{
+    public Guid EquipmentId { get; private set; }
+    public Guid SourceDepartmentId { get; private set; }
+    public Guid TargetDepartmentId { get; private set; }
+    public Guid ResponsibleId { get; private set; }
+    public DateTime TransferDate { get; private set; }
+    public DateTime CreatedAt { get; private set; }
+
+    // EF Core constructor
+    private Transfer() { }
+
+    private Transfer(
+        Guid equipmentId,
+        Guid sourceDepartmentId,
+        Guid targetDepartmentId,
+        Guid responsibleId,
+        DateTime transferDate)
+    {
+        GenerateId();
+        EquipmentId = equipmentId;
+        SourceDepartmentId = sourceDepartmentId;
+        TargetDepartmentId = targetDepartmentId;
+        ResponsibleId = responsibleId;
+        TransferDate = transferDate;
+        CreatedAt = DateTime.UtcNow;
+
+        Validate();
+    }
+
+    /// <summary>
+    /// Creates a new validated Transfer instance.
+    /// </summary>
+    public static Transfer Create(
+        Guid equipmentId,
+        Guid sourceDepartmentId,
+        Guid targetDepartmentId,
+        Guid responsibleId,
+        DateTime transferDate)
+    {
+        return new Transfer(
+            equipmentId,
+            sourceDepartmentId,
+            targetDepartmentId,
+            responsibleId,
+            transferDate);
+    }
+
+    private void Validate()
+    {
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(Transfer), "Transfer ID cannot be empty");
+
+        ValidateEquipmentId();
+        ValidateDepartmentIds();
+        ValidateResponsibleId();
+        ValidateTransferDate();
+    }
+
+    private void ValidateEquipmentId()
+    {
+        if (EquipmentId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Transfer),
+                "Equipment ID cannot be empty");
+    }
+
+    private void ValidateDepartmentIds()
+    {
+        if (SourceDepartmentId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Transfer),
+                "Source department ID cannot be empty");
+
+        if (TargetDepartmentId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Transfer),
+                "Target department ID cannot be empty");
+
+        if (SourceDepartmentId == TargetDepartmentId)
+            throw new BusinessRuleViolationException(
+                "TransferToSameDepartment",
+                $"Cannot transfer to the same department (ID: {SourceDepartmentId})");
+    }
+
+    private void ValidateResponsibleId()
+    {
+        if (ResponsibleId == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Transfer),
+                "Responsible ID cannot be empty");
+    }
+
+    private void ValidateTransferDate()
+    {
+        if (TransferDate > DateTime.UtcNow.AddDays(1))
+            throw new BusinessRuleViolationException(
+                "FutureTransferDate",
+                $"Transfer date cannot be in the future (provided: {TransferDate:yyyy-MM-dd})");
+    }
+
+    // Domain behavior methods
+
+    /// <summary>
+    /// Checks if this transfer is to a specific department.
+    /// </summary>
+    public bool IsTransferTo(Guid departmentId) => TargetDepartmentId == departmentId;
+
+    /// <summary>
+    /// Checks if this transfer is from a specific department.
+    /// </summary>
+    public bool IsTransferFrom(Guid departmentId) => SourceDepartmentId == departmentId;
+
+    /// <summary>
+    /// Checks if this transfer involves a specific department.
+    /// </summary>
+    public bool InvolvesDepartment(Guid departmentId) =>
+        SourceDepartmentId == departmentId || TargetDepartmentId == departmentId;
+
+    /// <summary>
+    /// Checks if authorized by a specific person.
+    /// </summary>
+    public bool WasAuthorizedBy(Guid responsibleId) => ResponsibleId == responsibleId;
+}
+
+
+
+
+using Domain.Common;
+using Domain.Exceptions;
+using Domain.ValueObjects;
+
+namespace Domain.Entities;
+
+/// <summary>
+/// Base user entity for the Technical Equipment Management System.
+/// </summary>
+public abstract class User : Entity
+{
+    public string Name { get; private set; } = string.Empty;
+    public Email Email { get; private set; } = default!;
+    public PasswordHash PasswordHash { get; private set; } = default!;
+    public int RoleId { get; private set; }
+
+    // EF Core constructor
+    protected User() { }
+
+    protected User(string name, Email email, PasswordHash passwordHash, int roleId)
+    {
+        GenerateId();
+        Name = name;
+        Email = email;
+        PasswordHash = passwordHash;
+        RoleId = roleId;
+
+        Validate();
+    }
+
+    private void Validate()
+    {
+        const int MaxNameLength = 100;
+
+        if (Id == Guid.Empty)
+            throw new InvalidEntityException(nameof(User), "User ID cannot be empty");
+
+        if (string.IsNullOrWhiteSpace(Name))
+            throw new InvalidEntityException(nameof(User), "Name cannot be empty");
+
+        if (Name.Length > MaxNameLength)
+            throw new InvalidEntityException(nameof(User), $"Name cannot exceed {MaxNameLength} characters");
+
+        // Email and PasswordHash are validated by their own ValueObjects when created
+
+        var validRole = Role.FromId(RoleId);
+        if (validRole == null)
+            throw new InvalidEntityException(nameof(User), $"Invalid role ID: {RoleId}");
+    }
+
+    public Role GetRole() => Role.FromId(RoleId) 
+        ?? throw new InvalidEntityException(nameof(User), $"Invalid role ID: {RoleId}");
+    public bool HasRole(Role role) => RoleId == role.Id;
+    public bool IsTechnical() => RoleId == Role.Technical.Id;
+    public bool IsDirector() => RoleId == Role.Director.Id;
+    public bool IsEmployee() => RoleId == Role.Employee.Id;
+    public bool IsResponsible() => RoleId == Role.Responsible.Id;
+}
+
+
+
+
+
+================ValueObjects===============
+
+
+using Domain.Exceptions;
+
+namespace Domain.ValueObjects;
+
+/// <summary>
+/// Value object that represents an email address.
+/// Encapsula validación mínima (no vacío, longitud y formato con '@').
+/// </summary>
+public sealed record Email
+{
+    public string Value { get;}
+
+    private Email(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidValueObjectException(nameof(Email), value ?? string.Empty, "Email cannot be empty");
+
+        var trimmed = value.Trim();
+        const int MaxEmailLength = 150;
+        if (trimmed.Length > MaxEmailLength)
+            throw new InvalidValueObjectException(nameof(Email), trimmed, $"Email cannot exceed {MaxEmailLength} characters");
+
+        if (!trimmed.Contains("@"))
+            throw new InvalidValueObjectException(nameof(Email), trimmed, "Email format is invalid");
+
+        Value = trimmed;
+    }
+
+    public static Email Create(string value) => new Email(value);
+
+    public override string ToString() => Value;
+}
+
+
+
+using Domain.Exceptions;
+
+namespace Domain.ValueObjects;
+
+/// <summary>
+/// Value object that represents a password hash.
+/// Encapsula validación mínima (no vacío, longitud razonable).
+/// </summary>
+public sealed record PasswordHash
+{
+    public string Value { get; }
+
+    private PasswordHash(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            throw new InvalidValueObjectException(nameof(PasswordHash), value ?? string.Empty, "Password hash cannot be empty");
+
+        var trimmed = value.Trim();
+        const int MaxPasswordHashLength = 255;
+        if (trimmed.Length > MaxPasswordHashLength)
+            throw new InvalidValueObjectException(nameof(PasswordHash), trimmed, $"Password hash cannot exceed {MaxPasswordHashLength} characters");
+
+        Value = trimmed;
+    }
+
+    public bool Verify(string plainTextPassword)
+    {
+        return Value ==  plainTextPassword;
+    }
+
+    public static PasswordHash Create(string value) => new PasswordHash(value);
+
+    public override string ToString() => Value;
+}
+
+
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Domain.Entities;
+using Domain.Exceptions;
+
+namespace Domain.ValueObjects
+{
+    /// <summary>
+    /// Represents a technical's performance score based on assessments.
+    /// Value must be between 0 and 100.
+    /// Immutable value object that encapsulates performance evaluation logic.
+    /// </summary>
+    public sealed record PerformanceScore
+    {
+        /// <summary>
+        /// Gets the performance score value (0-100)
+        /// </summary>
+        public decimal Value { get; }
+
+        /// <summary>
+        /// Private constructor with validation (always-valid pattern).
+        /// Ensures that no invalid PerformanceScore instance can exist.
+        /// </summary>
+        /// <param name="value">The score value to set</param>
+        /// <exception cref="DomainException">Thrown when value is outside the valid range (0-100)</exception>
+        private PerformanceScore(decimal value)
+        {
+            // Validation happens in constructor to guarantee "always-valid" pattern
+            // This protects against EF Core, reflection, and serialization
+            if (value < 0 || value > 100)
+                throw new DomainException("Performance score must be between 0 and 100.");
+
+            Value = Math.Round(value, 2);
+        }
+
+        /// <summary>
+        /// Creates a performance score with a specific value.
+        /// </summary>
+        /// <param name="value">The score value (must be between 0 and 100)</param>
+        /// <returns>A new PerformanceScore instance</returns>
+        /// <exception cref="DomainException">Thrown when value is outside the valid range</exception>
+        public static PerformanceScore Create(decimal value)
+        {
+            return new PerformanceScore(value);
+        }
+
+        /// <summary>
+        /// Calculates the average performance score from a collection of assessments.
+        /// Returns a score of 0 if the collection is empty.
+        /// </summary>
+        /// <param name="assessments">Collection of assessments to calculate from</param>
+        /// <returns>A new PerformanceScore with the calculated average</returns>
+        /// <exception cref="ArgumentNullException">Thrown when assessments is null</exception>
+        public static PerformanceScore FromAssessments(IEnumerable<Assessment> assessments)
+        {
+            ArgumentNullException.ThrowIfNull(assessments);
+
+            var list = assessments.ToList();
+            if (!list.Any())
+                return new PerformanceScore(0);
+
+            var average = list.Average(a => a.Score.Value);
+            return new PerformanceScore(average);
+        }
+
+        /// <summary>
+        /// Returns a string representation of the performance score.
+        /// </summary>
+        /// <returns>The score value formatted as a percentage (e.g., "85.50%")</returns>
+        public override string ToString() => $"{Value}%";
+    }
+}
+

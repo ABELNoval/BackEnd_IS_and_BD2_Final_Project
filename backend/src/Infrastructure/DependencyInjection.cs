@@ -5,6 +5,8 @@ using Infrastructure.Persistence;
 using Infrastructure.Persistence.Repositories;
 using Application.Interfaces.Security;
 using Infrastructure.Security;
+using Application.Interfaces.Services;
+using Infrastructure.Reports;
 
 namespace Infrastructure
 {
@@ -34,6 +36,14 @@ namespace Infrastructure
 
             // 🔹 JwtProvider = infraestructura técnica → debe estar aquí
             services.AddSingleton<IJwtProvider, JwtProvider>();
+
+             services.AddScoped<IReportQueryService, ReportQueryService>();
+            services.AddScoped<IReportService, ReportService>();
+    
+            // Generadores de formatos
+            services.AddScoped<PdfReportGenerator>();
+            services.AddScoped<ExcelReportGenerator>();
+            services.AddScoped<WordReportGenerator>();
 
             return services;
         }
