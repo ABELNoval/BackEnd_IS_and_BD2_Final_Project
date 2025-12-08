@@ -11,8 +11,7 @@ namespace Application.Mappers
             // Entity → DTO
             CreateMap<EquipmentType, EquipmentTypeDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.EquipmentCount, opt => opt.Ignore());       
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));     
         }
     }
 }
