@@ -77,3 +77,19 @@ public class BusinessRuleViolationException : DomainException
     public string RuleName { get; }
     public string Details { get; }
 }
+
+/// <summary>
+/// Excepción que se lanza cuando una estrategia de destino valida que no se pueden cumplir los requisitos
+/// </summary>
+public class InvalidDestinationException : DomainException
+{
+    public InvalidDestinationException(Domain.Enumerations.DestinyType destinyType, string reason)
+        : base($"Invalid destination {destinyType.Name}: {reason}")
+    {
+        DestinyType = destinyType;
+        Reason = reason;
+    }
+
+    public Domain.Enumerations.DestinyType DestinyType { get; }
+    public string Reason { get; }
+}
