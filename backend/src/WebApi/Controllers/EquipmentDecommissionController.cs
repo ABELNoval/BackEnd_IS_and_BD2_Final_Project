@@ -41,7 +41,7 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateEquipmentDecommissionDto dto, CancellationToken cancellationToken)
         {
-             var created = await _equipmentDecommissionService.CreateAsync(dto, cancellationToken);
+            var created = await _equipmentDecommissionService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 

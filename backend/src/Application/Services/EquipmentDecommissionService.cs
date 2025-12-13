@@ -151,16 +151,14 @@ namespace Application.Services
         {
             return destinyType.Id switch
             {
-                1 => DecommissionContext.ForDisposal(dto.ResponsibleId ?? Guid.Empty, dto.TransferDate),
-                2 => DecommissionContext.ForDepartment(
-                    dto.TargetDepartmentId ?? throw new ValidationException("Target department is required for transfer destiny"),
-                    dto.ResponsibleId ?? Guid.Empty,
-                    dto.TransferDate),
-                3 => DecommissionContext.ForDepartment(
-                    dto.TargetDepartmentId ?? throw new ValidationException("Target department is required for department destiny"),
-                    dto.ResponsibleId ?? Guid.Empty,
-                    dto.TransferDate),
-                4 => DecommissionContext.ForWarehouse(dto.ResponsibleId ?? Guid.Empty, dto.TransferDate),
+                2 => DecommissionContext.ForDisposal(),
+                1 => DecommissionContext.ForDepartment(
+                    (dto.DepartmentId != Guid.Empty)? dto.DepartmentId : throw new ValidationException("DepartmentId is required for transfer destiny"),
+                    (dto.RecipientId != Guid.Empty)? dto.RecipientId : throw new ValidationException("RecipientId is required for transfer destiny"),
+                    dto.DecommissionDate),
+                3 => DecommissionContext.ForWarehouse(
+                    (dto.RecipientId != Guid.Empty)? dto.RecipientId : throw new ValidationException("RecipientId is required for transfer destiny"),
+                    dto.DecommissionDate),
                 _ => throw new ValidationException($"Invalid destiny type ID: {destinyType.Id}")
             };
         }

@@ -92,13 +92,11 @@ public class Transfer : Entity
     /// <param name="newTransferDate">The new transfer date</param>
     /// <param name="newResponsibleId">The new responsible person ID</param>
     /// <exception cref="InvalidEntityException">If validation fails</exception>
-    public void UpdateBasicInfo(DateTime newTransferDate, Guid newResponsibleId)
+    public void UpdateBasicInfo(DateTime newTransferDate)
     {
         ValidateTransferDate(newTransferDate);
-        ValidateGuidProperty(newResponsibleId, "Responsible ID");
         
         TransferDate = newTransferDate;
-        ResponsibleId = newResponsibleId;
     }
 
     /// <summary>

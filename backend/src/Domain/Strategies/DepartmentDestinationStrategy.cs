@@ -39,7 +39,7 @@ public class DepartmentDestinationStrategy : IDestinationStrategy
 
     public void ApplyTo(Equipment equipment, DecommissionContext context)
     {
-        Validate(context);
+        //Validate(context);
         
         // Lógica específica para transferir a departamento
         equipment.MoveToDepartment(context.TargetDepartmentId!.Value);

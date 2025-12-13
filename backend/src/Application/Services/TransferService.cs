@@ -75,7 +75,7 @@ namespace Application.Services
             if (existing == null)
                 return null;
 
-            existing.UpdateBasicInfo(dto.TransferDate, dto.ResponsibleId);
+            existing.UpdateBasicInfo(dto.TransferDate);
 
             await _transferRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

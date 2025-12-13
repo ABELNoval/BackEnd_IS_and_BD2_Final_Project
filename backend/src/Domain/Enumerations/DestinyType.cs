@@ -44,7 +44,7 @@ public class DestinyType : Enumeration
         {
             if (!targetDepartmentId.HasValue || targetDepartmentId.Value == Guid.Empty)
                 throw new ArgumentNullException(nameof(targetDepartmentId), "Department destiny requires a target department ID");
-            return new DepartmentDestinationStrategy(targetDepartmentId.Value);
+            return new DepartmentDestinationStrategy();
         }
 
         if (Id == Disposal.Id)
