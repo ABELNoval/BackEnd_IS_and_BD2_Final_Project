@@ -1,37 +1,44 @@
 using Domain.Entities;
+using Domain.Enumerations;
+using Domain.Exceptions;
+using Domain.ValueObjects;
 
 namespace Domain.Strategies;
 
 /// <summary>
 /// Strategy for handling equipment movement to a department.
-/// When equipment is decommissioned to a department, it's assigned to that department.
 /// </summary>
 public class DepartmentDestinationStrategy : IDestinationStrategy
 {
     private readonly Guid _targetDepartmentId;
 
-    public int DestinyTypeId => 1; // Department
+    public DestinyType DestinyType => DestinyType.Department;
 
-    public Guid? TargetDepartmentId => _targetDepartmentId;
-
-    /// <summary>
-    /// Creates a new department destination strategy
-    /// </summary>
-    /// <param name="targetDepartmentId">The ID of the department where the equipment will be moved</param>
-    public DepartmentDestinationStrategy(Guid targetDepartmentId)
+    public void Validate(DecommissionContext context)
     {
-        if (targetDepartmentId == Guid.Empty)
-            throw new ArgumentException("Target department ID cannot be empty", nameof(targetDepartmentId));
-
-        _targetDepartmentId = targetDepartmentId;
+        if (context.TargetDepartmentId == null || context.TargetDepartmentId == Guid.Empty)
+        {
+            throw new InvalidDestinationException(
+                DestinyType.Department,
+                "Target department ID is required for department destination");
+        }
+        
+        if (context.ResponsibleId == Guid.Empty)
+        {
+            throw new InvalidDestinationException(
+                DestinyType.Department,
+                "Responsible ID is required for department destination");
+        }
     }
 
-    /// <summary>
-    /// Applies department assignment logic to the equipment.
-    /// Equipment is assigned to the target department.
-    /// </summary>
-    public void ApplyTo(Equipment equipment)
+    public void ApplyTo(Equipment equipment, DecommissionContext context)
     {
-        equipment.MoveToDepartment(_targetDepartmentId);
+        Validate(context);
+        
+        // Lógica específica para transferir a departamento
+        equipment.MoveToDepartment(context.TargetDepartmentId!.Value);
+        
+        // Nota: El responsable y fecha se usan en el Transfer que se crea,
+        // pero eso lo maneja Equipment.AddDecommission() internamente
     }
 }

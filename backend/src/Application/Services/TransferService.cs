@@ -10,6 +10,7 @@ namespace Application.Services
 {
     public class TransferService : ITransferService
     {
+        private readonly IEquipmentRepository _equipmentRepository;
         private readonly ITransferRepository _transferRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -17,12 +18,14 @@ namespace Application.Services
         private readonly IValidator<UpdateTransferDto> _updateValidator;
 
         public TransferService(
+            IEquipmentRepository equipmentRepository,
             ITransferRepository transferRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<CreateTransferDto> createValidator,
             IValidator<UpdateTransferDto> updateValidator)
         {
+            _equipmentRepository = equipmentRepository;
             _transferRepository = transferRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -30,53 +33,63 @@ namespace Application.Services
             _updateValidator = updateValidator;
         }
 
-        // Crear una transferencia
+        /// <summary>
+        /// Creates a new transfer record by calling Equipment.AddTransfer()
+        /// </summary>
         public async Task<TransferDto> CreateAsync(CreateTransferDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = _mapper.Map<Transfer>(dto);
+            // Get the aggregate root Equipment
+            var equipment = await _equipmentRepository.GetByIdAsync(dto.EquipmentId, cancellationToken);
+            if (equipment == null)
+                throw new ValidationException($"Equipment with ID {dto.EquipmentId} not found");
 
-            await _transferRepository.CreateAsync(entity, cancellationToken);
+            // Equipment creates and manages the Transfer entity
+            equipment.AddTransfer(
+                dto.TargetDepartmentId,
+                dto.ResponsibleId,
+                dto.TransferDate);
+
+            // Save the aggregate root, which includes the new transfer
+            await _equipmentRepository.UpdateAsync(equipment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return _mapper.Map<TransferDto>(entity);
+            // Return the last transfer added
+            var transfer = equipment.Transfers.Last();
+            return _mapper.Map<TransferDto>(transfer);
         }
 
-        // Actualizar una transferencia
+        /// <summary>
+        /// Updates a transfer record
+        /// </summary>
         public async Task<TransferDto?> UpdateAsync(UpdateTransferDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _transferRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            existing.UpdateBasicInfo(dto.TransferDate, dto.ResponsibleId);
+
             await _transferRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<TransferDto>(existing);
         }
 
-        // Eliminar una transferencia
+        /// <summary>
+        /// Deletes a transfer record
+        /// </summary>
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var existing = await _transferRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
@@ -87,20 +100,21 @@ namespace Application.Services
             return true;
         }
 
-        // Obtener una transferencia por Id
+        /// <summary>
+        /// Gets a transfer record by ID
+        /// </summary>
         public async Task<TransferDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var entity = await _transferRepository.GetByIdAsync(id, cancellationToken);
             return entity == null ? null : _mapper.Map<TransferDto>(entity);
         }
 
-        // Obtener todas las transferencias
+        /// <summary>
+        /// Gets all transfer records
+        /// </summary>
         public async Task<IEnumerable<TransferDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var entities = await _transferRepository.GetAllAsync(cancellationToken);

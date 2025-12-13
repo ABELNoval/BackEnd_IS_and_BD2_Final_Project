@@ -118,31 +118,31 @@ public class Equipment : Entity
     /// </summary>
     public void AddDecommission(
         IDestinationStrategy destinationStrategy,
-        Guid responsibleId,
+        Domain.ValueObjects.DecommissionContext context,
         Guid technicalId,
-        DateTime decommissionDate,
         string reason)
     {
         ValidateCanBeDecommissioned();
+        if (destinationStrategy == null) throw new ArgumentNullException(nameof(destinationStrategy));
+        if (context == null) throw new ArgumentNullException(nameof(context));
 
-        Guid departmentForDecommission = Guid.Empty;
-        if (destinationStrategy is Domain.Strategies.DepartmentDestinationStrategy deptStrategy)
-            departmentForDecommission = deptStrategy.TargetDepartmentId ?? Guid.Empty;
+        // Validate strategy-specific requirements (fail-fast)
+        destinationStrategy.Validate(context);
+
+        var departmentForDecommission = context.TargetDepartmentId ?? Guid.Empty;
 
         var decommission = EquipmentDecommission.Create(
             equipmentId: Id,
             technicalId: technicalId,
             departmentId: departmentForDecommission,
-            destinyTypeId: destinationStrategy.DestinyTypeId,
-            recipientId: responsibleId,
-            decommissionDate: decommissionDate,
+            destinyTypeId: destinationStrategy.DestinyType.Id,
+            recipientId: context.ResponsibleId,
+            decommissionDate: context.TransferDate,
             reason: reason);
 
-        // Apply the destination strategy (Tell, Don't Ask)
-        // The strategy knows what to do with the equipment
-        destinationStrategy.ApplyTo(this);
+        // Apply the destination strategy (Command)
+        destinationStrategy.ApplyTo(this, context);
 
-        // Add to collection after successful application
         _decommissions.Add(decommission);
         if (StateId != EquipmentState.Disposed.Id)
             StateId = EquipmentState.Decommissioned.Id;

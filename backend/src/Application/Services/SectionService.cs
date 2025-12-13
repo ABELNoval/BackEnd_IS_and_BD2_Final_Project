@@ -56,7 +56,7 @@ namespace Application.Services
             if (existing == null)
                 return null;
 
-            existing.Update(dto.Name, dto.ResponsibleId);
+            existing.UpdateBasicInfo(dto.Name, dto.ResponsibleId);
 
             await _sectionRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
