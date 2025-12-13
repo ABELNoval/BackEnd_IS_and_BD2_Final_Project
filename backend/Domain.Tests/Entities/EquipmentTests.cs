@@ -138,14 +138,17 @@ namespace Domain.Tests.Entities
             var decommissionDate = DateTime.UtcNow;
             var reason = "Obsolescencia por antigüedad";
             var strategyMock = new Moq.Mock<Domain.Strategies.IDestinationStrategy>();
-            strategyMock.Setup(s => s.DestinyTypeId).Returns(Domain.Enumerations.DestinyType.Warehouse.Id);
-            strategyMock.Setup(s => s.ApplyTo(It.IsAny<Equipment>()));
+            strategyMock.Setup(s => s.DestinyType).Returns(Domain.Enumerations.DestinyType.Warehouse);
+            strategyMock.Setup(s => s.Validate(It.IsAny<Domain.ValueObjects.DecommissionContext>()));
+            strategyMock.Setup(s => s.ApplyTo(It.IsAny<Equipment>(), It.IsAny<Domain.ValueObjects.DecommissionContext>()));
+
+            var context = Domain.ValueObjects.DecommissionContext.ForWarehouse(responsibleId, decommissionDate);
 
             // Act
-            equipment.AddDecommission(strategyMock.Object, responsibleId, technicalId, decommissionDate, reason);
+            equipment.AddDecommission(strategyMock.Object, context, technicalId, reason);
 
             // Assert
-            strategyMock.Verify(s => s.ApplyTo(equipment), Moq.Times.Once);
+            strategyMock.Verify(s => s.ApplyTo(equipment, context), Moq.Times.Once);
             Assert.Equal(Domain.Enumerations.EquipmentState.Decommissioned.Id, equipment.StateId);
             Assert.Single(equipment.Decommissions);
             var decommission = equipment.Decommissions.First();
@@ -153,7 +156,7 @@ namespace Domain.Tests.Entities
             Assert.Equal(technicalId, decommission.TechnicalId);
             Assert.Equal(responsibleId, decommission.RecipientId);
             Assert.Equal(decommissionDate, decommission.DecommissionDate);
-            Assert.Equal(strategyMock.Object.DestinyTypeId, decommission.DestinyTypeId);
+            Assert.Equal(strategyMock.Object.DestinyType.Id, decommission.DestinyTypeId);
             equipment.ValidateEquipment();
         }
 [Fact]
