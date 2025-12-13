@@ -63,14 +63,17 @@ namespace Application.Services
             if (existing == null)
                 return null;
 
-            existing.Update(
+            var updatedEmail = existing.Email.Update(dto.Email);
+            var updatedPasswordHash = string.IsNullOrWhiteSpace(dto.Password) 
+                ? existing.PasswordHash   
+                : existing.PasswordHash.Update(dto.Password);
+
+            existing.UpdateBasicInfo(
                 dto.Name,
+                updatedEmail,
+                updatedPasswordHash,
                 dto.Experience,
-                dto.Specialty,
-                Email.Create(dto.Email),
-                string.IsNullOrWhiteSpace(dto.Password) 
-                    ? existing.PasswordHash   
-                    : PasswordHash.Create(dto.Password)
+                dto.Specialty
             );
 
             await _technicalRepository.UpdateAsync(existing);

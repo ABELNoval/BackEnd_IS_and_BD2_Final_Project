@@ -30,5 +30,13 @@ public sealed record PasswordHash
 
     public static PasswordHash Create(string value) => new PasswordHash(value);
 
+    /// <summary>
+    /// Updates the password hash value.
+    /// </summary>
+    /// <param name="newValue">The new password hash</param>
+    /// <returns>A new PasswordHash instance with the updated value</returns>
+    /// <exception cref="InvalidValueObjectException">If validation fails</exception>
+    public PasswordHash Update(string newValue) => new PasswordHash(newValue);
+
     public override string ToString() => Value;
 }

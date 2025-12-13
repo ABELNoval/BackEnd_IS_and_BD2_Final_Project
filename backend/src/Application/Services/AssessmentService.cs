@@ -10,6 +10,7 @@ namespace Application.Services
 {
     public class AssessmentService : IAssessmentService
     {
+        private readonly ITechnicalRepository _technicalRepository;
         private readonly IAssessmentRepository _repository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -17,12 +18,14 @@ namespace Application.Services
         private readonly IValidator<UpdateAssessmentDto> _updateValidator;
 
         public AssessmentService(
+            ITechnicalRepository technicalRepository,
             IAssessmentRepository repository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<CreateAssessmentDto> createValidator,
             IValidator<UpdateAssessmentDto> updateValidator)
         {
+            _technicalRepository = technicalRepository;
             _repository = repository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -30,27 +33,33 @@ namespace Application.Services
             _updateValidator = updateValidator;
         }
 
-        // Crear evaluación
+        /// <summary>
+        /// Creates a new assessment by calling Technical.AddAssessment()
+        /// </summary>
         public async Task<AssessmentDTO> CreateAsync(CreateAssessmentDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = Assessment.Create(
-                dto.TechnicalId,
+            // Get the aggregate root Technical
+            var technical = await _technicalRepository.GetByIdAsync(dto.TechnicalId, cancellationToken);
+            if (technical == null)
+                throw new ValidationException($"Technical with ID {dto.TechnicalId} not found");
+
+            // Technical creates and manages the Assessment entity
+            technical.AddAssessment(
                 dto.DirectorId,
                 dto.Score,
-                dto.Comment
-            );
+                dto.Comment);
 
-            await _repository.CreateAsync(entity, cancellationToken);
+            // Save the aggregate root, which includes the new assessment
+            await _technicalRepository.UpdateAsync(technical);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return _mapper.Map<AssessmentDTO>(entity);
+            // Return the last assessment added
+            var assessment = technical.Assessments.Last();
+            return _mapper.Map<AssessmentDTO>(assessment);
         }
 
         // Actualizar evaluación
