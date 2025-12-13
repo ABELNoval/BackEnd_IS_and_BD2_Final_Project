@@ -39,7 +39,7 @@ namespace Application.Services
                 throw new ValidationException(validationResult.Errors);
             }
 
-            var entity = _mapper.Map<EquipmentType>(dto);
+            var entity = EquipmentType.Create(dto.Name);
             await _equipmentTypeRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<EquipmentTypeDto>(entity);
@@ -55,7 +55,7 @@ namespace Application.Services
             if (existing == null)
                 return null;
 
-            existing.Update(dto.Name);
+            existing.UpdateName(dto.Name);
             await _equipmentTypeRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
