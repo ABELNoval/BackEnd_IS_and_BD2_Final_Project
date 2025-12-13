@@ -10,7 +10,13 @@ namespace Domain.Strategies;
 /// </summary>
 public class DepartmentDestinationStrategy : IDestinationStrategy
 {
-    private readonly Guid _targetDepartmentId;
+    /// <summary>
+    /// Creates a new instance of DepartmentDestinationStrategy.
+    /// The target department ID is obtained from the decommission context.
+    /// </summary>
+    public DepartmentDestinationStrategy()
+    {
+    }
 
     public DestinyType DestinyType => DestinyType.Department;
 

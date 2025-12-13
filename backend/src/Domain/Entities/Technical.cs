@@ -154,6 +154,20 @@ public class Technical : User
     #region Validation Methods
 
     /// <summary>
+    /// Validates a generic Guid property
+    /// </summary>
+    /// <param name="id">The ID to validate</param>
+    /// <param name="propertyName">The name of the property being validated</param>
+    /// <exception cref="InvalidEntityException">If validation fails</exception>
+    private void ValidateGuidProperty(Guid id, string propertyName)
+    {
+        if (id == Guid.Empty)
+            throw new InvalidEntityException(
+                nameof(Technical),
+                $"{propertyName} cannot be empty");
+    }
+
+    /// <summary>
     /// Validates the experience property
     /// </summary>
     /// <param name="experience">The experience value to validate</param>
