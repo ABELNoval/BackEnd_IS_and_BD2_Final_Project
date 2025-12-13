@@ -10,6 +10,7 @@ namespace Application.Services
 {
     public class MaintenanceService : IMaintenanceService
     {
+        private readonly IEquipmentRepository _equipmentRepository;
         private readonly IMaintenanceRepository _maintenanceRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -17,12 +18,14 @@ namespace Application.Services
         private readonly IValidator<UpdateMaintenanceDto> _updateValidator;
 
         public MaintenanceService(
+            IEquipmentRepository equipmentRepository,
             IMaintenanceRepository maintenanceRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<CreateMaintenanceDto> createValidator,
             IValidator<UpdateMaintenanceDto> updateValidator)
         {
+            _equipmentRepository = equipmentRepository;
             _maintenanceRepository = maintenanceRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -30,52 +33,64 @@ namespace Application.Services
             _updateValidator = updateValidator;
         }
 
-        // Crear mantenimiento
+        /// <summary>
+        /// Creates a new maintenance record by calling Equipment.AddMaintenance()
+        /// </summary>
         public async Task<MaintenanceDto> CreateAsync(CreateMaintenanceDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
-            var entity = _mapper.Map<Maintenance>(dto);
-            await _maintenanceRepository.CreateAsync(entity, cancellationToken);
+            // Get the aggregate root Equipment
+            var equipment = await _equipmentRepository.GetByIdAsync(dto.EquipmentId, cancellationToken);
+            if (equipment == null)
+                throw new ValidationException($"Equipment with ID {dto.EquipmentId} not found");
+
+            // Equipment creates and manages the Maintenance entity
+            equipment.AddMaintenance(
+                dto.TechnicalId,
+                dto.MaintenanceDate,
+                dto.MaintenanceTypeId,
+                dto.Cost);
+
+            // Save the aggregate root, which includes the new maintenance
+            await _equipmentRepository.UpdateAsync(equipment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            return _mapper.Map<MaintenanceDto>(entity);
+            // Return the last maintenance added
+            var maintenance = equipment.Maintenances.Last();
+            return _mapper.Map<MaintenanceDto>(maintenance);
         }
 
-        // Actualizar mantenimiento
+        /// <summary>
+        /// Updates a maintenance record
+        /// </summary>
         public async Task<MaintenanceDto?> UpdateAsync(UpdateMaintenanceDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
                 throw new ValidationException(validationResult.Errors);
-            }
 
             var existing = await _maintenanceRepository.GetByIdAsync(dto.Id, cancellationToken);
-            if (existing is null)
+            if (existing == null)
                 return null;
 
-            _mapper.Map(dto, existing);
+            existing.UpdateBasicInfo(dto.MaintenanceDate, dto.MaintenanceTypeId, dto.Cost);
+
             await _maintenanceRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             return _mapper.Map<MaintenanceDto>(existing);
         }
 
-        // Eliminar mantenimiento
+        /// <summary>
+        /// Deletes a maintenance record
+        /// </summary>
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var existing = await _maintenanceRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
@@ -86,20 +101,21 @@ namespace Application.Services
             return result > 0;
         }
 
-        // Obtener mantenimiento por Id
+        /// <summary>
+        /// Gets a maintenance record by ID
+        /// </summary>
         public async Task<MaintenanceDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var maintenance = await _maintenanceRepository.GetByIdAsync(id, cancellationToken);
-            return maintenance is null ? null : _mapper.Map<MaintenanceDto>(maintenance);
+            return maintenance == null ? null : _mapper.Map<MaintenanceDto>(maintenance);
         }
 
-        // Obtener todos los mantenimientos
+        /// <summary>
+        /// Gets all maintenance records
+        /// </summary>
         public async Task<IEnumerable<MaintenanceDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var maintenances = await _maintenanceRepository.GetAllAsync(cancellationToken);
