@@ -65,6 +65,17 @@ namespace Domain.ValueObjects
         }
 
         /// <summary>
+        /// Updates the performance score value.
+        /// </summary>
+        /// <param name="newValue">The new score value (must be between 0 and 100)</param>
+        /// <returns>A new PerformanceScore instance with the updated value</returns>
+        /// <exception cref="DomainException">Thrown when value is outside the valid range</exception>
+        public PerformanceScore Update(decimal newValue)
+        {
+            return new PerformanceScore(newValue);
+        }
+
+        /// <summary>
         /// Returns a string representation of the performance score.
         /// </summary>
         /// <returns>The score value formatted as a percentage (e.g., "85.50%")</returns>
