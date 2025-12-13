@@ -28,5 +28,13 @@ public sealed record Email
 
     public static Email Create(string value) => new Email(value);
 
+    /// <summary>
+    /// Updates the email value.
+    /// </summary>
+    /// <param name="newValue">The new email address</param>
+    /// <returns>A new Email instance with the updated value</returns>
+    /// <exception cref="InvalidValueObjectException">If validation fails</exception>
+    public Email Update(string newValue) => new Email(newValue);
+
     public override string ToString() => Value;
 }
