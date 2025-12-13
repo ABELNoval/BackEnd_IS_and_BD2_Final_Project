@@ -41,7 +41,8 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateMaintenanceDto dto, CancellationToken cancellationToken)
         {
-             var created = await _maintenanceService.CreateAsync(dto, cancellationToken);
+            Console.WriteLine($"El type es: {dto.MaintenanceTypeId}");
+            var created = await _maintenanceService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 

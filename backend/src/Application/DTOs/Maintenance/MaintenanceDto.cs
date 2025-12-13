@@ -12,7 +12,7 @@ namespace Application.DTOs.Maintenance
 
         public int MaintenanceTypeId { get; set; }
 
-        public string MaintenanceTypeName { get; set; } = string.Empty;
+        // public string MaintenanceTypeName { get; set; } = string.Empty;
         
         public decimal Cost { get; set; }
 

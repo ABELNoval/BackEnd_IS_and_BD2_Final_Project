@@ -161,63 +161,100 @@ namespace Infrastructure.Reports
         // ----------------------------------------------------------------------
         //  🔥  Reporte 6: Rendimiento técnicos para bonificaciones
         // ----------------------------------------------------------------------
-        public async Task<IEnumerable<TechnicianPerformanceBonusDto>>
-            GetTechnicianPerformanceBonusAsync()
+        public async Task<IEnumerable<TechnicianPerformanceBonusDto>> GetTechnicianPerformanceBonusAsync()
         {
             var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
+            
+            try
+            {
+                // Obtener todos los datos necesarios por separado
+                var technicians = await _context.Technicals.ToListAsync();
+                var maintenances = await _context.Maintenances
+                    .Where(m => m.MaintenanceDate >= sixMonthsAgo)
+                    .ToListAsync();
+                var assessments = await _context.Assessments.ToListAsync();
 
-            var query =
-                from tech in _context.Technicals
-                join m in _context.Maintenances
-                    on tech.Id equals m.TechnicalId into mGroup
-                from mg in mGroup.DefaultIfEmpty()
-                join a in _context.Assessments
-                    on tech.Id equals a.TechnicalId into aGroup
-                from ag in aGroup.DefaultIfEmpty()
-                where mg == null || mg.MaintenanceDate >= sixMonthsAgo
-                group new { mg, ag } by new
+                var results = new List<TechnicianPerformanceBonusDto>();
+
+                foreach (var tech in technicians)
                 {
-                    tech.Id,
-                    tech.Name,
-                    tech.Specialty,
-                    tech.Experience,
-                    tech.Email
+                    var techMaintenances = maintenances
+                        .Where(m => m.TechnicalId == tech.Id)
+                        .ToList();
+                        
+                    var techAssessments = assessments
+                        .Where(a => a.TechnicalId == tech.Id)
+                        .ToList();
+                    
+                    // Solo procesar técnicos que tengan al menos una intervención o calificación
+                    if (!techMaintenances.Any() && !techAssessments.Any())
+                        continue;
+                    
+                    var totalInterventions = techMaintenances.Count;
+                    var totalInterventionCost = techMaintenances.Sum(m => m.Cost);
+                    var totalRatings = techAssessments.Count;
+                    
+                    // Calcular promedio de calificaciones (seguro contra división por cero)
+                    decimal averageRating = 0;
+                    if (totalRatings > 0)
+                    {
+                        averageRating = techAssessments.Average(a => a.Score.Value);
+                    }
+                    
+                    // Última fecha de calificación (nullable)
+                    DateTime? lastRatingDate = null;
+                    if (techAssessments.Any())
+                    {
+                        lastRatingDate = techAssessments.Max(a => a.AssessmentDate);
+                    }
+                    
+                    // Calcular puntaje de bonificación
+                    decimal bonusScore = (totalInterventions * 0.4m) + (averageRating * 0.6m);
+                    
+                    // Determinar recomendación
+                    string bonusRecommendation = bonusScore > 7 ? "BONIFICAR" : "MANTENER";
+                    
+                    // Calcular días sin intervención
+                    int daysWithoutIntervention = 999;
+                    if (techMaintenances.Any())
+                    {
+                        var lastMaintenance = techMaintenances.Max(m => m.MaintenanceDate);
+                        daysWithoutIntervention = (int)(DateTime.UtcNow - lastMaintenance).TotalDays;
+                    }
+                    
+                    results.Add(new TechnicianPerformanceBonusDto
+                    {
+                        TechnicalName = tech.Name,
+                        Speciality = tech.Specialty,
+                        Experience = tech.Experience,
+                        Email = tech.Email.Value,
+                        TotalInterventions = totalInterventions,
+                        TotalInterventionCost = totalInterventionCost,
+                        TotalRatings = totalRatings,
+                        AverageRating = Math.Round(averageRating, 2),
+                        LastRatingDate = lastRatingDate,
+                        BonusScore = Math.Round(bonusScore, 2),
+                        BonusRecommendation = bonusRecommendation,
+                        DaysWithoutIntervention = daysWithoutIntervention
+                    });
                 }
-                into g
-                select new TechnicianPerformanceBonusDto
-                {
-                    TechnicalName = g.Key.Name,
-                    Speciality = g.Key.Specialty,
-                    Experience = g.Key.Experience,
-                    Email = g.Key.Email.Value,
-                    TotalInterventions = g.Count(x => x.mg != null),
-                    TotalInterventionCost = g.Sum(x => x.mg != null ? x.mg.Cost : 0),
-                    TotalRatings = g.Count(x => x.ag != null),
-                    AverageRating = g.Where(x => x.ag != null).Average(x => x.ag!.Score.Value),
-                    LastRatingDate = g.Where(x => x.ag != null)
-                                      .Max(x => x.ag!.AssessmentDate),
-                    BonusScore =
-                        (g.Count(x => x.mg != null) * 0.4m) +
-                        (g.Where(x => x.ag != null).Average(x => x.ag!.Score.Value) * 0.6m),
-                    BonusRecommendation =
-                        ((g.Count(x => x.mg != null) * 0.4m) +
-                         (g.Where(x => x.ag != null).Average(x => x.ag!.Score.Value) * 0.6m)) > 7
-                            ? "BONIFICAR"
-                            : "MANTENER",
-                    DaysWithoutIntervention =
-                        g.All(x => x.mg == null)
-                            ? 999
-                            : (int)(DateTime.UtcNow -
-                                g.Where(x => x.mg != null)
-                                 .Max(x => x.mg!.MaintenanceDate)
-                            ).TotalDays
-                };
-
-            return await query
-                .OrderByDescending(x => x.BonusScore)
-                .ToListAsync();
+                
+                return results
+                    .OrderByDescending(r => r.BonusScore)
+                    .ThenByDescending(r => r.TotalInterventions)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                // Log detallado del error
+                Console.WriteLine($"Error en GetTechnicianPerformanceBonusAsync: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                
+                // Devuelve una lista vacía en caso de error para evitar romper el flujo
+                return new List<TechnicianPerformanceBonusDto>();
+            }
         }
-
+        
         // ----------------------------------------------------------------------
         //  🔧 Métodos auxiliares para enums (solución temporal)
         // ----------------------------------------------------------------------
