@@ -1,27 +1,28 @@
 using Domain.Entities;
+using Domain.Enumerations;
+using Domain.ValueObjects;
 
 namespace Domain.Strategies;
 
 /// <summary>
-/// Strategy interface for handling equipment destination logic.
-/// Each destination type (disposal, warehouse, department) has its own implementation.
+/// IDestinationStrategy - CQS applied
+/// Query : exposes the DestinyType
+/// Command : Validate (fail-fast) and ApplyTo (mutates the aggregate)
 /// </summary>
 public interface IDestinationStrategy
 {
     /// <summary>
-    /// ID of the destiny type (from DestinyType enumeration)
+    /// The destiny type this strategy implements
     /// </summary>
-    int DestinyTypeId { get; }
+    DestinyType DestinyType { get; }
 
     /// <summary>
-    /// Target department ID (only for Department destination, null for others)
+    /// Query : validates destination-specific requirements (fail-fast)
     /// </summary>
-    Guid? TargetDepartmentId { get; }
+    void Validate(DecommissionContext context);
 
     /// <summary>
-    /// Applies the destination logic to the equipment.
-    /// This method modifies the equipment's internal state based on the destination type.
+    /// Command : applies the business logic to the equipment
     /// </summary>
-    /// <param name="equipment">The equipment to apply the destination to</param>
-    void ApplyTo(Equipment equipment);
+    void ApplyTo(Equipment equipment, DecommissionContext context);
 }
