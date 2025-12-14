@@ -14,7 +14,7 @@ public class WarehouseDestinationStrategy : IDestinationStrategy
     
     public void Validate(DecommissionContext context)
     {
-        if (context.ResponsibleId == Guid.Empty)
+        if (context.RecipientId == Guid.Empty)
         {
             throw new InvalidDestinationException(
                 DestinyType.Warehouse,

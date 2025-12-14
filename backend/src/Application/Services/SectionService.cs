@@ -37,7 +37,7 @@ namespace Application.Services
             if (!validationResult.IsValid)
                 throw new ValidationException(validationResult.Errors);
 
-            var entity = Section.Create(dto.Name, dto.ResponsibleId);
+            var entity = Section.Create(dto.Name);
             
             await _sectionRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -56,7 +56,7 @@ namespace Application.Services
             if (existing == null)
                 return null;
 
-            existing.UpdateBasicInfo(dto.Name, dto.ResponsibleId);
+            existing.UpdateBasicInfo(dto.Name);
 
             await _sectionRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);

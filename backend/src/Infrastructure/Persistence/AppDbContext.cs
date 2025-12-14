@@ -259,10 +259,6 @@ namespace Infrastructure.Persistence
                 entity.Property(s => s.Name)
                     .HasMaxLength(100)
                     .IsRequired();
-
-                // use 's' variable name for clarity
-                entity.Property(s => s.ResponsibleId)
-                    .IsRequired();
             });
 
             /// <summary>

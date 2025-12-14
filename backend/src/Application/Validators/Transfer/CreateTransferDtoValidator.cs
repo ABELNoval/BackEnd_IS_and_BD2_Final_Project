@@ -21,10 +21,6 @@ namespace Application.Validators.Transfer
                 .NotEqual(Guid.Empty).WithMessage("Target department ID cannot be empty")
                 .NotEqual(x => x.SourceDepartmentId).WithMessage("Target department cannot be the same as source department");
 
-            RuleFor(x => x.ResponsibleId)
-                .NotEmpty().WithMessage("Responsible ID is required")
-                .NotEqual(Guid.Empty).WithMessage("Responsible ID cannot be empty");
-
             RuleFor(x => x.TransferDate)
                 .NotEmpty().WithMessage("Transfer date is required")
                 .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("Transfer date cannot be in the future");

@@ -39,7 +39,7 @@ namespace Application.Services
             {
                 throw new ValidationException(validationResult.Errors);
             }
-
+            Console.WriteLine("Creating Equipment State: " + dto.StateId);
             var entity = _mapper.Map<Equipment>(dto);
             await _equipmentRepository.CreateAsync(entity, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
