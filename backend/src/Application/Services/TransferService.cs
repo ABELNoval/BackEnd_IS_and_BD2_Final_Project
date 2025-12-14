@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Application.DTOs.Transfer;
 using Application.Interfaces.Services;
 using Application.Validators.Transfer;
@@ -53,12 +54,11 @@ namespace Application.Services
                 dto.ResponsibleId,
                 dto.TransferDate);
 
-            // Save the aggregate root, which includes the new transfer
-            await _equipmentRepository.UpdateAsync(equipment);
+            var transfer = equipment.Transfers.Last();
+            await _transferRepository.CreateAsync(transfer);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Return the last transfer added
-            var transfer = equipment.Transfers.Last();
             return _mapper.Map<TransferDto>(transfer);
         }
 

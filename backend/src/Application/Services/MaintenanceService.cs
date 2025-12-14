@@ -54,12 +54,11 @@ namespace Application.Services
                 dto.MaintenanceTypeId,
                 dto.Cost);
 
-            // Save the aggregate root, which includes the new maintenance
-            await _equipmentRepository.UpdateAsync(equipment);
+            var maintenance = equipment.Maintenances.Last();
+
+            await _maintenanceRepository.CreateAsync(maintenance);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Return the last maintenance added
-            var maintenance = equipment.Maintenances.Last();
             return _mapper.Map<MaintenanceDto>(maintenance);
         }
 

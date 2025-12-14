@@ -46,34 +46,29 @@ namespace Application.Services
             if (!validationResult.IsValid)
                 throw new ValidationException(validationResult.Errors);
 
-            // Get the aggregate root Equipment
             var equipment = await _equipmentRepository.GetByIdAsync(dto.EquipmentId, cancellationToken);
             if (equipment == null)
                 throw new ValidationException($"Equipment with ID {dto.EquipmentId} not found");
 
-            // Step 1: Create context based on destiny type (validates common data)
             var destinyType = DestinyType.FromId(dto.DestinyTypeId);
             if (destinyType == null)
                 throw new ValidationException($"Invalid destiny type ID: {dto.DestinyTypeId}");
 
             var context = CreateDecommissionContext(destinyType, dto);
 
-            // Step 2: Create the destination strategy (factory pattern)
             var strategy = DestinationStrategyFactory.Create(destinyType);
 
-            // Step 3: Equipment coordinates the decommission process
             equipment.AddDecommission(
                 strategy,
                 context,
                 dto.TechnicalId,
                 dto.Reason);
 
-            // Step 4: Save the aggregate root, which includes the new decommission
-            await _equipmentRepository.UpdateAsync(equipment);
+            var decommission = equipment.Decommissions.Last();
+            await _decommissionRepository.CreateAsync(decommission);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Return the last decommission added
-            var decommission = equipment.Decommissions.Last();
             return _mapper.Map<EquipmentDecommissionDto>(decommission);
         }
 

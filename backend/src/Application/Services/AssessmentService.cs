@@ -53,12 +53,12 @@ namespace Application.Services
                 dto.Score,
                 dto.Comment);
 
-            // Save the aggregate root, which includes the new assessment
-            await _technicalRepository.UpdateAsync(technical);
+            var assessment = technical.Assessments.Last();
+
+            await _repository.CreateAsync(assessment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
             // Return the last assessment added
-            var assessment = technical.Assessments.Last();
             return _mapper.Map<AssessmentDTO>(assessment);
         }
 

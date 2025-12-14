@@ -12,6 +12,10 @@ namespace Application.Mappers
             CreateMap<Section, SectionDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
+        
+            // DTO → Entity
+            CreateMap<CreateSectionDto, Section>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name));
         }
     }
 }

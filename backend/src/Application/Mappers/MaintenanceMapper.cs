@@ -15,8 +15,14 @@ namespace Application.Mappers
                 .ForMember(dest => dest.TechnicalId, opt => opt.MapFrom(src => src.TechnicalId))
                 .ForMember(dest => dest.MaintenanceDate, opt => opt.MapFrom(src => src.MaintenanceDate))
                 .ForMember(dest => dest.MaintenanceTypeId, opt => opt.MapFrom(src => src.MaintenanceTypeId))
-
-                //.ForMember(dest => dest.MaintenanceTypeName, opt => opt.Ignore())
+                .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.Cost));
+        
+            // DTO → Entity
+            CreateMap<CreateMaintenanceDto, Maintenance>()
+                .ForMember(dest => dest.EquipmentId, opt => opt.MapFrom(src => src.EquipmentId))
+                .ForMember(dest => dest.TechnicalId, opt => opt.MapFrom(src => src.TechnicalId))
+                .ForMember(dest => dest.MaintenanceDate, opt => opt.MapFrom(src => src.MaintenanceDate))
+                .ForMember(dest => dest.MaintenanceTypeId, opt => opt.MapFrom(src => src.MaintenanceTypeId))
                 .ForMember(dest => dest.Cost, opt => opt.MapFrom(src => src.Cost));
         }
     }
