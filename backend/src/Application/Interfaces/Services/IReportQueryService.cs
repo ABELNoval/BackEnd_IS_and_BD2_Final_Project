@@ -11,10 +11,7 @@ namespace Application.Interfaces.Services
         Task<IEnumerable<EquipmentMaintenanceHistoryDto>> GetEquipmentMaintenanceHistoryAsync(Guid equipmentId);
 
         // Reporte 3: Equipos trasladados entre secciones
-        Task<IEnumerable<EquipmentTransferBetweenSectionsDto>> GetEquipmentTransfersBetweenSectionsAsync();
-
-        // Reporte 3b: Historial de traslados de un equipo entre secciones
-        Task<IEnumerable<EquipmentTransferBetweenSectionsDto>> GetEquipmentTransferHistoryBetweenSectionsAsync(Guid equipmentId);
+        Task<IEnumerable<EquipmentTransferBetweenSectionsDto>> GetEquipmentTransferHistoryBetweenSectionsAsync();
 
         // Reporte 4: Correlación rendimiento técnicos vs longevidad equipos (top peores)
         Task<IEnumerable<TechnicianPerformanceCorrelationDto>> GetTechnicianMaintenanceCorrelationAsync();

@@ -23,16 +23,11 @@ namespace WebApi.Controllers
             _logger = logger;
         }
 
-        // ENDPOINTS DE EXPORTACIÓN DIRECTA 
         // ----------------------------------------------------------------------
         // ENDPOINTS DE EXPORTACIÓN DIRECTA
         // ----------------------------------------------------------------------
-        [HttpGet("export/sent-to-department/{departmentId}/{format}")]
-        public async Task<IActionResult> ExportSentToDepartment(Guid departmentId, string format)
-        {
-            var data = await _queryService.GetEquipmentSentToDepartmentAsync(departmentId);
-            return await GenerateReportFile("EquipmentSentToDepartment", format, data);
-        }
+        
+        //1
         [HttpGet("export/decommission-last-year/{format}")]
         public async Task<IActionResult> ExportDecommissionLastYear(string format)
         {
@@ -40,6 +35,7 @@ namespace WebApi.Controllers
             return await GenerateReportFile("EquipmentDecommissionLastYear", format, data);
         }
 
+        //2
         [HttpGet("export/maintenance-history/{equipmentId}/{format}")]
         public async Task<IActionResult> ExportMaintenanceHistory(Guid equipmentId, string format)
         {
@@ -47,6 +43,7 @@ namespace WebApi.Controllers
             return await GenerateReportFile("EquipmentMaintenanceHistory", format, data);
         }
 
+        //5
         [HttpGet("export/frequent-maintenance/{format}")]
         public async Task<IActionResult> ExportFrequentMaintenance(string format)
         {
@@ -54,6 +51,7 @@ namespace WebApi.Controllers
             return await GenerateReportFile("FrequentMaintenanceEquipment", format, data);
         }
 
+        //6
         [HttpGet("export/technician-bonus/{format}")]
         public async Task<IActionResult> ExportTechnicianBonus(string format)
         {
@@ -61,68 +59,13 @@ namespace WebApi.Controllers
             return await GenerateReportFile("TechnicianPerformanceBonus", format, data);
         }
 
- 
-        // TRASLADOS ENTRE DIFERENTES SECCIONES
-        [HttpGet("equipment-transfers-between-sections")]
-        public async Task<IActionResult> GetEquipmentTransfersBetweenSections()
-        {
-            try
-            {
-                _logger.LogInformation("Iniciando Reporte 3: Traslados entre secciones");
-
-                var data = (await _queryService.GetEquipmentTransfersBetweenSectionsAsync()).ToList();
-
-                _logger.LogInformation("Reporte 3 completado: {Count} traslados", data.Count);
-
-                return Ok(new
-                {
-                    success = true,
-                    data,
-                    count = data.Count,
-                    message = "Traslados entre secciones obtenidos"
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en GetEquipmentTransfersBetweenSections");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-
-        /// Historial de traslados de UN equipo específico entre secciones
-        [HttpGet("equipment-transfers-between-sections/{equipmentId}")]
-        public async Task<IActionResult> GetEquipmentTransferHistoryBetweenSections(Guid equipmentId)
-        {
-            try
-            {
-                if (equipmentId == Guid.Empty)
-                    return BadRequest(new { error = "EquipmentId inválido" });
-
-                _logger.LogInformation("Historial traslados equipo {EquipmentId}", equipmentId);
-
-                var data = (await _queryService.GetEquipmentTransferHistoryBetweenSectionsAsync(equipmentId)).ToList();
-
-                if (!data.Any())
-                    return NotFound(new { message = "No hay traslados para este equipo" });
-
-                return Ok(new { success = true, data, count = data.Count });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error historial traslados");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-
-        /// Exporta traslados a PDF/Excel/Word
+        // 3
         [HttpGet("export/equipment-transfers-between-sections/{format}")]
-        public async Task<IActionResult> ExportEquipmentTransfersBetweenSections(string format)
+        public async Task<IActionResult> ExportEquipmentTransfersHistoryBetweenSections(string format)
         {
             try
             {
-                var data = await _queryService.GetEquipmentTransfersBetweenSectionsAsync();
+                var data = await _queryService.GetEquipmentTransferHistoryBetweenSectionsAsync();
                 return await GenerateReportFile("EquipmentTransfersBetweenSections", format, data);
             }
             catch (Exception ex)
@@ -132,36 +75,7 @@ namespace WebApi.Controllers
             }
         }
 
-        // TOP 5 TÉCNICOS PEOR CORRELACIÓN
-        [HttpGet("technician-correlation-worst")]
-        public async Task<IActionResult> GetTechnicianCorrelationWorst()
-        {
-            try
-            {
-                _logger.LogInformation("Iniciando Reporte 4 CRÍTICO: Correlación técnicos");
-
-                var data = (await _queryService.GetTechnicianMaintenanceCorrelationAsync()).ToList();
-
-                if (!data.Any())
-                    return Ok(new
-                    {
-                        success = true,
-                        data = new List<object>(),
-                        message = "No hay datos para correlación (sin equipos irreparables)"
-                    });
-
-                _logger.LogInformation("Reporte 4: Top {Count} técnicos peores", data.Count);
-
-                return Ok(new { success = true, data, count = data.Count });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "ERROR CRÍTICO Reporte 4");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        /// Exporta Top 5 técnicos peores (PDF/Excel/Word)
+        // 4
         [HttpGet("export/technician-correlation-worst/{format}")]
         public async Task<IActionResult> ExportTechnicianCorrelationWorst(string format)
         {
@@ -177,29 +91,7 @@ namespace WebApi.Controllers
             }
         }
 
-        //  EQUIPOS ENVIADOS A DEPARTAMENTO ESPECÍFICO
-        [HttpGet("equipment-sent-to-department/{departmentId}")]
-        public async Task<IActionResult> GetEquipmentSentToDepartment(Guid departmentId)
-        {
-            try
-            {
-                if (departmentId == Guid.Empty)
-                    return BadRequest(new { error = "DepartmentId inválido" });
-
-                _logger.LogInformation("Equipos enviados a departamento {DeptId}", departmentId);
-
-                var data = (await _queryService.GetEquipmentSentToDepartmentAsync(departmentId)).ToList();
-
-                return Ok(new { success = true, data, count = data.Count });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error equipos enviados departamento");
-                return StatusCode(500, new { error = ex.Message });
-            }
-        }
-
-        // Exporta equipos enviados a departamento
+        // 7
         [HttpGet("export/equipment-sent-to-department/{departmentId}/{format}")]
         public async Task<IActionResult> ExportEquipmentSentToDepartment(Guid departmentId, string format)
         {
@@ -216,7 +108,7 @@ namespace WebApi.Controllers
         }
 
  
-        // 🔥 MÉTODO AUXILIAR PARA GENERAR ARCHIVOS (EXISTENTE)
+        // MÉTODO AUXILIAR PARA GENERAR ARCHIVOS (EXISTENTE)
         private async Task<IActionResult> GenerateReportFile(string reportType, string format, object? data = null)
         {
             try

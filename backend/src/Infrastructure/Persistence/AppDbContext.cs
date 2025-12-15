@@ -211,12 +211,6 @@ namespace Infrastructure.Persistence
                     .IsRequired();
 
                 entity.HasIndex(t => t.TransferDate);
-
-                // Foreign key: RecipientId -> Employee
-                entity.HasOne<Employee>()
-                    .WithMany()
-                    .HasForeignKey("RecipientId")
-                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             /// <summary>

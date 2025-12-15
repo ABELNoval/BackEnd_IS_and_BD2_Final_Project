@@ -13,7 +13,14 @@ namespace Infrastructure.Reports
         /// Gets all equipment transfers between different sections, including transfer date, origin, destination, sender, and receiver information.
         /// </summary>
         /// <returns>List of equipment transfers between different sections.</returns>
-        public async Task<List<EquipmentTransferBetweenSectionsDto>> GetEquipmentTransfersBetweenSectionsAsync()
+        private readonly AppDbContext _context;
+
+        public ReportQueryService(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<IEnumerable<EquipmentTransferBetweenSectionsDto>> GetEquipmentTransferHistoryBetweenSectionsAsync()
         {
             var query = from transfer in _context.Transfers
                         join equipment in _context.Equipments on transfer.EquipmentId equals equipment.Id
@@ -44,170 +51,164 @@ namespace Infrastructure.Reports
                 .ToListAsync();
         }
 
-            /// <summary>
-            /// REPORT 4 - CRITICAL: Correlation between technicians and irreparable equipment longevity.
-            /// Identifies the 5 technicians with the worst performance based on:
-            /// 1. High maintenance cost on failed equipment
-            /// 2. Low longevity (equipment lasts little)
-            /// 3. Equipment decommissioned due to "irreparable technical failure"
-            /// 4. Low average rating from supervisors
-            /// 5. Type of equipment they specialize in
-            /// </summary>
-            /// <returns>List of the 5 worst-performing technicians by correlation score.</returns>
-            public async Task<List<TechnicianPerformanceCorrelationDto>> GetTechnicianMaintenanceCorrelationAsync()
+        /// <summary>
+        /// REPORT 4 - CRITICAL: Correlation between technicians and irreparable equipment longevity.
+        /// Identifies the 5 technicians with the worst performance based on:
+        /// 1. High maintenance cost on failed equipment
+        /// 2. Low longevity (equipment lasts little)
+        /// 3. Equipment decommissioned due to "irreparable technical failure"
+        /// 4. Low average rating from supervisors
+        /// 5. Type of equipment they specialize in
+        /// </summary>
+        /// <returns>List of the 5 worst-performing technicians by correlation score.</returns>
+        public async Task<IEnumerable<TechnicianPerformanceCorrelationDto>> GetTechnicianMaintenanceCorrelationAsync()
+        {
+            try
             {
-                try
+                // PHASE 1: Get irreparable equipment IDs
+                var irreparableEquipmentIds = await _context.EquipmentDecommissions
+                    .AsNoTracking()
+                    .Where(d => d.Reason.ToLower().Contains("irreparable") || d.Reason.ToLower().Contains("fallo técnico"))
+                    .Select(d => d.EquipmentId)
+                    .ToListAsync();
+
+                if (!irreparableEquipmentIds.Any())
                 {
-                    // PHASE 1: Get irreparable equipment IDs
-                    var irreparableEquipmentIds = await _context.EquipmentDecommissions
-                        .AsNoTracking()
-                        .Where(d => d.Reason.ToLower().Contains("irreparable") || d.Reason.ToLower().Contains("fallo técnico"))
-                        .Select(d => d.EquipmentId)
-                        .ToListAsync();
-
-                    if (!irreparableEquipmentIds.Any())
-                    {
-                        // No irreparable equipment found
-                        return new List<TechnicianPerformanceCorrelationDto>();
-                    }
-
-                    // PHASE 2: Maintenance costs per irreparable equipment
-                    var maintenanceCosts = await _context.Maintenances
-                        .Where(m => irreparableEquipmentIds.Contains(m.EquipmentId))
-                        .GroupBy(m => m.EquipmentId)
-                        .Select(g => new
-                        {
-                            EquipmentId = g.Key,
-                            TotalCost = g.Sum(x => x.Cost),
-                            MaintenanceCount = g.Count()
-                        })
-                        .AsNoTracking()
-                        .ToListAsync();
-
-                    var equipmentWithCosts = maintenanceCosts.Select(m => m.EquipmentId).ToList();
-
-                    // PHASE 3: Longevity and type of irreparable equipment
-                    var equipmentDetails = await (from eq in _context.Equipments
-                                                 where equipmentWithCosts.Contains(eq.Id)
-                                                 join decomm in _context.EquipmentDecommissions on eq.Id equals decomm.EquipmentId
-                                                 join eqType in _context.EquipmentTypes on eq.EquipmentTypeId equals eqType.Id
-                                                 select new
-                                                 {
-                                                     Equipment = eq,
-                                                     Decommission = decomm,
-                                                     EquipmentTypeName = eqType.Name,
-                                                     DaysInUse = EF.Functions.DateDiffDay(eq.AcquisitionDate, decomm.DecommissionDate)
-                                                 })
-                                                 .AsNoTracking()
-                                                 .ToListAsync();
-
-                    // PHASE 4: Technicians who maintained irreparable equipment
-                    var techniciansWithEquipment = await (from m in _context.Maintenances
-                                                         where irreparableEquipmentIds.Contains(m.EquipmentId)
-                                                         join tech in _context.Technicals on m.TechnicalId equals tech.Id
-                                                         select new { tech.Id, tech.Name, tech.Specialty, m.EquipmentId })
-                                                         .AsNoTracking()
-                                                         .Distinct()
-                                                         .ToListAsync();
-
-                    // PHASE 5: Average ratings per technician
-                    var assessments = await _context.Assessments
-                        .GroupBy(a => a.TechnicalId)
-                        .Select(g => new
-                        {
-                            TechnicalId = g.Key,
-                            AverageRating = g.Average(x => x.Score.Value),
-                            AssessmentCount = g.Count()
-                        })
-                        .AsNoTracking()
-                        .ToListAsync();
-
-                    // PHASE 6: Analytical calculations per technician
-                    var results = new List<TechnicianPerformanceCorrelationDto>();
-                    var technicianGroups = techniciansWithEquipment.GroupBy(x => x.Id).ToList();
-
-                    foreach (var techGroup in technicianGroups)
-                    {
-                        var techId = techGroup.Key;
-                        var techName = techGroup.First().Name;
-                        var techSpecialty = techGroup.First().Specialty;
-
-                        // Irreparable equipment maintained by this technician
-                        var techEquipmentIds = techGroup.Select(x => x.EquipmentId).Distinct().ToList();
-                        var techEquipments = equipmentDetails.Where(e => techEquipmentIds.Contains(e.Equipment.Id)).ToList();
-                        var techCosts = maintenanceCosts.Where(c => techEquipmentIds.Contains(c.EquipmentId)).ToList();
-
-                        decimal totalCost = techCosts.Sum(c => c.TotalCost);
-                        double avgLongevityDays = techEquipments.Count > 0 ? techEquipments.Average(e => e.DaysInUse) : 0;
-
-                        // Average rating
-                        var techAssessment = assessments.FirstOrDefault(a => a.TechnicalId == techId);
-                        decimal avgRating = techAssessment?.AverageRating ?? 0;
-
-                        // Correlation score: 100 / (cost per day)
-                        decimal correlationScore = 0;
-                        if (avgLongevityDays > 0 && totalCost > 0)
-                        {
-                            decimal costPerDay = totalCost / (decimal)avgLongevityDays;
-                            correlationScore = 100m / costPerDay;
-                        }
-
-                        // Specialization: most maintained equipment type
-                        var specialization = techEquipments
-                            .GroupBy(e => e.EquipmentTypeName)
-                            .OrderByDescending(g => g.Count())
-                            .FirstOrDefault()?.Key ?? "Not specialized";
-
-                        results.Add(new TechnicianPerformanceCorrelationDto
-                        {
-                            Rank = 0, // Assigned in phase 7
-                            TechnicalName = techName,
-                            Specialty = techSpecialty,
-                            AverageRating = Math.Round(avgRating, 2),
-                            IrreparableEquipmentCount = techEquipments.Count,
-                            TotalMaintenanceCost = Math.Round(totalCost, 2),
-                            AverageCostPerEquipment = techEquipments.Any() ? Math.Round(totalCost / techEquipments.Count, 2) : 0,
-                            AverageLongevityDays = Math.Round(avgLongevityDays, 0),
-                            CorrelationScore = Math.Round(correlationScore, 2),
-                            EquipmentSpecialization = specialization
-                        });
-                    }
-
-                    // PHASE 7: Top 5 worst technicians by correlation score
-                    var top5Worst = results
-                        .OrderBy(r => r.CorrelationScore)
-                        .Take(5)
-                        .Select((item, index) => new TechnicianPerformanceCorrelationDto
-                        {
-                            Rank = index + 1,
-                            TechnicalName = item.TechnicalName,
-                            Specialty = item.Specialty,
-                            AverageRating = item.AverageRating,
-                            IrreparableEquipmentCount = item.IrreparableEquipmentCount,
-                            TotalMaintenanceCost = item.TotalMaintenanceCost,
-                            AverageCostPerEquipment = item.AverageCostPerEquipment,
-                            AverageLongevityDays = item.AverageLongevityDays,
-                            CorrelationScore = item.CorrelationScore,
-                            EquipmentSpecialization = item.EquipmentSpecialization
-                        })
-                        .ToList();
-
-                    return top5Worst;
-                }
-                catch (Exception ex)
-                {
-                    // Log error (no emojis or AI-like marks)
-                    Console.WriteLine($"ERROR in GetTechnicianMaintenanceCorrelationAsync: {ex.Message}");
+                    // No irreparable equipment found
                     return new List<TechnicianPerformanceCorrelationDto>();
                 }
-            }
-    
-        private readonly AppDbContext _context;
 
-        public ReportQueryService(AppDbContext context)
-        {
-            _context = context;
+                // PHASE 2: Maintenance costs per irreparable equipment
+                var maintenanceCosts = await _context.Maintenances
+                    .Where(m => irreparableEquipmentIds.Contains(m.EquipmentId))
+                    .GroupBy(m => m.EquipmentId)
+                    .Select(g => new
+                    {
+                        EquipmentId = g.Key,
+                        TotalCost = g.Sum(x => x.Cost),
+                        MaintenanceCount = g.Count()
+                    })
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var equipmentWithCosts = maintenanceCosts.Select(m => m.EquipmentId).ToList();
+
+                // PHASE 3: Longevity and type of irreparable equipment
+                var equipmentDetails = await (from eq in _context.Equipments
+                                                where equipmentWithCosts.Contains(eq.Id)
+                                                join decomm in _context.EquipmentDecommissions on eq.Id equals decomm.EquipmentId
+                                                join eqType in _context.EquipmentTypes on eq.EquipmentTypeId equals eqType.Id
+                                                select new
+                                                {
+                                                    Equipment = eq,
+                                                    Decommission = decomm,
+                                                    EquipmentTypeName = eqType.Name,
+                                                    DaysInUse = EF.Functions.DateDiffDay(eq.AcquisitionDate, decomm.DecommissionDate)
+                                                })
+                                                .AsNoTracking()
+                                                .ToListAsync();
+
+                // PHASE 4: Technicians who maintained irreparable equipment
+                var techniciansWithEquipment = await (from m in _context.Maintenances
+                                                        where irreparableEquipmentIds.Contains(m.EquipmentId)
+                                                        join tech in _context.Technicals on m.TechnicalId equals tech.Id
+                                                        select new { tech.Id, tech.Name, tech.Specialty, m.EquipmentId })
+                                                        .AsNoTracking()
+                                                        .Distinct()
+                                                        .ToListAsync();
+
+                // PHASE 5: Average ratings per technician
+                var assessments = await _context.Assessments
+                    .GroupBy(a => a.TechnicalId)
+                    .Select(g => new
+                    {
+                        TechnicalId = g.Key,
+                        AverageRating = g.Average(x => x.Score.Value),
+                        AssessmentCount = g.Count()
+                    })
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                // PHASE 6: Analytical calculations per technician
+                var results = new List<TechnicianPerformanceCorrelationDto>();
+                var technicianGroups = techniciansWithEquipment.GroupBy(x => x.Id).ToList();
+
+                foreach (var techGroup in technicianGroups)
+                {
+                    var techId = techGroup.Key;
+                    var techName = techGroup.First().Name;
+                    var techSpecialty = techGroup.First().Specialty;
+
+                    // Irreparable equipment maintained by this technician
+                    var techEquipmentIds = techGroup.Select(x => x.EquipmentId).Distinct().ToList();
+                    var techEquipments = equipmentDetails.Where(e => techEquipmentIds.Contains(e.Equipment.Id)).ToList();
+                    var techCosts = maintenanceCosts.Where(c => techEquipmentIds.Contains(c.EquipmentId)).ToList();
+
+                    decimal totalCost = techCosts.Sum(c => c.TotalCost);
+                    double avgLongevityDays = techEquipments.Count > 0 ? techEquipments.Average(e => e.DaysInUse) : 0;
+
+                    // Average rating
+                    var techAssessment = assessments.FirstOrDefault(a => a.TechnicalId == techId);
+                    decimal avgRating = techAssessment?.AverageRating ?? 0;
+
+                    // Correlation score: 100 / (cost per day)
+                    decimal correlationScore = 0;
+                    if (avgLongevityDays > 0 && totalCost > 0)
+                    {
+                        decimal costPerDay = totalCost / (decimal)avgLongevityDays;
+                        correlationScore = 100m / costPerDay;
+                    }
+
+                    // Specialization: most maintained equipment type
+                    var specialization = techEquipments
+                        .GroupBy(e => e.EquipmentTypeName)
+                        .OrderByDescending(g => g.Count())
+                        .FirstOrDefault()?.Key ?? "Not specialized";
+
+                    results.Add(new TechnicianPerformanceCorrelationDto
+                    {
+                        Rank = 0, // Assigned in phase 7
+                        TechnicalName = techName,
+                        Specialty = techSpecialty,
+                        AverageRating = Math.Round(avgRating, 2),
+                        IrreparableEquipmentCount = techEquipments.Count,
+                        TotalMaintenanceCost = Math.Round(totalCost, 2),
+                        AverageCostPerEquipment = techEquipments.Any() ? Math.Round(totalCost / techEquipments.Count, 2) : 0,
+                        AverageLongevityDays = Math.Round(avgLongevityDays, 0),
+                        CorrelationScore = Math.Round(correlationScore, 2),
+                        EquipmentSpecialization = specialization
+                    });
+                }
+
+                // PHASE 7: Top 5 worst technicians by correlation score
+                var top5Worst = results
+                    .OrderBy(r => r.CorrelationScore)
+                    .Take(5)
+                    .Select((item, index) => new TechnicianPerformanceCorrelationDto
+                    {
+                        Rank = index + 1,
+                        TechnicalName = item.TechnicalName,
+                        Specialty = item.Specialty,
+                        AverageRating = item.AverageRating,
+                        IrreparableEquipmentCount = item.IrreparableEquipmentCount,
+                        TotalMaintenanceCost = item.TotalMaintenanceCost,
+                        AverageCostPerEquipment = item.AverageCostPerEquipment,
+                        AverageLongevityDays = item.AverageLongevityDays,
+                        CorrelationScore = item.CorrelationScore,
+                        EquipmentSpecialization = item.EquipmentSpecialization
+                    })
+                    .ToList();
+
+                return top5Worst;
+            }
+            catch (Exception ex)
+            {
+                // Log error (no emojis or AI-like marks)
+                Console.WriteLine($"ERROR in GetTechnicianMaintenanceCorrelationAsync: {ex.Message}");
+                return new List<TechnicianPerformanceCorrelationDto>();
+            }
         }
+    
 
         /// <summary>
         /// Gets equipment decommissioned in the last year.
@@ -530,6 +531,5 @@ namespace Infrastructure.Reports
                 .OrderByDescending(x => x.SendDate)
                 .ToListAsync();
         }
-
     }
 }

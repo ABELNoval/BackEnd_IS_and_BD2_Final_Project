@@ -45,9 +45,9 @@ namespace Application.Services
         /// <returns>The created EquipmentDecommissionDto.</returns>
         public async Task<EquipmentDecommissionDto> CreateAsync(CreateEquipmentDecommissionDto dto, CancellationToken cancellationToken = default)
         {
-            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
-            if (!validationResult.IsValid)
-                throw new Application.Exceptions.ValidationException(validationResult.Errors);
+            // var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            // if (!validationResult.IsValid)
+            //     throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
             var equipment = await _equipmentRepository.GetByIdAsync(dto.EquipmentId, cancellationToken);
             if (equipment == null)
