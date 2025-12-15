@@ -1,6 +1,7 @@
 using Application.DTOs.Employee;
 using Application.Interfaces.Services;
 using Application.Validators.Employee;
+using Application.Exceptions;
 using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
@@ -14,29 +15,27 @@ namespace Application.Services
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly IValidator<CreateEmployeeDto> _createValidator;
-        private readonly IValidator<UpdateEmployeeDto> _updateValidator;
+
 
         public EmployeeService(
             IEmployeeRepository employeeRepository,
             IUnitOfWork unitOfWork,
-            IMapper mapper,
-            IValidator<CreateEmployeeDto> createValidator,
-            IValidator<UpdateEmployeeDto> updateValidator)
+            IMapper mapper)
         {
             _employeeRepository = employeeRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _createValidator = createValidator;
-            _updateValidator = updateValidator;
         }
 
         public async Task<EmployeeDto> CreateAsync(CreateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
-            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            // 1️⃣ Validar DTO (Application Layer)
+            var validator = new CreateEmployeeDtoValidator();
+            var validationResult = await validator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
+            // 2️⃣ Domain valida y puede lanzar InvalidEntityException
             var entity = Employee.Create(
                 dto.Name,
                 Email.Create(dto.Email),
@@ -52,13 +51,15 @@ namespace Application.Services
 
         public async Task<EmployeeDto?> UpdateAsync(UpdateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
-            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            // Validar
+            var validator = new UpdateEmployeeDtoValidator();
+            var validationResult = await validator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
             var existing = await _employeeRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
-                return null;
+                throw new EntityNotFoundException(nameof(Employee), dto.Id);
 
             var updatedEmail = existing.Email.Update(dto.Email);
             var updatedPasswordHash = string.IsNullOrWhiteSpace(dto.Password) 
@@ -88,7 +89,7 @@ namespace Application.Services
 
             var existing = await _employeeRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
-                return false;
+                throw new EntityNotFoundException(nameof(Employee), id);
 
             await _employeeRepository.DeleteAsync(id, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -104,7 +105,9 @@ namespace Application.Services
             }
 
             var entity = await _employeeRepository.GetByIdAsync(id, cancellationToken);
-            return entity == null ? null : _mapper.Map<EmployeeDto>(entity);
+            if (entity == null)
+                throw new EntityNotFoundException(nameof(Employee), id);
+            return _mapper.Map<EmployeeDto>(entity);
         }
 
         public async Task<IEnumerable<EmployeeDto>> GetAllAsync(CancellationToken cancellationToken = default)

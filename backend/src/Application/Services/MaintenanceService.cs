@@ -5,6 +5,7 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
 using FluentValidation;
+using Application.Exceptions;
 
 namespace Application.Services
 {
@@ -40,14 +41,12 @@ namespace Application.Services
         {
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
-            // Get the aggregate root Equipment
             var equipment = await _equipmentRepository.GetByIdAsync(dto.EquipmentId, cancellationToken);
             if (equipment == null)
-                throw new ValidationException($"Equipment with ID {dto.EquipmentId} not found");
+                throw new EntityNotFoundException(nameof(Equipment), dto.EquipmentId);
 
-            // Equipment creates and manages the Maintenance entity
             equipment.AddMaintenance(
                 dto.TechnicalId,
                 dto.MaintenanceDate,
@@ -69,11 +68,11 @@ namespace Application.Services
         {
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
             var existing = await _maintenanceRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
-                return null;
+                throw new EntityNotFoundException(nameof(Maintenance), dto.Id);
 
             existing.UpdateBasicInfo(dto.MaintenanceDate, dto.MaintenanceTypeId, dto.Cost);
 
@@ -93,7 +92,7 @@ namespace Application.Services
 
             var existing = await _maintenanceRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
-                return false;
+                throw new EntityNotFoundException(nameof(Maintenance), id);
 
             await _maintenanceRepository.DeleteAsync(id, cancellationToken);
             var result = await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -109,7 +108,9 @@ namespace Application.Services
                 throw new ArgumentException("ID cannot be empty", nameof(id));
 
             var maintenance = await _maintenanceRepository.GetByIdAsync(id, cancellationToken);
-            return maintenance == null ? null : _mapper.Map<MaintenanceDto>(maintenance);
+            if (maintenance == null)
+                throw new EntityNotFoundException(nameof(Maintenance), id);
+            return _mapper.Map<MaintenanceDto>(maintenance);
         }
 
         /// <summary>
