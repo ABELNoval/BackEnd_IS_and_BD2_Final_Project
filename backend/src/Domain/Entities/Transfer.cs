@@ -24,6 +24,7 @@ public class Transfer : Entity
     /// </summary>
     public Guid TargetDepartmentId { get; private set; }
 
+
     /// <summary>
     /// ID of the responsible person authorizing the transfer
     /// </summary>

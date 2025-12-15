@@ -211,6 +211,12 @@ namespace Infrastructure.Persistence
                     .IsRequired();
 
                 entity.HasIndex(t => t.TransferDate);
+
+                // Foreign key: RecipientId -> Employee
+                entity.HasOne<Employee>()
+                    .WithMany()
+                    .HasForeignKey("RecipientId")
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             /// <summary>
@@ -232,6 +238,12 @@ namespace Infrastructure.Persistence
                     .IsRequired();
 
                 entity.HasIndex(d => d.DecommissionDate);
+
+                // Foreign key: RecipientId -> Employee
+                entity.HasOne<Employee>()
+                    .WithMany()
+                    .HasForeignKey("RecipientId")
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             /// <summary>

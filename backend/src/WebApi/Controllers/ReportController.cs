@@ -24,6 +24,15 @@ namespace WebApi.Controllers
         }
 
         // ENDPOINTS DE EXPORTACIÓN DIRECTA 
+        // ----------------------------------------------------------------------
+        // ENDPOINTS DE EXPORTACIÓN DIRECTA
+        // ----------------------------------------------------------------------
+        [HttpGet("export/sent-to-department/{departmentId}/{format}")]
+        public async Task<IActionResult> ExportSentToDepartment(Guid departmentId, string format)
+        {
+            var data = await _queryService.GetEquipmentSentToDepartmentAsync(departmentId);
+            return await GenerateReportFile("EquipmentSentToDepartment", format, data);
+        }
         [HttpGet("export/decommission-last-year/{format}")]
         public async Task<IActionResult> ExportDecommissionLastYear(string format)
         {
@@ -273,6 +282,7 @@ namespace WebApi.Controllers
                 { "EquipmentTransfersBetweenSections", "traslados-secciones" },
                 { "TechnicianCorrelationWorst", "tecnicos-correlacion-peor" },
                 // For department-specific exported file names we use the base name plus dept id at call site
+                { "EquipmentSentToDepartment", "equipos-enviados-departamento" }
             };
 
             var extensions = new Dictionary<string, string>
