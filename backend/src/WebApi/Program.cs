@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using FluentValidation;
 using Application.Validators.Generic;
 using Application.Validators.Assessment;
+using WebAPI.ExceptionHandlers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,6 +87,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseRouting();
 
