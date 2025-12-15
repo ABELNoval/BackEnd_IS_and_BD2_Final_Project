@@ -12,16 +12,18 @@ namespace Application.Services
     public class DepartmentService : IDepartmentService
     {
         private readonly IDepartmentRepository _departmentRepository;
+        private readonly ISectionRepository _sectionRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-
         public DepartmentService(
             IDepartmentRepository departmentRepository,
+            ISectionRepository sectionRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _departmentRepository = departmentRepository;
+            _sectionRepository = sectionRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
@@ -34,7 +36,7 @@ namespace Application.Services
         /// <returns>The created DepartmentDto.</returns>
         public async Task<DepartmentDto> CreateAsync(CreateDepartmentDto dto, CancellationToken cancellationToken = default)
         {
-            var validator = new CreateDepartmentDtoValidator();
+            var validator = new CreateDepartmentDtoValidator(_sectionRepository);
             var validationResult = await validator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
                 throw new Application.Exceptions.ValidationException(validationResult.Errors);
@@ -53,7 +55,7 @@ namespace Application.Services
         /// <returns>The updated DepartmentDto.</returns>
         public async Task<DepartmentDto?> UpdateAsync(UpdateDepartmentDto dto, CancellationToken cancellationToken = default)
         {
-            var validator = new UpdateDepartmentDtoValidator();
+            var validator = new UpdateDepartmentDtoValidator(_departmentRepository, _sectionRepository);
             var validationResult = await validator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
                 throw new Application.Exceptions.ValidationException(validationResult.Errors);

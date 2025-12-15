@@ -358,14 +358,15 @@ namespace Domain.Tests.Entities
                     .WithLocationTypeId(Domain.Enumerations.LocationType.Department.Id)
                     .Build();
 
-                var strategy = new Domain.Strategies.DepartmentDestinationStrategy(newDepartmentId);
+                var strategy = new Domain.Strategies.DepartmentDestinationStrategy();
                 var responsibleId = Guid.NewGuid();
                 var technicalId = Guid.NewGuid();
                 var decommissionDate = DateTime.UtcNow;
                 var reason = "Traslado por baja";
+                var context = Domain.ValueObjects.DecommissionContext.ForDepartment(newDepartmentId, responsibleId, decommissionDate);
 
                 // Act
-                equipment.AddDecommission(strategy, responsibleId, technicalId, decommissionDate, reason);
+                equipment.AddDecommission(strategy, context, technicalId, reason);
 
                 // Assert
                 Assert.Equal(newDepartmentId, equipment.DepartmentId);
@@ -391,9 +392,10 @@ namespace Domain.Tests.Entities
                 var technicalId = Guid.NewGuid();
                 var decommissionDate = DateTime.UtcNow;
                 var reason = "Baja por traslado a almacén";
+                var context = Domain.ValueObjects.DecommissionContext.ForWarehouse(responsibleId, decommissionDate);
 
                 // Act
-                equipment.AddDecommission(strategy, responsibleId, technicalId, decommissionDate, reason);
+                equipment.AddDecommission(strategy, context, technicalId, reason);
 
                 // Assert
                 Assert.Null(equipment.DepartmentId);
@@ -415,13 +417,12 @@ namespace Domain.Tests.Entities
                     .Build();
 
                 var strategy = new Domain.Strategies.DisposalDestinationStrategy();
-                var responsibleId = Guid.NewGuid();
                 var technicalId = Guid.NewGuid();
-                var decommissionDate = DateTime.UtcNow;
                 var reason = "Baja definitiva por desecho";
+                var context = Domain.ValueObjects.DecommissionContext.ForDisposal();
 
                 // Act
-                equipment.AddDecommission(strategy, responsibleId, technicalId, decommissionDate, reason);
+                equipment.AddDecommission(strategy, context, technicalId, reason);
 
                 // Assert
                 Assert.Null(equipment.DepartmentId);
@@ -443,14 +444,13 @@ namespace Domain.Tests.Entities
                         .Build();
 
                     var strategy = new Domain.Strategies.DisposalDestinationStrategy();
-                    var responsibleId = Guid.NewGuid();
                     var technicalId = Guid.NewGuid();
-                    var decommissionDate = DateTime.UtcNow;
                     var reason = "Intento de baja sobre equipo ya desechado";
+                    var context = Domain.ValueObjects.DecommissionContext.ForDisposal();
 
                     // Act & Assert
                     Assert.Throws<EquipmentAlreadyDisposedException>(() =>
-                        equipment.AddDecommission(strategy, responsibleId, technicalId, decommissionDate, reason));
+                        equipment.AddDecommission(strategy, context, technicalId, reason));
                 }
         
     }

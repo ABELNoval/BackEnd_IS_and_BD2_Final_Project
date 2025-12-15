@@ -13,29 +13,35 @@ namespace Application.Services
     public class EmployeeService : IEmployeeService
     {
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IDepartmentRepository _departmentRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
 
-
         public EmployeeService(
             IEmployeeRepository employeeRepository,
+            IDepartmentRepository departmentRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper)
         {
             _employeeRepository = employeeRepository;
+            _departmentRepository = departmentRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
 
+        /// <summary>
+        /// Creates a new employee after validating the DTO.
+        /// </summary>
+        /// <param name="dto">The CreateEmployeeDto to validate and create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created EmployeeDto.</returns>
         public async Task<EmployeeDto> CreateAsync(CreateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
-            // 1️⃣ Validar DTO (Application Layer)
-            var validator = new CreateEmployeeDtoValidator();
+            var validator = new CreateEmployeeDtoValidator(_employeeRepository, _departmentRepository);
             var validationResult = await validator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
                 throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
-            // 2️⃣ Domain valida y puede lanzar InvalidEntityException
             var entity = Employee.Create(
                 dto.Name,
                 Email.Create(dto.Email),
@@ -49,10 +55,15 @@ namespace Application.Services
             return _mapper.Map<EmployeeDto>(entity);
         }
 
+        /// <summary>
+        /// Updates an existing employee after validating the DTO.
+        /// </summary>
+        /// <param name="dto">The UpdateEmployeeDto to validate and update.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated EmployeeDto.</returns>
         public async Task<EmployeeDto?> UpdateAsync(UpdateEmployeeDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar
-            var validator = new UpdateEmployeeDtoValidator();
+            var validator = new UpdateEmployeeDtoValidator(_employeeRepository, _departmentRepository);
             var validationResult = await validator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
                 throw new Application.Exceptions.ValidationException(validationResult.Errors);
@@ -79,13 +90,16 @@ namespace Application.Services
             return _mapper.Map<EmployeeDto>(existing);
         }
 
+        /// <summary>
+        /// Deletes an employee by ID.
+        /// </summary>
+        /// <param name="id">The employee ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if deleted, otherwise throws EntityNotFoundException.</returns>
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var existing = await _employeeRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
@@ -96,13 +110,16 @@ namespace Application.Services
             return true;
         }
 
+        /// <summary>
+        /// Gets an employee by ID.
+        /// </summary>
+        /// <param name="id">The employee ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The EmployeeDto if found, otherwise throws EntityNotFoundException.</returns>
         public async Task<EmployeeDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var entity = await _employeeRepository.GetByIdAsync(id, cancellationToken);
             if (entity == null)
@@ -110,12 +127,23 @@ namespace Application.Services
             return _mapper.Map<EmployeeDto>(entity);
         }
 
+        /// <summary>
+        /// Gets all employees.
+        /// </summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A collection of EmployeeDto.</returns>
         public async Task<IEnumerable<EmployeeDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var entities = await _employeeRepository.GetAllAsync(cancellationToken);
             return _mapper.Map<IEnumerable<EmployeeDto>>(entities);
         }
 
+        /// <summary>
+        /// Filters employees by a query string.
+        /// </summary>
+        /// <param name="query">The filter query.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>A collection of EmployeeDto matching the filter.</returns>
         public async Task<IEnumerable<EmployeeDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
             var entities = await _employeeRepository.FilterAsync(query, cancellationToken);

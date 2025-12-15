@@ -13,15 +13,15 @@ namespace Domain.Tests.Entities
             // Arrange
             var name = "Informática";
             var sectionId = Guid.NewGuid();
-            var responsibleId = Guid.NewGuid();
+
 
             // Act
-            var dept = Department.Create(name, sectionId, responsibleId);
+            var dept = Department.Create(name, sectionId);
 
             // Assert
             Assert.Equal(name, dept.Name);
             Assert.Equal(sectionId, dept.SectionId);
-            Assert.Equal(responsibleId, dept.ResponsibleId);
+            
         }
 
         [Theory]
@@ -30,47 +30,37 @@ namespace Domain.Tests.Entities
         public void Create_EmptyName_ThrowsInvalidEntityException(string name)
         {
             // Arrange
+
             var sectionId = Guid.NewGuid();
-            var responsibleId = Guid.NewGuid();
 
             // Act & Assert
-            Assert.Throws<InvalidEntityException>(() => Department.Create(name, sectionId, responsibleId));
+            Assert.Throws<InvalidEntityException>(() => Department.Create(name, sectionId));
         }
 
         [Fact]
         public void Create_NameTooLong_ThrowsInvalidEntityException()
         {
             // Arrange
+
             var name = new string('a', 101); // 101 chars
             var sectionId = Guid.NewGuid();
-            var responsibleId = Guid.NewGuid();
 
             // Act & Assert
-            Assert.Throws<InvalidEntityException>(() => Department.Create(name, sectionId, responsibleId));
+            Assert.Throws<InvalidEntityException>(() => Department.Create(name, sectionId));
         }
 
         [Fact]
         public void Create_EmptySectionId_ThrowsInvalidEntityException()
         {
             // Arrange
+
             var name = "Informática";
             var sectionId = Guid.Empty;
-            var responsibleId = Guid.NewGuid();
 
             // Act & Assert
-            Assert.Throws<InvalidEntityException>(() => Department.Create(name, sectionId, responsibleId));
+            Assert.Throws<InvalidEntityException>(() => Department.Create(name, sectionId));
         }
 
-        [Fact]
-        public void Create_EmptyResponsibleId_ThrowsInvalidEntityException()
-        {
-            // Arrange
-            var name = "Informática";
-            var sectionId = Guid.NewGuid();
-            var responsibleId = Guid.Empty;
-
-            // Act & Assert
-            Assert.Throws<InvalidEntityException>(() => Department.Create(name, sectionId, responsibleId));
+       
         }
-    }
 }
