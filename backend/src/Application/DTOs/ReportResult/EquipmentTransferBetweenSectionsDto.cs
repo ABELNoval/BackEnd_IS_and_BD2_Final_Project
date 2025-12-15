@@ -56,15 +56,5 @@ namespace Application.DTOs.ReportResult
         /// Email of the person who sent the equipment.
         /// </summary>
         public string SenderEmail { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Name of the person who received the equipment.
-        /// </summary>
-        public string ReceiverName { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Email of the person who received the equipment.
-        /// </summary>
-        public string ReceiverEmail { get; set; } = string.Empty;
     }
 }

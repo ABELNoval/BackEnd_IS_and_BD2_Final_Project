@@ -1,4 +1,4 @@
-using Application.Common.Exceptions;
+using Application.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.ExceptionHandlers;

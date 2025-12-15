@@ -31,11 +31,6 @@ public class Transfer : Entity
     public Guid ResponsibleId { get; private set; }
 
     /// <summary>
-    /// ID of the employee who receives the equipment (Recipient)
-    /// </summary>
-    public Guid RecipientId { get; private set; }
-
-    /// <summary>
     /// Date when the transfer occurred
     /// </summary>
     public DateTime TransferDate { get; private set; }
@@ -58,21 +53,18 @@ public class Transfer : Entity
         Guid sourceDepartmentId,
         Guid targetDepartmentId,
         Guid responsibleId,
-        Guid recipientId,
         DateTime transferDate)
     {
         GenerateId();
         ValidateGuidProperty(equipmentId, "Equipment ID");
         ValidateDepartmentIds(sourceDepartmentId, targetDepartmentId);
         ValidateGuidProperty(responsibleId, "Responsible ID");
-        ValidateGuidProperty(recipientId, "Recipient ID");
         ValidateTransferDate(transferDate);
         
         EquipmentId = equipmentId;
         SourceDepartmentId = sourceDepartmentId;
         TargetDepartmentId = targetDepartmentId;
         ResponsibleId = responsibleId;
-        RecipientId = recipientId;
         TransferDate = transferDate;
         CreatedAt = DateTime.UtcNow;
     }
@@ -92,9 +84,8 @@ public class Transfer : Entity
         Guid sourceDepartmentId,
         Guid targetDepartmentId,
         Guid responsibleId,
-        Guid recipientId,
         DateTime transferDate)
-        => new(equipmentId, sourceDepartmentId, targetDepartmentId, responsibleId, recipientId, transferDate);
+        => new(equipmentId, sourceDepartmentId, targetDepartmentId, responsibleId, transferDate);
 
     /// <summary>
     /// Updates transfer date and responsible person atomically
@@ -198,7 +189,6 @@ public class Transfer : Entity
         ValidateGuidProperty(EquipmentId, "Equipment ID");
         ValidateDepartmentIds(SourceDepartmentId, TargetDepartmentId);
         ValidateGuidProperty(ResponsibleId, "Responsible ID");
-        ValidateGuidProperty(RecipientId, "Recipient ID");
         ValidateTransferDate(TransferDate);
     }
 

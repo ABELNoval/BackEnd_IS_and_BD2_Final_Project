@@ -23,7 +23,6 @@ namespace Infrastructure.Reports
                         join targetDept in _context.Departments on transfer.TargetDepartmentId equals targetDept.Id
                         join targetSection in _context.Sections on targetDept.SectionId equals targetSection.Id
                         join sender in _context.Responsibles on transfer.ResponsibleId equals sender.Id
-                        join recipient in _context.Users on transfer.RecipientId equals recipient.Id
                         where sourceSection.Id != targetSection.Id
                         select new EquipmentTransferBetweenSectionsDto
                         {
@@ -37,8 +36,6 @@ namespace Infrastructure.Reports
                             TargetDepartment = targetDept.Name,
                             SenderName = sender.Name,
                             SenderEmail = sender.Email.Value,
-                            ReceiverName = recipient.Name,
-                            ReceiverEmail = recipient.Email.Value
                         };
 
             return await query

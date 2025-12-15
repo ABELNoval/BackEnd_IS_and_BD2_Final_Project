@@ -1,4 +1,5 @@
-using Application.Common.Exceptions;
+using Application.Exceptions;
+using Domain.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 
 namespace WebAPI.ExceptionHandlers;
