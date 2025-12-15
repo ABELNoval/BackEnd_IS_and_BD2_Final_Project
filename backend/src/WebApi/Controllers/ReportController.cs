@@ -27,6 +27,12 @@ namespace WebApi.Controllers
         // ----------------------------------------------------------------------
         // ENDPOINTS DE EXPORTACIÓN DIRECTA
         // ----------------------------------------------------------------------
+        [HttpGet("export/sent-to-department/{departmentId}/{format}")]
+        public async Task<IActionResult> ExportSentToDepartment(Guid departmentId, string format)
+        {
+            var data = await _queryService.GetEquipmentSentToDepartmentAsync(departmentId);
+            return await GenerateReportFile("EquipmentSentToDepartment", format, data);
+        }
         [HttpGet("export/decommission-last-year/{format}")]
         public async Task<IActionResult> ExportDecommissionLastYear(string format)
         {
@@ -119,7 +125,8 @@ namespace WebApi.Controllers
                 { "EquipmentDecommissionLastYear", "equipos-dados-de-baja" },
                 { "EquipmentMaintenanceHistory", "historial-mantenimiento" },
                 { "FrequentMaintenanceEquipment", "equipos-mantenimiento-frecuente" },
-                { "TechnicianPerformanceBonus", "rendimiento-tecnicos-bonificaciones" }
+                { "TechnicianPerformanceBonus", "rendimiento-tecnicos-bonificaciones" },
+                { "EquipmentSentToDepartment", "equipos-enviados-departamento" }
             };
 
             var extensions = new Dictionary<string, string>
