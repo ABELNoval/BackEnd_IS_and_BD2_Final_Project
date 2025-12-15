@@ -15,9 +15,10 @@ namespace Domain.Tests.Entities
             var name = "Juan Pérez";
             var email = Email.Create("juan.perez@example.com");
             var passwordHash = PasswordHash.Create("hashedpassword123");
+            var departmentId = Guid.NewGuid();
 
             // Act
-            var responsible = Responsible.Create(name, email, passwordHash);
+            var responsible = Responsible.Create(name, email, passwordHash, departmentId);
 
             // Assert
             Assert.Equal(name, responsible.Name);
@@ -32,10 +33,11 @@ namespace Domain.Tests.Entities
             // Arrange
             var email = Email.Create("juan.perez@example.com");
             var passwordHash = PasswordHash.Create("hashedpassword123");
+            var departmentId = Guid.NewGuid();
 
             // Act & Assert
             Assert.Throws<InvalidEntityException>(() =>
-                Responsible.Create("   ", email, passwordHash));
+                Responsible.Create("   ", email, passwordHash, departmentId));
         }
 
         [Fact]
@@ -45,10 +47,11 @@ namespace Domain.Tests.Entities
             var longName = new string('a', 101); // 101 caracteres
             var email = Email.Create("juan.perez@example.com");
             var passwordHash = PasswordHash.Create("hashedpassword123");
+            var departmentId = Guid.NewGuid();
 
             // Act & Assert
             Assert.Throws<InvalidEntityException>(() =>
-                Responsible.Create(longName, email, passwordHash));
+                Responsible.Create(longName, email, passwordHash, departmentId));
         }
     }
 }

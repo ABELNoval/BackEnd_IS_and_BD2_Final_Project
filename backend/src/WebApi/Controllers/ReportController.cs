@@ -22,78 +22,16 @@ namespace WebApi.Controllers
             _reportService = reportService;
             _logger = logger;
         }
+        
 
         // ----------------------------------------------------------------------
-        // 🔥 ENDPOINTS GET PARA DATOS JSON (para mostrar en tabla)
+        // ENDPOINTS DE EXPORTACIÓN DIRECTA
         // ----------------------------------------------------------------------
-        [HttpGet("decommission-last-year")]
-        public async Task<IActionResult> GetDecommissionLastYear()
-        {
-            try
-            {
-                var result = await _queryService.GetEquipmentDecommissionLastYearAsync();
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en GetDecommissionLastYear");
-                return StatusCode(500, "Error interno del servidor");
-            }
-        }
-
-        [HttpGet("maintenance-history/{equipmentId}")]
-        public async Task<IActionResult> GetMaintenanceHistory(Guid equipmentId)
-        {
-            try
-            {
-                var result = await _queryService.GetEquipmentMaintenanceHistoryAsync(equipmentId);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en GetMaintenanceHistory");
-                return StatusCode(500, "Error interno del servidor");
-            }
-        }
-
-        [HttpGet("frequent-maintenance")]
-        public async Task<IActionResult> GetFrequentMaintenance()
-        {
-            try
-            {
-                var result = await _queryService.GetFrequentMaintenanceEquipmentAsync();
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en GetFrequentMaintenance");
-                return StatusCode(500, "Error interno del servidor");
-            }
-        }
-
-        [HttpGet("technician-bonus")]
-        public async Task<IActionResult> GetTechnicianBonus()
-        {
-            try
-            {
-                var result = await _queryService.GetTechnicianPerformanceBonusAsync();
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error en GetTechnicianBonus");
-                return StatusCode(500, "Error interno del servidor");
-            }
-        }
-
-        // ----------------------------------------------------------------------
-        // 🔥 ENDPOINTS DE EXPORTACIÓN DIRECTA (NUEVOS - PARA FRONTEND)
-        // ----------------------------------------------------------------------
-
         [HttpGet("export/decommission-last-year/{format}")]
         public async Task<IActionResult> ExportDecommissionLastYear(string format)
         {
-            return await GenerateReportFile("EquipmentDecommissionLastYear", format, null);
+            var data = await _queryService.GetEquipmentDecommissionLastYearAsync();
+            return await GenerateReportFile("EquipmentDecommissionLastYear", format, data);
         }
 
         [HttpGet("export/maintenance-history/{equipmentId}/{format}")]
@@ -106,13 +44,15 @@ namespace WebApi.Controllers
         [HttpGet("export/frequent-maintenance/{format}")]
         public async Task<IActionResult> ExportFrequentMaintenance(string format)
         {
-            return await GenerateReportFile("FrequentMaintenanceEquipment", format, null);
+            var data = await _queryService.GetFrequentMaintenanceEquipmentAsync();
+            return await GenerateReportFile("FrequentMaintenanceEquipment", format, data);
         }
 
         [HttpGet("export/technician-bonus/{format}")]
         public async Task<IActionResult> ExportTechnicianBonus(string format)
         {
-            return await GenerateReportFile("TechnicianPerformanceBonus", format, null);
+            var data = await _queryService.GetTechnicianPerformanceBonusAsync();
+            return await GenerateReportFile("TechnicianPerformanceBonus", format, data);
         }
 
         // ----------------------------------------------------------------------
@@ -122,18 +62,6 @@ namespace WebApi.Controllers
         {
             try
             {
-                // Si no nos pasan datos, los obtenemos del servicio
-                if (data == null)
-                {
-                    data = reportType switch
-                    {
-                        "EquipmentDecommissionLastYear" => await _queryService.GetEquipmentDecommissionLastYearAsync(),
-                        "FrequentMaintenanceEquipment" => await _queryService.GetFrequentMaintenanceEquipmentAsync(),
-                        "TechnicianPerformanceBonus" => await _queryService.GetTechnicianPerformanceBonusAsync(),
-                        _ => null
-                    };
-                }
-
                 if (data == null)
                 {
                     return BadRequest($"No se pudo obtener datos para el reporte: {reportType}");
@@ -205,34 +133,6 @@ namespace WebApi.Controllers
             var extension = extensions.ContainsKey(format.ToLower()) ? extensions[format.ToLower()] : format;
             
             return $"{baseName}-{DateTime.Now:yyyyMMdd}.{extension}";
-        }
-
-        // ----------------------------------------------------------------------
-        // 🔥 ENDPOINTS POST ORIGINALES (mantener para compatibilidad)
-        // ----------------------------------------------------------------------
-        [HttpPost("export/pdf")]
-        public async Task<IActionResult> ExportPdf([FromBody] ReportRequestDto request)
-        {
-            var bytes = await _reportService.GeneratePdfReport(request);
-            return File(bytes, "application/pdf", $"{request.ReportType}.pdf");
-        }
-
-        [HttpPost("export/excel")]
-        public async Task<IActionResult> ExportExcel([FromBody] ReportRequestDto request)
-        {
-            var bytes = await _reportService.GenerateExcelReport(request);
-            return File(bytes, 
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
-                        $"{request.ReportType}.xlsx");
-        }
-
-        [HttpPost("export/word")]
-        public async Task<IActionResult> ExportWord([FromBody] ReportRequestDto request)
-        {
-            var bytes = await _reportService.GenerateWordReport(request);
-            return File(bytes, 
-                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
-                        $"{request.ReportType}.docx");
         }
     }
 }

@@ -5,6 +5,7 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
 using FluentValidation;
+using Application.Exceptions;
 
 namespace Application.Services
 {
@@ -34,48 +35,49 @@ namespace Application.Services
         }
 
         /// <summary>
-        /// Creates a new assessment by calling Technical.AddAssessment()
+        /// Creates a new assessment by calling Technical.AddAssessment().
         /// </summary>
+        /// <param name="dto">The CreateAssessmentDto to validate and create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created AssessmentDTO.</returns>
         public async Task<AssessmentDTO> CreateAsync(CreateAssessmentDto dto, CancellationToken cancellationToken = default)
         {
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
-            // Get the aggregate root Technical
             var technical = await _technicalRepository.GetByIdAsync(dto.TechnicalId, cancellationToken);
             if (technical == null)
-                throw new ValidationException($"Technical with ID {dto.TechnicalId} not found");
+                throw new EntityNotFoundException(nameof(Technical), dto.TechnicalId);
 
-            // Technical creates and manages the Assessment entity
             technical.AddAssessment(
                 dto.DirectorId,
                 dto.Score,
                 dto.Comment);
 
-            // Save the aggregate root, which includes the new assessment
-            await _technicalRepository.UpdateAsync(technical);
+            var assessment = technical.Assessments.Last();
+
+            await _repository.CreateAsync(assessment);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Return the last assessment added
-            var assessment = technical.Assessments.Last();
             return _mapper.Map<AssessmentDTO>(assessment);
         }
 
-        // Actualizar evaluación
+        /// <summary>
+        /// Updates an existing assessment after validating the DTO.
+        /// </summary>
+        /// <param name="dto">The UpdateAssessmentDto to validate and update.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated AssessmentDTO, or throws EntityNotFoundException if not found.</returns>
         public async Task<AssessmentDTO?> UpdateAsync(UpdateAssessmentDto dto, CancellationToken cancellationToken = default)
         {
-            // Validar DTO usando FluentValidation
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-            {
-                throw new ValidationException(validationResult.Errors);
-            }
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
             var existing = await _repository.GetByIdAsync(dto.Id, cancellationToken);
-
             if (existing == null)
-                return null;
+                throw new EntityNotFoundException(nameof(Assessment), dto.Id);
 
             existing.UpdateScore(dto.Score);
             existing.UpdateComment(dto.Comment);
@@ -86,38 +88,43 @@ namespace Application.Services
             return _mapper.Map<AssessmentDTO>(existing);
         }
 
-        // Eliminar evaluación
+        /// <summary>
+        /// Deletes an assessment by ID.
+        /// </summary>
+        /// <param name="id">The assessment ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if deleted, otherwise throws EntityNotFoundException.</returns>
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var existing = await _repository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
-                return false;
+                throw new EntityNotFoundException(nameof(Assessment), id);
 
             await _repository.DeleteAsync(id, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return true;
         }
 
-        // Obtener por Id
+        /// <summary>
+        /// Gets an assessment by ID.
+        /// </summary>
+        /// <param name="id">The assessment ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The AssessmentDTO if found, otherwise throws EntityNotFoundException.</returns>
         public async Task<AssessmentDTO?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var entity = await _repository.GetByIdAsync(id, cancellationToken);
-            return entity is null ? null : _mapper.Map<AssessmentDTO>(entity);
+            if (entity == null)
+                throw new EntityNotFoundException(nameof(Assessment), id);
+            return _mapper.Map<AssessmentDTO>(entity);
         }
 
-        // Obtener todas
         public async Task<IEnumerable<AssessmentDTO>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var list = await _repository.GetAllAsync(cancellationToken);

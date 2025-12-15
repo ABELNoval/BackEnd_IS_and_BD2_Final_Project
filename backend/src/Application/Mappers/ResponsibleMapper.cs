@@ -15,6 +15,12 @@ namespace Application.Mappers
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email.Value))
                 .ForMember(dest => dest.DepartmentId, opt => opt.MapFrom(src => src.DepartmentId));
+       
+            // DTO → Entity
+            CreateMap<CreateResponsibleDto, Responsible>()
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.DepartmentId, opt => opt.MapFrom(src => src.DepartmentId));
         }
     }
 }

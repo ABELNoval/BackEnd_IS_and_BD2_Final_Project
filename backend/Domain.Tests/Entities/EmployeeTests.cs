@@ -17,7 +17,8 @@ namespace Domain.Tests.Entities
             var passwordHash = PasswordHash.Create("hashed_password");
 
             // Act
-            var employee = Employee.Create(name, email, passwordHash);
+            var departmentId = Guid.NewGuid();
+            var employee = Employee.Create(name, email, passwordHash, departmentId);
 
             // Assert
             Assert.Equal(name, employee.Name);
@@ -35,7 +36,8 @@ namespace Domain.Tests.Entities
             var passwordHash = PasswordHash.Create("hashed_password");
 
             // Act & Assert
-            Assert.Throws<InvalidEntityException>(() => Employee.Create(name, email, passwordHash));
+            var departmentId = Guid.NewGuid();
+            Assert.Throws<InvalidEntityException>(() => Employee.Create(name, email, passwordHash, departmentId));
         }
     }
 }

@@ -29,7 +29,7 @@ public class DepartmentDestinationStrategy : IDestinationStrategy
                 "Target department ID is required for department destination");
         }
         
-        if (context.ResponsibleId == Guid.Empty)
+        if (context.RecipientId == Guid.Empty)
         {
             throw new InvalidDestinationException(
                 DestinyType.Department,

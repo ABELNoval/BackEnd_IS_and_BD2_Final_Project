@@ -8,6 +8,7 @@ using Domain.Interfaces;
 using Domain.Strategies;
 using Domain.ValueObjects;
 using FluentValidation;
+using Application.Exceptions;
 
 namespace Application.Services
 {
@@ -37,70 +38,68 @@ namespace Application.Services
         }
 
         /// <summary>
-        /// Creates a new equipment decommission record by calling Equipment.AddDecommission()
-        /// Follows CQS pattern: creates context (query-like), validates, then applies (command-like)
+        /// Creates a new equipment decommission record by calling Equipment.AddDecommission().
         /// </summary>
+        /// <param name="dto">The CreateEquipmentDecommissionDto to validate and create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created EquipmentDecommissionDto.</returns>
         public async Task<EquipmentDecommissionDto> CreateAsync(CreateEquipmentDecommissionDto dto, CancellationToken cancellationToken = default)
         {
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
-            // Get the aggregate root Equipment
             var equipment = await _equipmentRepository.GetByIdAsync(dto.EquipmentId, cancellationToken);
             if (equipment == null)
-                throw new ValidationException($"Equipment with ID {dto.EquipmentId} not found");
+                throw new EntityNotFoundException(nameof(Equipment), dto.EquipmentId);
 
-            // Step 1: Create context based on destiny type (validates common data)
             var destinyType = DestinyType.FromId(dto.DestinyTypeId);
             if (destinyType == null)
-                throw new ValidationException($"Invalid destiny type ID: {dto.DestinyTypeId}");
+                throw new EntityNotFoundException(nameof(DestinyType), dto.DestinyTypeId);
 
             var context = CreateDecommissionContext(destinyType, dto);
-
-            // Step 2: Create the destination strategy (factory pattern)
             var strategy = DestinationStrategyFactory.Create(destinyType);
 
-            // Step 3: Equipment coordinates the decommission process
             equipment.AddDecommission(
                 strategy,
                 context,
                 dto.TechnicalId,
                 dto.Reason);
 
-            // Step 4: Save the aggregate root, which includes the new decommission
-            await _equipmentRepository.UpdateAsync(equipment);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-            // Return the last decommission added
             var decommission = equipment.Decommissions.Last();
+            await _decommissionRepository.CreateAsync(decommission);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<EquipmentDecommissionDto>(decommission);
         }
 
         /// <summary>
-        /// Updates an equipment decommission record
+        /// Updates an equipment decommission record after validating the DTO.
         /// </summary>
+        /// <param name="dto">The UpdateEquipmentDecommissionDto to validate and update.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated EquipmentDecommissionDto, or throws EntityNotFoundException if not found.</returns>
         public async Task<EquipmentDecommissionDto?> UpdateAsync(UpdateEquipmentDecommissionDto dto, CancellationToken cancellationToken = default)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
             var existing = await _decommissionRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
-                return null;
+                throw new EntityNotFoundException(nameof(EquipmentDecommission), dto.Id);
 
             existing.UpdateReason(dto.Reason);
-
             await _decommissionRepository.UpdateAsync(existing);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
-
             return _mapper.Map<EquipmentDecommissionDto>(existing);
         }
 
         /// <summary>
-        /// Deletes an equipment decommission record
+        /// Deletes an equipment decommission record by ID.
         /// </summary>
+        /// <param name="id">The equipment decommission ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if deleted, otherwise throws EntityNotFoundException.</returns>
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
             if (id == Guid.Empty)
@@ -108,7 +107,7 @@ namespace Application.Services
 
             var existing = await _decommissionRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
-                return false;
+                throw new EntityNotFoundException(nameof(EquipmentDecommission), id);
 
             await _decommissionRepository.DeleteAsync(id, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -116,15 +115,20 @@ namespace Application.Services
         }
 
         /// <summary>
-        /// Gets an equipment decommission record by ID
+        /// Gets an equipment decommission record by ID.
         /// </summary>
+        /// <param name="id">The equipment decommission ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The EquipmentDecommissionDto if found, otherwise throws EntityNotFoundException.</returns>
         public async Task<EquipmentDecommissionDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("ID cannot be empty", nameof(id));
 
             var entity = await _decommissionRepository.GetByIdAsync(id, cancellationToken);
-            return entity == null ? null : _mapper.Map<EquipmentDecommissionDto>(entity);
+            if (entity == null)
+                throw new EntityNotFoundException(nameof(EquipmentDecommission), id);
+            return _mapper.Map<EquipmentDecommissionDto>(entity);
         }
 
         /// <summary>
@@ -142,27 +146,26 @@ namespace Application.Services
             return _mapper.Map<IEnumerable<EquipmentDecommissionDto>>(entities);
         }
 
-        #region Helper Methods
-
         /// <summary>
-        /// Creates a DecommissionContext based on the destiny type
+        /// Creates a DecommissionContext based on the destiny type.
         /// </summary>
+        /// <param name="destinyType">The DestinyType.</param>
+        /// <param name="dto">The CreateEquipmentDecommissionDto.</param>
+        /// <returns>The DecommissionContext.</returns>
         private DecommissionContext CreateDecommissionContext(DestinyType destinyType, CreateEquipmentDecommissionDto dto)
         {
             return destinyType.Id switch
             {
                 2 => DecommissionContext.ForDisposal(),
                 1 => DecommissionContext.ForDepartment(
-                    (dto.DepartmentId != Guid.Empty)? dto.DepartmentId : throw new ValidationException("DepartmentId is required for transfer destiny"),
-                    (dto.RecipientId != Guid.Empty)? dto.RecipientId : throw new ValidationException("RecipientId is required for transfer destiny"),
+                    (dto.DepartmentId != Guid.Empty) ? dto.DepartmentId : throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("DepartmentId", "DepartmentId is required for transfer destiny") }),
+                    (dto.RecipientId != Guid.Empty) ? dto.RecipientId : throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("RecipientId", "RecipientId is required for transfer destiny") }),
                     dto.DecommissionDate),
                 3 => DecommissionContext.ForWarehouse(
-                    (dto.RecipientId != Guid.Empty)? dto.RecipientId : throw new ValidationException("RecipientId is required for transfer destiny"),
+                    (dto.RecipientId != Guid.Empty) ? dto.RecipientId : throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("RecipientId", "RecipientId is required for transfer destiny") }),
                     dto.DecommissionDate),
-                _ => throw new ValidationException($"Invalid destiny type ID: {destinyType.Id}")
+                _ => throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("DestinyTypeId", $"Invalid destiny type ID: {destinyType.Id}") })
             };
         }
-
-        #endregion
     }
 }

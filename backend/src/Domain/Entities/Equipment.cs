@@ -136,7 +136,7 @@ public class Equipment : Entity
             technicalId: technicalId,
             departmentId: departmentForDecommission,
             destinyTypeId: destinationStrategy.DestinyType.Id,
-            recipientId: context.ResponsibleId,
+            recipientId: context.RecipientId,
             decommissionDate: context.TransferDate,
             reason: reason);
 

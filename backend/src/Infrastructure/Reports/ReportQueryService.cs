@@ -125,13 +125,11 @@ namespace Infrastructure.Reports
                 join equipmentType in _context.EquipmentTypes on eq.EquipmentTypeId equals equipmentType.Id
                 join department in _context.Departments on eq.DepartmentId equals department.Id
                 join section in _context.Sections on department.SectionId equals section.Id
-                join responsible in _context.Responsibles on section.ResponsibleId equals responsible.Id
                 select new
                 {
                     Equipment = eq,
                     EquipmentTypeName = equipmentType.Name,
                     Department = department,
-                    Responsible = responsible
                 };
 
             var detailedList = await detailedQuery.ToListAsync();
@@ -146,7 +144,6 @@ namespace Infrastructure.Reports
                              State = GetStateName(d.Equipment.StateId),
                              AcquisitionDate = d.Equipment.AcquisitionDate,
                              Department = d.Department.Name,
-                             DepartmentResponsible = d.Responsible.Name,
                              MaintenanceCountLastYear = f.Count,
                              LastMaintenanceDate = f.LastDate,
                              TotalMaintenanceCost = f.TotalCost,

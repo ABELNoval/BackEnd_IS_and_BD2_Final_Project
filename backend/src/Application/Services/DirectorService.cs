@@ -6,6 +6,7 @@ using Domain.Entities;
 using Domain.Interfaces;
 using Domain.ValueObjects;
 using FluentValidation;
+using Application.Exceptions;
 
 namespace Application.Services
 {
@@ -31,13 +32,18 @@ namespace Application.Services
             _updateValidator = updateValidator;
         }
 
+        /// <summary>
+        /// Creates a new director after validating the DTO.
+        /// </summary>
+        /// <param name="dto">The CreateDirectorDto to validate and create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created DirectorDto.</returns>
         public async Task<DirectorDto> CreateAsync(CreateDirectorDto dto, CancellationToken cancellationToken = default)
         {
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
-            // Crear entidad directamente desde el DTO
             var entity = Director.Create(
                 dto.Name,
                 Email.Create(dto.Email),
@@ -50,15 +56,21 @@ namespace Application.Services
             return _mapper.Map<DirectorDto>(entity);
         }
 
+        /// <summary>
+        /// Updates an existing director after validating the DTO.
+        /// </summary>
+        /// <param name="dto">The UpdateDirectorDto to validate and update.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated DirectorDto, or throws EntityNotFoundException if not found.</returns>
         public async Task<DirectorDto?> UpdateAsync(UpdateDirectorDto dto, CancellationToken cancellationToken = default)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
             var existing = await _directorRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
-                return null;
+                throw new EntityNotFoundException(nameof(Director), dto.Id);
 
             var updatedEmail = existing.Email.Update(dto.Email);
             var updatedPasswordHash = string.IsNullOrWhiteSpace(dto.Password) 
@@ -78,33 +90,41 @@ namespace Application.Services
         }
 
 
+        /// <summary>
+        /// Deletes a director by ID.
+        /// </summary>
+        /// <param name="id">The director ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if deleted, otherwise throws EntityNotFoundException.</returns>
         public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var existing = await _directorRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
-                return false;
+                throw new EntityNotFoundException(nameof(Director), id);
 
             await _directorRepository.DeleteAsync(id, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return true;
         }
 
+        /// <summary>
+        /// Gets a director by ID.
+        /// </summary>
+        /// <param name="id">The director ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The DirectorDto if found, otherwise throws EntityNotFoundException.</returns>
         public async Task<DirectorDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
         {
-            // Validación básica del ID
             if (id == Guid.Empty)
-            {
                 throw new ArgumentException("ID cannot be empty", nameof(id));
-            }
 
             var entity = await _directorRepository.GetByIdAsync(id, cancellationToken);
-            return entity == null ? null : _mapper.Map<DirectorDto>(entity);
+            if (entity == null)
+                throw new EntityNotFoundException(nameof(Director), id);
+            return _mapper.Map<DirectorDto>(entity);
         }
 
         public async Task<IEnumerable<DirectorDto>> GetAllAsync(CancellationToken cancellationToken = default)

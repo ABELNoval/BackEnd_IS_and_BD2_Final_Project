@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Application.DTOs.Transfer;
 using Application.Interfaces.Services;
 using Application.Validators.Transfer;
@@ -5,6 +6,7 @@ using AutoMapper;
 using Domain.Entities;
 using Domain.Interfaces;
 using FluentValidation;
+using Application.Exceptions;
 
 namespace Application.Services
 {
@@ -40,25 +42,22 @@ namespace Application.Services
         {
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
-            // Get the aggregate root Equipment
             var equipment = await _equipmentRepository.GetByIdAsync(dto.EquipmentId, cancellationToken);
             if (equipment == null)
-                throw new ValidationException($"Equipment with ID {dto.EquipmentId} not found");
+                throw new EntityNotFoundException(nameof(Equipment), dto.EquipmentId);
 
-            // Equipment creates and manages the Transfer entity
             equipment.AddTransfer(
                 dto.TargetDepartmentId,
                 dto.ResponsibleId,
                 dto.TransferDate);
 
-            // Save the aggregate root, which includes the new transfer
-            await _equipmentRepository.UpdateAsync(equipment);
+            var transfer = equipment.Transfers.Last();
+            await _transferRepository.CreateAsync(transfer);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-            // Return the last transfer added
-            var transfer = equipment.Transfers.Last();
             return _mapper.Map<TransferDto>(transfer);
         }
 
@@ -69,11 +68,11 @@ namespace Application.Services
         {
             var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
-                throw new ValidationException(validationResult.Errors);
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
 
             var existing = await _transferRepository.GetByIdAsync(dto.Id, cancellationToken);
             if (existing == null)
-                return null;
+                throw new EntityNotFoundException(nameof(Transfer), dto.Id);
 
             existing.UpdateBasicInfo(dto.TransferDate);
 
@@ -93,7 +92,7 @@ namespace Application.Services
 
             var existing = await _transferRepository.GetByIdAsync(id, cancellationToken);
             if (existing == null)
-                return false;
+                throw new EntityNotFoundException(nameof(Transfer), id);
 
             await _transferRepository.DeleteAsync(id, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -109,7 +108,9 @@ namespace Application.Services
                 throw new ArgumentException("ID cannot be empty", nameof(id));
 
             var entity = await _transferRepository.GetByIdAsync(id, cancellationToken);
-            return entity == null ? null : _mapper.Map<TransferDto>(entity);
+            if (entity == null)
+                throw new EntityNotFoundException(nameof(Transfer), id);
+            return _mapper.Map<TransferDto>(entity);
         }
 
         /// <summary>
