@@ -34,14 +34,15 @@ namespace Application.Services
             if (!user.PasswordHash.Verify(dto.Password))
                 return null;
 
-            // Determine role based on RoleId
+            // Determine role based on RoleId (matches Role.cs enumeration)
             string role = user.RoleId switch
             {
                 1 => "Administrator",
                 2 => "Director",
-                3 => "Responsible",
-                4 => "Technician",
-                5 => "Employee",
+                3 => "Technical",
+                4 => "Employee",
+                5 => "Responsible",
+                6 => "Receptor",
                 _ => "User"
             };
 

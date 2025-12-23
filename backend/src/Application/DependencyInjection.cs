@@ -75,7 +75,7 @@ namespace Application
             services.AddScoped<ITransferService, TransferService>();
             services.AddScoped<IEquipmentDecommissionService, EquipmentDecommissionService>();
             services.AddScoped<IAssessmentService, AssessmentService>();
-            // services.AddScoped<IUserService, UserService>();
+            services.AddScoped<IUserService, UserService>();
 
             // AuthService - JWT authentication service
             services.AddScoped<IAuthService, AuthService>();

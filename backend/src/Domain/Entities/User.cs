@@ -123,6 +123,17 @@ public abstract class User : Entity
             $"Invalid role ID: {RoleId}");
 
     /// <summary>
+    /// Updates the user's role
+    /// </summary>
+    /// <param name="newRoleId">The new role ID for the user</param>
+    /// <exception cref="InvalidEntityException">If validation fails</exception>
+    public void UpdateRole(int newRoleId)
+    {
+        ValidateRoleId(newRoleId);
+        RoleId = newRoleId;
+    }
+
+    /// <summary>
     /// Checks if the user has a specific role
     /// </summary>
     /// <param name="role">The role to check</param>
