@@ -77,8 +77,8 @@ namespace Application
             services.AddScoped<IAssessmentService, AssessmentService>();
             // services.AddScoped<IUserService, UserService>();
 
-            // AuthService va aquí porque es lógicamente un servicio de aplicación
-            //services.AddScoped<IAuthService, AuthService>();
+            // AuthService - JWT authentication service
+            services.AddScoped<IAuthService, AuthService>();
 
             // 🔹 Validadores EquipmentDecommission (con dependencias)
             services.AddScoped<FluentValidation.IValidator<Application.DTOs.EquipmentDecommission.CreateEquipmentDecommissionDto>,

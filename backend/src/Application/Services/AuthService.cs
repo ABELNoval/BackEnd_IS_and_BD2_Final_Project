@@ -1,64 +1,68 @@
-// using Application.DTOs.Auth;
-// using Application.Interfaces.Services;
-// using AutoMapper;
-// using Domain.Interfaces;
-// using Application.Interfaces.Security;
+using Application.DTOs.Auth;
+using Application.Interfaces.Services;
+using Application.Interfaces.Security;
+using Domain.Interfaces;
 
-// namespace Application.Services
-// {
-//     public class AuthService : IAuthService
-//     {
-//         private readonly IUserRepository _userRepository;
-//         private readonly IJwtProvider _jwtProvider;
-//         private readonly IMapper _mapper;
+namespace Application.Services
+{
+    public class AuthService : IAuthService
+    {
+        private readonly IUserRepository _userRepository;
+        private readonly IJwtProvider _jwtProvider;
 
-//         public AuthService(
-//             IUserRepository userRepository,
-//             IJwtProvider jwtProvider,
-//             IMapper mapper)
-//         {
-//             _userRepository = userRepository;
-//             _jwtProvider = jwtProvider;
-//             _mapper = mapper;
-//         }
+        public AuthService(
+            IUserRepository userRepository,
+            IJwtProvider jwtProvider)
+        {
+            _userRepository = userRepository;
+            _jwtProvider = jwtProvider;
+        }
 
-//         public async Task<AuthResponseDto?> LoginAsync(LoginRequestDto dto, CancellationToken cancellationToken = default)
-//         {
-//             // Buscar por email
-//             var user = await _userRepository.GetByEmailAsync(dto.Identifier, cancellationToken);
+        public async Task<AuthResponseDto?> LoginAsync(LoginRequestDto dto, CancellationToken cancellationToken = default)
+        {
+            // Search all users and find by email or name
+            var users = await _userRepository.GetAllAsync(cancellationToken);
+            
+            var user = users.FirstOrDefault(u => 
+                u.Email.Value.Equals(dto.Identifier, StringComparison.OrdinalIgnoreCase) ||
+                u.Name.Equals(dto.Identifier, StringComparison.OrdinalIgnoreCase));
 
-//             if (user == null)
-//                 return null;
+            if (user == null)
+                return null;
 
-//             // Validar contraseña
-//             if (!user.PasswordHash.Verify(dto.Password))
-//                 return null;
+            // Validate password
+            if (!user.PasswordHash.Verify(dto.Password))
+                return null;
 
-//             // Determinar rol
-//             string role = user.RoleId switch
-//             {
-//                 1 => "Administrator", // ejemplo
-//                 _ => user.GetType().Name // Technician, Director, Responsible...
-//             };
+            // Determine role based on RoleId
+            string role = user.RoleId switch
+            {
+                1 => "Administrator",
+                2 => "Director",
+                3 => "Responsible",
+                4 => "Technician",
+                5 => "Employee",
+                _ => "User"
+            };
 
-//             // Convertir a dto
-//             var authUserDto = new AuthUserDto
-//             {
-//                 Id = user.Id,
-//                 Name = user.Name,
-//                 Email = user.Email.Value,
-//                 Role = role
-//             };
+            // Convert to DTO
+            var authUserDto = new AuthUserDto
+            {
+                Id = user.Id,
+                Name = user.Name,
+                Email = user.Email.Value,
+                Role = role
+            };
 
-//             // Generar token
-//             var token = _jwtProvider.GenerateToken(authUserDto);
+            // Generate token
+            var token = _jwtProvider.GenerateToken(authUserDto);
 
-//             return new AuthResponseDto
-//             {
-//                 Token = token,
-//                 Expiration = DateTime.UtcNow.AddHours(6),
-//                 User = authUserDto
-//             };
-//         }
-//     }
-// }
+            return new AuthResponseDto
+            {
+                Token = token,
+                Expiration = DateTime.UtcNow.AddHours(6),
+                User = authUserDto
+            };
+        }
+    }
+}
