@@ -284,7 +284,7 @@ public class Equipment : Entity
             throw new InvalidEntityException(nameof(Equipment), $"Invalid location type ID: {LocationTypeId}");
         }
 
-        if (LocationType == LocationType.Department)
+        if (LocationTypeId == LocationType.Department.Id)
         {
             if (!DepartmentId.HasValue || DepartmentId.Value == Guid.Empty)
                 throw new InvalidEntityException(nameof(Equipment), "If LocationType is Department, DepartmentId must be set and not empty.");

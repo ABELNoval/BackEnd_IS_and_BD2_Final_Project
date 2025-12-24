@@ -44,7 +44,6 @@ namespace Infrastructure.Persistence.Repositories
             if (entity != null)
             {
                 _dbSet.Remove(entity);
-                await _context.SaveChangesAsync(cancellationToken);
             }
         }
     }

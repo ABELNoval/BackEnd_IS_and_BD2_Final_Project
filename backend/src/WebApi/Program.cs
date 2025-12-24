@@ -92,7 +92,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowAll");
 
-//app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseRouting();
 

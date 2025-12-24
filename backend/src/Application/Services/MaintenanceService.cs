@@ -96,7 +96,7 @@ namespace Application.Services
 
             await _maintenanceRepository.DeleteAsync(id, cancellationToken);
             var result = await _unitOfWork.SaveChangesAsync(cancellationToken);
-            return result > 0;
+            return true;
         }
 
         /// <summary>
