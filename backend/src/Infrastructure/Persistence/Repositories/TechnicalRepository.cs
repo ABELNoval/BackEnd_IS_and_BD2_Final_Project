@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,6 +15,12 @@ namespace Infrastructure.Persistence.Repositories
     public class TechnicalRepository : BaseRepository<Technical>, ITechnicalRepository
     {
         public TechnicalRepository(AppDbContext context) : base(context) { }
+
+        public async Task<Technical?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Technicals
+                .FirstOrDefaultAsync(t => t.Email == Email.Create(email), cancellationToken);
+        }
 
         public async Task<IEnumerable<Technical>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {

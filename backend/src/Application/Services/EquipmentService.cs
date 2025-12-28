@@ -124,6 +124,18 @@ namespace Application.Services
             return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
         }
 
+        public async Task<IEnumerable<EquipmentDto>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default)
+        {
+            if (departmentIds == null || !departmentIds.Any())
+                return Enumerable.Empty<EquipmentDto>();
+
+            var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
+            var query = $"DepartmentId in ({ids})";
+            
+            var entities = await _equipmentRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
+        }
+
         public async Task<IEnumerable<EquipmentDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
             var entities = await _equipmentRepository.FilterAsync(query, cancellationToken);

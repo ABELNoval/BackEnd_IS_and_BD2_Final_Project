@@ -2,6 +2,7 @@ using Application.DTOs.Transfer;
 using Application.Interfaces.Services;
 using Domain.Entities;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Web.Controllers
 {
@@ -10,10 +11,12 @@ namespace Web.Controllers
     public class TransferController : ControllerBase
     {
         private readonly ITransferService _transferService;
+        private readonly IDepartmentService _departmentService;
 
-        public TransferController (ITransferService transferService)
+        public TransferController (ITransferService transferService, IDepartmentService departmentService)
         {
             _transferService = transferService;
+            _departmentService = departmentService;
         }
 
         // ==============================
@@ -22,8 +25,30 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            var result = await _transferService.GetAllAsync(cancellationToken);
-            return Ok(result);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<TransferDto>());
+                    }
+
+                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
+                    var query = $"SourceDepartmentId in ({ids}) || TargetDepartmentId in ({ids})";
+                    
+                    var result = await _transferService.FilterAsync(query, cancellationToken);
+                    return Ok(result);
+                }
+            }
+
+            var resultAll = await _transferService.GetAllAsync(cancellationToken);
+            return Ok(resultAll);
         }
 
         // ==============================
@@ -80,6 +105,34 @@ namespace Web.Controllers
             if (request != null && request.Count > 0)
             {
                 query = string.Join(" AND ", request);
+            }
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<TransferDto>());
+                    }
+
+                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
+                    var sectionFilter = $"(SourceDepartmentId in ({ids}) || TargetDepartmentId in ({ids}))";
+                    
+                    if (!string.IsNullOrEmpty(query))
+                    {
+                        query = $"({query}) AND {sectionFilter}";
+                    }
+                    else
+                    {
+                        query = sectionFilter;
+                    }
+                }
             }
 
             var result = await _transferService.FilterAsync(query, cancellationToken);

@@ -1,6 +1,7 @@
 using Application.DTOs.Equipment;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -9,10 +10,12 @@ namespace WebApi.Controllers
     public class EquipmentController : ControllerBase
     {
         private readonly IEquipmentService _equipmentService;
+        private readonly IDepartmentService _departmentService;
 
-        public EquipmentController(IEquipmentService equipmentService)
+        public EquipmentController(IEquipmentService equipmentService, IDepartmentService departmentService)
         {
             _equipmentService = equipmentService;
+            _departmentService = departmentService;
         }
 
         // ================================
@@ -21,8 +24,30 @@ namespace WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EquipmentDto>>> GetAll(CancellationToken cancellationToken)
         {
-            var result = await _equipmentService.GetAllAsync(cancellationToken);
-            return Ok(result);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    var result = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    return Ok(result);
+                }
+            }
+            else if (role == "Employee")
+            {
+                var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
+                if (Guid.TryParse(departmentIdClaim, out var departmentId))
+                {
+                    var result = await _equipmentService.GetByDepartmentIdsAsync(new List<Guid> { departmentId }, cancellationToken);
+                    return Ok(result);
+                }
+            }
+
+            var resultAll = await _equipmentService.GetAllAsync(cancellationToken);
+            return Ok(resultAll);
         }
 
         // ================================
@@ -90,6 +115,35 @@ namespace WebApi.Controllers
             {
                 query = string.Join(" AND ", request);
             }
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<EquipmentDto>());
+                    }
+
+                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
+                    var sectionFilter = $"DepartmentId in ({ids})";
+                    
+                    if (!string.IsNullOrEmpty(query))
+                    {
+                        query = $"({query}) AND {sectionFilter}";
+                    }
+                    else
+                    {
+                        query = sectionFilter;
+                    }
+                }
+            }
+
             Console.WriteLine("QUERY RECIBIDA: " + query);
             var result = await _equipmentService.FilterAsync(query, cancellationToken);
 

@@ -1,6 +1,7 @@
 using Application.DTOs.Department;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -21,8 +22,28 @@ namespace WebApi.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetAll(CancellationToken cancellationToken)
         {
-            var result = await _departmentService.GetAllAsync(cancellationToken);
-            return Ok(result);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var result = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    return Ok(result);
+                }
+            }
+            else if (role == "Employee")
+            {
+                var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
+                if (Guid.TryParse(departmentIdClaim, out var departmentId))
+                {
+                    var department = await _departmentService.GetByIdAsync(departmentId, cancellationToken);
+                    return Ok(department != null ? new List<DepartmentDto> { department } : new List<DepartmentDto>());
+                }
+            }
+
+            var allResult = await _departmentService.GetAllAsync(cancellationToken);
+            return Ok(allResult);
         }
 
         // ============================================================
@@ -81,7 +102,7 @@ namespace WebApi.Controllers
         // GET: api/department/filter
         // =========================================
         [HttpPost("filter")]
-        public async Task<IActionResult> Filter([FromBody] List<string> request)
+        public async Task<IActionResult> Filter([FromBody] List<string> request, CancellationToken cancellationToken)
         {
             string query = "";
 
@@ -90,7 +111,25 @@ namespace WebApi.Controllers
                 query = string.Join(" AND ", request);
             }
 
-            var result = await _departmentService.FilterAsync(query);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var sectionFilter = $"SectionId == \"{sectionId}\"";
+                    if (!string.IsNullOrEmpty(query))
+                    {
+                        query = $"({query}) AND {sectionFilter}";
+                    }
+                    else
+                    {
+                        query = sectionFilter;
+                    }
+                }
+            }
+
+            var result = await _departmentService.FilterAsync(query, cancellationToken);
 
             return Ok(result);
         }

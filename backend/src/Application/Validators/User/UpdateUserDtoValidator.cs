@@ -55,8 +55,8 @@ namespace Application.Validators.User
         /// </summary>
         private async System.Threading.Tasks.Task<bool> EmailIsUnique(UpdateUserDto dto, string email, System.Threading.CancellationToken ct)
         {
-            var users = await _userRepo.FilterAsync($"Email == \"{email}\" && Id != Guid(\"{dto.Id}\")", ct);
-            return users == null || !users.GetEnumerator().MoveNext();
+            var user = await _userRepo.GetByEmailAsync(email, ct);
+            return user == null || user.Id == dto.Id;
         }
 
         /// <summary>

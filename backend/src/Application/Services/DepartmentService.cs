@@ -114,6 +114,12 @@ namespace Application.Services
             return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
         }
 
+        public async Task<IEnumerable<DepartmentDto>> GetBySectionIdAsync(Guid sectionId, CancellationToken cancellationToken = default)
+        {
+            var entities = await _departmentRepository.FilterAsync($"SectionId == \"{sectionId}\"", cancellationToken);
+            return _mapper.Map<IEnumerable<DepartmentDto>>(entities);
+        }
+
         public async Task<IEnumerable<DepartmentDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
             var entities = await _departmentRepository.FilterAsync(query, cancellationToken);

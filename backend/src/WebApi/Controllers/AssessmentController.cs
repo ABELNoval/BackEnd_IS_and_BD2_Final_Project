@@ -1,6 +1,7 @@
 using Application.DTOs.Assessment;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Web.Controllers
 {
@@ -21,6 +22,18 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Technical")
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var query = $"TechnicalId == \"{userId}\"";
+                    var resultT = await _assessmentService.FilterAsync(query, cancellationToken);
+                    return Ok(resultT);
+                }
+            }
+
             var result = await _assessmentService.GetAllAsync(cancellationToken);
             return Ok(result);
         }
