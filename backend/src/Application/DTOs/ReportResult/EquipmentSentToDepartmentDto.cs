@@ -3,61 +3,39 @@ using System;
 namespace Application.DTOs.ReportResult
 {
     /// <summary>
-    /// DTO for report of equipment sent to a specific department.
+    /// Read-model for REPORT 7: equipment sent to specific department.
+    /// Contains sender, receiver, destination department and sending company details.
     /// </summary>
     public class EquipmentSentToDepartmentDto
     {
         /// <summary>
-        /// Name of the equipment.
+        /// Equipment name.
         /// </summary>
-        public string EquipmentName { get; set; }
+        public string EquipmentName { get; set; } = string.Empty;
+
         /// <summary>
-        /// Type of the equipment.
+        /// Name of the person who sends the equipment.
         /// </summary>
-        public string EquipmentType { get; set; }
+        public string SenderName { get; set; } = string.Empty;
+
         /// <summary>
-        /// Date when the equipment was sent.
+        /// Name of the person who receives the equipment.
         /// </summary>
-        public DateTime SendDate { get; set; }
+        public string ReceiverName { get; set; } = string.Empty;
+
         /// <summary>
-        /// Reason for sending the equipment.
+        /// Destination department name.
         /// </summary>
-        public string Reason { get; set; }
+        public string DestinationDepartment { get; set; } = string.Empty;
+
         /// <summary>
-        /// Name of the sender (technician from source department).
+        /// Sending company name (from section).
         /// </summary>
-        public string SenderName { get; set; }
+        public string SendingCompany { get; set; } = string.Empty;
+
         /// <summary>
-        /// Email of the sender.
+        /// Date when equipment was sent.
         /// </summary>
-        public string SenderEmail { get; set; }
-        /// <summary>
-        /// Name of the sender's department.
-        /// </summary>
-        public string SenderDepartment { get; set; }
-        /// <summary>
-        /// Name of the sender's company/division (source section).
-        /// </summary>
-        public string SenderCompany { get; set; }
-        /// <summary>
-        /// Name of the receiver (responsible of target department).
-        /// </summary>
-        public string ReceiverName { get; set; }
-        /// <summary>
-        /// Email of the receiver.
-        /// </summary>
-        public string ReceiverEmail { get; set; }
-        /// <summary>
-        /// Name of the receiver's department.
-        /// </summary>
-        public string ReceiverDepartment { get; set; }
-        /// <summary>
-        /// Current state of the equipment.
-        /// </summary>
-        public string EquipmentState { get; set; }
-        /// <summary>
-        /// Indicates if the equipment is defective.
-        /// </summary>
-        public bool IsDefective { get; set; }
+        public DateTime SentDate { get; set; }
     }
 }

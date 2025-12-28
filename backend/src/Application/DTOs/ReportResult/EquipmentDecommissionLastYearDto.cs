@@ -1,18 +1,36 @@
+using System;
+
 namespace Application.DTOs.ReportResult
 {
+    /// <summary>
+    /// Read-model for REPORT 1: decommissioned equipment last year.
+    /// Contains equipment details, decommission cause, final destination and recipient.
+    /// </summary>
     public class EquipmentDecommissionLastYearDto
     {
-        // Reporte 1: Equipos dados de baja en el último año
-        public string EquipmentName { get; set; }
-        public DateTime AcquisitionDate { get; set; }
-        public string State { get; set; } // Estado del equipo
+        /// <summary>
+        /// Equipment name.
+        /// </summary>
+        public string EquipmentName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Cause of the equipment decommission.
+        /// </summary>
+        public string DecommissionCause { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Final destination (department name or destiny type).
+        /// </summary>
+        public string FinalDestination { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Name of the recipient person (or "No recipient assigned").
+        /// </summary>
+        public string ReceiverName { get; set; } = string.Empty;
+
+        /// <summary>
+        /// Decommission date.
+        /// </summary>
         public DateTime DecommissionDate { get; set; }
-        public string Reason { get; set; } // Causa de la baja
-        public string DestinyType { get; set; } // Destino final
-        public string TechnicalName { get; set; } // Persona que hace la baja
-        public string TechnicalSpeciality { get; set; }
-        public string TechnicalEmail { get; set; }
-        public string Department { get; set; } // Departamento origen
-        public int DaysInUse { get; set; } // Días desde adquisición hasta baja
     }
 }

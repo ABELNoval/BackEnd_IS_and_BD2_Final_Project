@@ -71,6 +71,16 @@ namespace Infrastructure.Persistence
 
                 entity.HasIndex(a => a.AssessmentDate);
             });
+            
+                /// <summary>
+                /// Configures Transfer entity to include RecipientId property.
+                /// </summary>
+                modelBuilder.Entity<Transfer>(entity =>
+                {
+                    entity.ToTable("Transfers");
+                    entity.Property(t => t.RecipientId)
+                        .IsRequired();
+                });
 
             /// <summary>
             /// Configures Equipment entity with smart enum converters for State and LocationType.

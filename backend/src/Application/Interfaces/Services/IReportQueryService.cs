@@ -17,10 +17,10 @@ namespace Application.Interfaces.Services
         Task<IEnumerable<TechnicianPerformanceCorrelationDto>> GetTechnicianMaintenanceCorrelationAsync();
 
         // Reporte 5: Equipos con más de 3 mantenimientos en el último año
-        Task<IEnumerable<FrequentMaintenanceEquipmentDto>> GetFrequentMaintenanceEquipmentAsync();
+        Task<IEnumerable<EquipmentReplacementReportDto>> GetFrequentMaintenanceEquipmentAsync();
 
-        // Reporte 6: Rendimiento técnicos para bonificaciones
-        Task<IEnumerable<TechnicianPerformanceBonusDto>> GetTechnicianPerformanceBonusAsync();
+        // Reporte 6: Comparativa de rendimiento de técnicos para revisión salarial
+        Task<List<TechnicianPerformanceReportDto>> GetTechnicianPerformanceReportAsync();
 
         // Reporte 7: Equipos enviados a un departamento específico
         Task<IEnumerable<EquipmentSentToDepartmentDto>> GetEquipmentSentToDepartmentAsync(Guid departmentId);

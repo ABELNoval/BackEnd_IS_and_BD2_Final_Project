@@ -3,58 +3,39 @@ using System;
 namespace Application.DTOs.ReportResult
 {
     /// <summary>
-    /// Equipment transferred between different sections, including transfer date, origin, destination, sender, and receiver information.
+    /// Read-model for REPORT 3: equipment transfers between different sections.
+    /// Contains transfer details including origin, destination, sender and recipient.
     /// </summary>
     public class EquipmentTransferBetweenSectionsDto
     {
-        /// <summary>
-        /// Equipment unique identifier.
-        /// </summary>
-        public Guid EquipmentId { get; set; }
-
         /// <summary>
         /// Equipment name.
         /// </summary>
         public string EquipmentName { get; set; } = string.Empty;
 
         /// <summary>
-        /// Equipment type name.
-        /// </summary>
-        public string EquipmentType { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Date of the transfer.
+        /// Transfer date.
         /// </summary>
         public DateTime TransferDate { get; set; }
 
         /// <summary>
-        /// Name of the source section.
+        /// Source section name (origin).
         /// </summary>
         public string SourceSection { get; set; } = string.Empty;
 
         /// <summary>
-        /// Name of the source department.
-        /// </summary>
-        public string SourceDepartment { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Name of the target section.
+        /// Target section name (destination).
         /// </summary>
         public string TargetSection { get; set; } = string.Empty;
 
         /// <summary>
-        /// Name of the target department.
-        /// </summary>
-        public string TargetDepartment { get; set; } = string.Empty;
-
-        /// <summary>
-        /// Name of the person who sent the equipment.
+        /// Name of the person who sends the equipment.
         /// </summary>
         public string SenderName { get; set; } = string.Empty;
 
         /// <summary>
-        /// Email of the person who sent the equipment.
+        /// Name of the person who receives the equipment.
         /// </summary>
-        public string SenderEmail { get; set; } = string.Empty;
+        public string RecipientName { get; set; } = string.Empty;
     }
 }

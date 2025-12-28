@@ -1,58 +1,39 @@
 namespace Application.DTOs.ReportResult
 {
     /// <summary>
-    /// DTO for technician performance correlation report (Report 4).
+    /// Read-model for REPORT 4: technician performance vs equipment longevity.
+    /// Represents the aggregated correlation metrics per technician and equipment type.
     /// </summary>
     public class TechnicianPerformanceCorrelationDto
     {
         /// <summary>
-        /// Position in the ranking (1 = worst).
+        /// Unique identifier of the technician.
         /// </summary>
-        public int Rank { get; set; }
+        public Guid TechnicianId { get; set; }
 
         /// <summary>
-        /// Technician's name.
+        /// Technician full name.
         /// </summary>
-        public string TechnicalName { get; set; } = string.Empty;
+        public string TechnicianName { get; set; } = string.Empty;
 
         /// <summary>
-        /// Technician's specialty.
+        /// Average performance score given by supervisors (0-100).
         /// </summary>
-        public string Specialty { get; set; } = string.Empty;
+        public decimal AveragePerformanceScore { get; set; }
 
         /// <summary>
-        /// Average rating (0-100).
-        /// </summary>
-        public decimal AverageRating { get; set; }
-
-        /// <summary>
-        /// Number of irreparable equipment maintained.
-        /// </summary>
-        public int IrreparableEquipmentCount { get; set; }
-
-        /// <summary>
-        /// Total maintenance cost.
+        /// Total maintenance cost on equipment that ended as irreparable failure.
         /// </summary>
         public decimal TotalMaintenanceCost { get; set; }
 
         /// <summary>
-        /// Average cost per equipment.
+        /// Average number of days the equipment remained operative before decommission.
         /// </summary>
-        public decimal AverageCostPerEquipment { get; set; }
+        public double AverageEquipmentLongevityDays { get; set; }
 
         /// <summary>
-        /// Average longevity in days.
+        /// Name of the equipment type where this correlation is being measured.
         /// </summary>
-        public double AverageLongevityDays { get; set; }
-
-        /// <summary>
-        /// Correlation score (lower = worse).
-        /// </summary>
-        public decimal CorrelationScore { get; set; }
-
-        /// <summary>
-        /// Most maintained equipment type.
-        /// </summary>
-        public string EquipmentSpecialization { get; set; } = string.Empty;
+        public string EquipmentTypeName { get; set; } = string.Empty;
     }
 }

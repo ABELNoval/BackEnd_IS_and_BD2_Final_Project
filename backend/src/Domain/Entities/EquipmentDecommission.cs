@@ -34,9 +34,9 @@ public class EquipmentDecommission : Entity
     public int DestinyTypeId { get; private set; }
 
     /// <summary>
-    /// ID of the person receiving/responsible for the equipment
+    /// ID of the person receiving/responsible for the equipment (nullable)
     /// </summary>
-    public Guid RecipientId { get; private set; }
+    public Guid? RecipientId { get; private set; }
 
     /// <summary>
     /// Date when decommissioning occurred
@@ -61,7 +61,7 @@ public class EquipmentDecommission : Entity
         Guid technicalId,
         Guid departmentId,
         int destinyTypeId,
-        Guid recipientId,
+        Guid? recipientId,
         DateTime decommissionDate,
         string reason)
     {
@@ -70,7 +70,6 @@ public class EquipmentDecommission : Entity
         ValidateGuidProperty(technicalId, "Technical ID");
         ValidateDestinyTypeId(destinyTypeId);
         ValidateDepartmentIdByDestiny(departmentId, destinyTypeId);
-        ValidateGuidProperty(recipientId, "Recipient ID");
         ValidateDecommissionDate(decommissionDate);
         ValidateReason(reason);
         
@@ -100,7 +99,7 @@ public class EquipmentDecommission : Entity
         Guid technicalId,
         Guid departmentId,
         int destinyTypeId,
-        Guid recipientId,
+        Guid? recipientId,
         DateTime decommissionDate,
         string reason)
         => new(equipmentId, technicalId, departmentId, destinyTypeId, recipientId, decommissionDate, reason);
@@ -254,7 +253,7 @@ public class EquipmentDecommission : Entity
         ValidateGuidProperty(TechnicalId, "Technical ID");
         ValidateDestinyTypeId(DestinyTypeId);
         ValidateDepartmentIdByDestiny(DepartmentId, DestinyTypeId);
-        ValidateGuidProperty(RecipientId, "Recipient ID");
+        // RecipientId can be null, so skip validation
         ValidateDecommissionDate(DecommissionDate);
         ValidateReason(Reason);
     }

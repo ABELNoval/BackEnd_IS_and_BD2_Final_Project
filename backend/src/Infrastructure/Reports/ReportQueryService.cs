@@ -5,259 +5,72 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Reports
 {
-        
+
     public class ReportQueryService : IReportQueryService
     {
-
-        /// <summary>
-        /// Gets all equipment transfers between different sections, including transfer date, origin, destination, sender, and receiver information.
-        /// </summary>
-        /// <returns>List of equipment transfers between different sections.</returns>
         private readonly AppDbContext _context;
 
         public ReportQueryService(AppDbContext context)
         {
             _context = context;
         }
-
-        public async Task<IEnumerable<EquipmentTransferBetweenSectionsDto>> GetEquipmentTransferHistoryBetweenSectionsAsync()
-        {
-            var query = from transfer in _context.Transfers
-                        join equipment in _context.Equipments on transfer.EquipmentId equals equipment.Id
-                        join eqType in _context.EquipmentTypes on equipment.EquipmentTypeId equals eqType.Id
-                        join sourceDept in _context.Departments on transfer.SourceDepartmentId equals sourceDept.Id
-                        join sourceSection in _context.Sections on sourceDept.SectionId equals sourceSection.Id
-                        join targetDept in _context.Departments on transfer.TargetDepartmentId equals targetDept.Id
-                        join targetSection in _context.Sections on targetDept.SectionId equals targetSection.Id
-                        join sender in _context.Responsibles on transfer.ResponsibleId equals sender.Id
-                        where sourceSection.Id != targetSection.Id
-                        select new EquipmentTransferBetweenSectionsDto
-                        {
-                            EquipmentId = equipment.Id,
-                            EquipmentName = equipment.Name,
-                            EquipmentType = eqType.Name,
-                            TransferDate = transfer.TransferDate,
-                            SourceSection = sourceSection.Name,
-                            SourceDepartment = sourceDept.Name,
-                            TargetSection = targetSection.Name,
-                            TargetDepartment = targetDept.Name,
-                            SenderName = sender.Name,
-                            SenderEmail = sender.Email.Value,
-                        };
-
-            return await query
-                .AsNoTracking()
-                .OrderByDescending(x => x.TransferDate)
-                .ToListAsync();
-        }
-
         /// <summary>
-        /// REPORT 4 - CRITICAL: Correlation between technicians and irreparable equipment longevity.
-        /// Identifies the 5 technicians with the worst performance based on:
-        /// 1. High maintenance cost on failed equipment
-        /// 2. Low longevity (equipment lasts little)
-        /// 3. Equipment decommissioned due to "irreparable technical failure"
-        /// 4. Low average rating from supervisors
-        /// 5. Type of equipment they specialize in
+        /// REPORT 1 - Decommissioned equipment last year.
+        /// Lists all equipment decommissioned in the last year, including decommission cause,
+        /// final destination and recipient name (if assigned).
         /// </summary>
-        /// <returns>List of the 5 worst-performing technicians by correlation score.</returns>
-        public async Task<IEnumerable<TechnicianPerformanceCorrelationDto>> GetTechnicianMaintenanceCorrelationAsync()
-        {
-            try
-            {
-                // PHASE 1: Get irreparable equipment IDs
-                var irreparableEquipmentIds = await _context.EquipmentDecommissions
-                    .AsNoTracking()
-                    .Where(d => d.Reason.ToLower().Contains("irreparable") || d.Reason.ToLower().Contains("fallo técnico"))
-                    .Select(d => d.EquipmentId)
-                    .ToListAsync();
-
-                if (!irreparableEquipmentIds.Any())
-                {
-                    // No irreparable equipment found
-                    return new List<TechnicianPerformanceCorrelationDto>();
-                }
-
-                // PHASE 2: Maintenance costs per irreparable equipment
-                var maintenanceCosts = await _context.Maintenances
-                    .Where(m => irreparableEquipmentIds.Contains(m.EquipmentId))
-                    .GroupBy(m => m.EquipmentId)
-                    .Select(g => new
-                    {
-                        EquipmentId = g.Key,
-                        TotalCost = g.Sum(x => x.Cost),
-                        MaintenanceCount = g.Count()
-                    })
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                var equipmentWithCosts = maintenanceCosts.Select(m => m.EquipmentId).ToList();
-
-                // PHASE 3: Longevity and type of irreparable equipment
-                var equipmentDetails = await (from eq in _context.Equipments
-                                                where equipmentWithCosts.Contains(eq.Id)
-                                                join decomm in _context.EquipmentDecommissions on eq.Id equals decomm.EquipmentId
-                                                join eqType in _context.EquipmentTypes on eq.EquipmentTypeId equals eqType.Id
-                                                select new
-                                                {
-                                                    Equipment = eq,
-                                                    Decommission = decomm,
-                                                    EquipmentTypeName = eqType.Name,
-                                                    DaysInUse = EF.Functions.DateDiffDay(eq.AcquisitionDate, decomm.DecommissionDate)
-                                                })
-                                                .AsNoTracking()
-                                                .ToListAsync();
-
-                // PHASE 4: Technicians who maintained irreparable equipment
-                var techniciansWithEquipment = await (from m in _context.Maintenances
-                                                        where irreparableEquipmentIds.Contains(m.EquipmentId)
-                                                        join tech in _context.Technicals on m.TechnicalId equals tech.Id
-                                                        select new { tech.Id, tech.Name, tech.Specialty, m.EquipmentId })
-                                                        .AsNoTracking()
-                                                        .Distinct()
-                                                        .ToListAsync();
-
-                // PHASE 5: Average ratings per technician
-                var assessments = await _context.Assessments
-                    .GroupBy(a => a.TechnicalId)
-                    .Select(g => new
-                    {
-                        TechnicalId = g.Key,
-                        AverageRating = g.Average(x => x.Score.Value),
-                        AssessmentCount = g.Count()
-                    })
-                    .AsNoTracking()
-                    .ToListAsync();
-
-                // PHASE 6: Analytical calculations per technician
-                var results = new List<TechnicianPerformanceCorrelationDto>();
-                var technicianGroups = techniciansWithEquipment.GroupBy(x => x.Id).ToList();
-
-                foreach (var techGroup in technicianGroups)
-                {
-                    var techId = techGroup.Key;
-                    var techName = techGroup.First().Name;
-                    var techSpecialty = techGroup.First().Specialty;
-
-                    // Irreparable equipment maintained by this technician
-                    var techEquipmentIds = techGroup.Select(x => x.EquipmentId).Distinct().ToList();
-                    var techEquipments = equipmentDetails.Where(e => techEquipmentIds.Contains(e.Equipment.Id)).ToList();
-                    var techCosts = maintenanceCosts.Where(c => techEquipmentIds.Contains(c.EquipmentId)).ToList();
-
-                    decimal totalCost = techCosts.Sum(c => c.TotalCost);
-                    double avgLongevityDays = techEquipments.Count > 0 ? techEquipments.Average(e => e.DaysInUse) : 0;
-
-                    // Average rating
-                    var techAssessment = assessments.FirstOrDefault(a => a.TechnicalId == techId);
-                    decimal avgRating = techAssessment?.AverageRating ?? 0;
-
-                    // Correlation score: 100 / (cost per day)
-                    decimal correlationScore = 0;
-                    if (avgLongevityDays > 0 && totalCost > 0)
-                    {
-                        decimal costPerDay = totalCost / (decimal)avgLongevityDays;
-                        correlationScore = 100m / costPerDay;
-                    }
-
-                    // Specialization: most maintained equipment type
-                    var specialization = techEquipments
-                        .GroupBy(e => e.EquipmentTypeName)
-                        .OrderByDescending(g => g.Count())
-                        .FirstOrDefault()?.Key ?? "Not specialized";
-
-                    results.Add(new TechnicianPerformanceCorrelationDto
-                    {
-                        Rank = 0, // Assigned in phase 7
-                        TechnicalName = techName,
-                        Specialty = techSpecialty,
-                        AverageRating = Math.Round(avgRating, 2),
-                        IrreparableEquipmentCount = techEquipments.Count,
-                        TotalMaintenanceCost = Math.Round(totalCost, 2),
-                        AverageCostPerEquipment = techEquipments.Any() ? Math.Round(totalCost / techEquipments.Count, 2) : 0,
-                        AverageLongevityDays = Math.Round(avgLongevityDays, 0),
-                        CorrelationScore = Math.Round(correlationScore, 2),
-                        EquipmentSpecialization = specialization
-                    });
-                }
-
-                // PHASE 7: Top 5 worst technicians by correlation score
-                var top5Worst = results
-                    .OrderBy(r => r.CorrelationScore)
-                    .Take(5)
-                    .Select((item, index) => new TechnicianPerformanceCorrelationDto
-                    {
-                        Rank = index + 1,
-                        TechnicalName = item.TechnicalName,
-                        Specialty = item.Specialty,
-                        AverageRating = item.AverageRating,
-                        IrreparableEquipmentCount = item.IrreparableEquipmentCount,
-                        TotalMaintenanceCost = item.TotalMaintenanceCost,
-                        AverageCostPerEquipment = item.AverageCostPerEquipment,
-                        AverageLongevityDays = item.AverageLongevityDays,
-                        CorrelationScore = item.CorrelationScore,
-                        EquipmentSpecialization = item.EquipmentSpecialization
-                    })
-                    .ToList();
-
-                return top5Worst;
-            }
-            catch (Exception ex)
-            {
-                // Log error (no emojis or AI-like marks)
-                Console.WriteLine($"ERROR in GetTechnicianMaintenanceCorrelationAsync: {ex.Message}");
-                return new List<TechnicianPerformanceCorrelationDto>();
-            }
-        }
-    
-
-        /// <summary>
-        /// Gets equipment decommissioned in the last year.
-        /// </summary>
-        /// <returns>List of equipment decommissioned in the last year.</returns>
+        /// <returns>
+        /// IEnumerable of <see cref="EquipmentDecommissionLastYearDto"/> ordered by decommission date (newest first).
+        /// </returns>
         public async Task<IEnumerable<EquipmentDecommissionLastYearDto>> GetEquipmentDecommissionLastYearAsync()
         {
             var oneYearAgo = DateTime.UtcNow.AddYears(-1);
 
             var query =
-                from decommission in _context.EquipmentDecommissions
-                where decommission.DecommissionDate >= oneYearAgo
+                from decomm in _context.EquipmentDecommissions
+                where decomm.DecommissionDate >= oneYearAgo
+
                 join equipment in _context.Equipments
-                    on decommission.EquipmentId equals equipment.Id
-                join technical in _context.Technicals
-                    on decommission.TechnicalId equals technical.Id
+                    on decomm.EquipmentId equals equipment.Id
+
+                // LEFT JOIN receiver (may not exist)
+                join receiver in _context.Responsibles
+                    on decomm.RecipientId equals receiver.Id into receivers
+                from receiver in receivers.DefaultIfEmpty()
+
+                // LEFT JOIN department (only for DestinyTypeId == 1)
                 join department in _context.Departments
-                    on equipment.DepartmentId equals department.Id into deptGroup
-                from department in deptGroup.DefaultIfEmpty()
+                    on decomm.DepartmentId equals department.Id into departments
+                from department in departments.DefaultIfEmpty()
+
                 select new EquipmentDecommissionLastYearDto
                 {
                     EquipmentName = equipment.Name,
-                    AcquisitionDate = equipment.AcquisitionDate,
-                    State = GetStateName(equipment.StateId),
-                    DecommissionDate = decommission.DecommissionDate,
-                    Reason = decommission.Reason,
-                    DestinyType = GetDestinyName(decommission.DestinyTypeId),
-                    TechnicalName = technical.Name,
-                    TechnicalSpeciality = technical.Specialty,
-                    TechnicalEmail = technical.Email.Value,
-                    Department = department != null ? department.Name : "No department",
-
-                    // 👇 AQUÍ VA EL CAMBIO IMPORTANTE
-                    DaysInUse = EF.Functions.DateDiffDay(
-                        equipment.AcquisitionDate,
-                        decommission.DecommissionDate
-                    )
+                    DecommissionCause = decomm.Reason,
+                    FinalDestination =
+                        decomm.DestinyTypeId == 1 && department != null
+                            ? department.Name
+                            : GetDestinyName(decomm.DestinyTypeId),
+                    ReceiverName = receiver != null ? receiver.Name : "No recipient assigned",
+                    DecommissionDate = decomm.DecommissionDate
                 };
 
-            return await query.ToListAsync();
+            return await query
+                .AsNoTracking()
+                .OrderByDescending(x => x.DecommissionDate)
+                .ToListAsync();
         }
-
+        
         /// <summary>
-        /// Gets the maintenance history for a specific equipment.
+        /// REPORT 2 - Equipment maintenance history.
+        /// Gets the maintenance history for a specific equipment, classified by type and date,
+        /// including technicians who performed the interventions.
         /// </summary>
         /// <param name="equipmentId">The equipment identifier.</param>
-        /// <returns>List of maintenance history records for the equipment.</returns>
-        public async Task<IEnumerable<EquipmentMaintenanceHistoryDto>>
-            GetEquipmentMaintenanceHistoryAsync(Guid equipmentId)
+        /// <returns>
+        /// IEnumerable of <see cref="EquipmentMaintenanceHistoryDto"/> ordered by maintenance date (newest first).
+        /// </returns>
+        public async Task<IEnumerable<EquipmentMaintenanceHistoryDto>> GetEquipmentMaintenanceHistoryAsync(Guid equipmentId)
         {
             var query =
                 from m in _context.Maintenances
@@ -271,187 +84,273 @@ namespace Infrastructure.Reports
                     MaintenanceId = m.Id,
                     MaintenanceDate = m.MaintenanceDate,
                     MaintenanceType = GetMaintenanceTypeName(m.MaintenanceTypeId),
-                    Cost = m.Cost,
                     EquipmentName = eq.Name,
-                    EquipmentState = GetStateName(eq.StateId),
-                    TechnicalName = tech.Name,
-                    TechnicalSpeciality = tech.Specialty,
-                    TechnicalExperience = tech.Experience,
-                    TechnicalEmail = tech.Email.Value,
-                    DaysFromAcquisition = (int)(m.MaintenanceDate - eq.AcquisitionDate).TotalDays
+                    TechnicalName = tech.Name
                 };
 
             return await query
+                .AsNoTracking()
                 .OrderByDescending(x => x.MaintenanceDate)
                 .ToListAsync();
         }
 
         /// <summary>
-        /// Gets equipment with more than 3 maintenances in the last year.
+        /// REPORT 3 - Equipment transfers between different sections.
+        /// Lists equipment transferred between sections with dates, origin, destination,
+        /// sender and recipient names.
         /// </summary>
-        /// <returns>List of equipment with frequent maintenance in the last year.</returns>
-        public async Task<IEnumerable<FrequentMaintenanceEquipmentDto>>
-            GetFrequentMaintenanceEquipmentAsync()
+        /// <returns>
+        /// IEnumerable of <see cref="EquipmentTransferBetweenSectionsDto"/> ordered by transfer date (newest first).
+        /// </returns>
+        public async Task<IEnumerable<EquipmentTransferBetweenSectionsDto>> GetEquipmentTransferHistoryBetweenSectionsAsync()
+        {
+            var query = from transfer in _context.Transfers
+                        join equipment in _context.Equipments on transfer.EquipmentId equals equipment.Id
+                        join sourceDept in _context.Departments on transfer.SourceDepartmentId equals sourceDept.Id
+                        join sourceSection in _context.Sections on sourceDept.SectionId equals sourceSection.Id
+                        join targetDept in _context.Departments on transfer.TargetDepartmentId equals targetDept.Id
+                        join targetSection in _context.Sections on targetDept.SectionId equals targetSection.Id
+                        join sender in _context.Responsibles on transfer.ResponsibleId equals sender.Id
+                        join recipient in _context.Responsibles on transfer.RecipientId equals recipient.Id
+                        where sourceSection.Id != targetSection.Id
+                        select new EquipmentTransferBetweenSectionsDto
+                        {
+                            EquipmentName = equipment.Name,
+                            TransferDate = transfer.TransferDate,
+                            SourceSection = sourceSection.Name,
+                            TargetSection = targetSection.Name,
+                            SenderName = sender.Name,
+                            RecipientName = recipient.Name
+                        };
+
+            return await query
+                .AsNoTracking()
+                .OrderByDescending(x => x.TransferDate)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// REPORT 4 - Technician performance vs equipment longevity (irreparable failures).
+        /// Identifies the top 5 technicians with the worst correlation between:
+        /// - High maintenance cost on equipment that ends in "fallo técnico irreparable"
+        /// - Low equipment longevity (from acquisition to decommission)
+        /// - Poor supervisor assessment scores.
+        /// Grouped by technician and equipment type for analytical reporting.
+        /// </summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>
+        /// A list of <see cref="TechnicianPerformanceCorrelationDto"/> representing
+        /// the 5 technicians with the worst cost/longevity/performance correlation
+        /// for equipment decommissioned due to "fallo técnico irreparable".
+        /// </returns>
+        public async Task<IEnumerable<TechnicianPerformanceCorrelationDto>> GetTechnicianMaintenanceCorrelationAsync()
+        {
+            // PHASE 1: Irreparable equipment (reason = "fallo técnico irreparable")
+            var irreparableEquipments =
+                from d in _context.EquipmentDecommissions
+                where d.Reason.ToLower() == "fallo técnico irreparable"
+                select new
+                {
+                    d.EquipmentId,
+                    d.TechnicalId,
+                    d.DecommissionDate
+                };
+
+            // PHASE 2: Equipment longevity (from acquisition to decommission)
+            var equipmentLongevity =
+                from e in _context.Equipments
+                join d in irreparableEquipments
+                    on e.Id equals d.EquipmentId
+                select new
+                {
+                    d.TechnicalId,
+                    EquipmentId = e.Id,
+                    LongevityDays = EF.Functions.DateDiffDay(
+                        e.AcquisitionDate,
+                        d.DecommissionDate)
+                };
+
+            // PHASE 3: Total maintenance cost per technician + equipment BEFORE decommission
+            var maintenanceCosts =
+                from m in _context.Maintenances
+                join d in irreparableEquipments
+                    on m.EquipmentId equals d.EquipmentId
+                where m.MaintenanceDate < d.DecommissionDate
+                group m by new { m.TechnicalId, m.EquipmentId } into g
+                select new
+                {
+                    g.Key.TechnicalId,
+                    g.Key.EquipmentId,
+                    TotalCost = g.Sum(x => x.Cost)
+                };
+
+            // PHASE 4: Average technician performance score (assessments)
+            var technicianPerformance =
+                from a in _context.Assessments
+                group a by a.TechnicalId into g
+                select new
+                {
+                    TechnicalId = g.Key,
+                    AvgScore = g.Average(x => x.Score.Value)
+                };
+
+            // PHASE 5: Final join, aggregation by technician + equipment type, ordering and TOP 5
+            var query =
+                from lon in equipmentLongevity
+                join cost in maintenanceCosts
+                    on new { lon.TechnicalId, lon.EquipmentId }
+                    equals new { cost.TechnicalId, cost.EquipmentId }
+                join perf in technicianPerformance
+                    on lon.TechnicalId equals perf.TechnicalId
+                join tech in _context.Technicals
+                    on lon.TechnicalId equals tech.Id
+                join eq in _context.Equipments
+                    on lon.EquipmentId equals eq.Id
+                join type in _context.EquipmentTypes
+                    on eq.EquipmentTypeId equals type.Id
+                group new { lon, cost, perf, type } by new
+                {
+                    tech.Id,
+                    tech.Name,
+                    EquipmentTypeName = type.Name,
+                    perf.AvgScore
+                }
+                into g
+                // Aggregated metrics per technician + equipment type
+                let totalCost = g.Sum(x => x.cost.TotalCost)
+                let avgLongevity = g.Average(x => (double)x.lon.LongevityDays)
+                // Ordering: worst correlation = higher cost, lower longevity, lower rating
+                orderby totalCost descending,
+                        avgLongevity ascending,
+                        g.Key.AvgScore ascending
+                select new TechnicianPerformanceCorrelationDto
+                {
+                    TechnicianId = g.Key.Id,
+                    TechnicianName = g.Key.Name,
+                    EquipmentTypeName = g.Key.EquipmentTypeName,
+                    AveragePerformanceScore = g.Key.AvgScore,
+                    TotalMaintenanceCost = totalCost,
+                    AverageEquipmentLongevityDays = avgLongevity
+                };
+
+            // Read-only query and TOP 5 from the database
+            var list = await query
+                .AsNoTracking()
+                .Take(5)
+                .ToListAsync();
+
+            return list;
+        }
+
+
+
+        /// <summary>
+        /// REPORT 5 - Frequent maintenance equipment.
+        /// Retrieves equipment that has received more than three maintenances
+        /// in the last year and therefore must be replaced according to policy.
+        /// </summary>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>
+        /// A list of <see cref="EquipmentReplacementReportDto"/> representing
+        /// equipment with more than three maintenances in the last 12 months,
+        /// including maintenance count and last maintenance date.
+        /// </returns>
+        public async Task<IEnumerable<EquipmentReplacementReportDto>> GetFrequentMaintenanceEquipmentAsync()
         {
             var oneYearAgo = DateTime.UtcNow.AddYears(-1);
 
-            // Subquery for equipment with more than 3 maintenances
-            var frequentQuery = 
+            // PHASE 1: Filter maintenances in the last 12 months
+            var recentMaintenances =
                 from m in _context.Maintenances
                 where m.MaintenanceDate >= oneYearAgo
+                select m;
+
+            // PHASE 2: Group by equipment and keep only those with > 3 maintenances
+            var equipmentWithCounts =
+                from m in recentMaintenances
                 group m by m.EquipmentId into g
                 where g.Count() > 3
                 select new
                 {
                     EquipmentId = g.Key,
-                    Count = g.Count(),
-                    LastDate = g.Max(x => x.MaintenanceDate),
-                    TotalCost = g.Sum(x => x.Cost)
+                    MaintenanceCount = g.Count(),
+                    LastMaintenanceDate = g.Max(x => x.MaintenanceDate)
                 };
 
-            var frequentList = await frequentQuery.ToListAsync();
-
-            if (!frequentList.Any())
-                return new List<FrequentMaintenanceEquipmentDto>();
-
-            // Get IDs of frequent equipment
-            var equipmentIds = frequentList.Select(f => f.EquipmentId).ToList();
-
-            // Main query to get detailed data
-            var detailedQuery = 
-                from eq in _context.Equipments
-                where equipmentIds.Contains(eq.Id)
-                join equipmentType in _context.EquipmentTypes on eq.EquipmentTypeId equals equipmentType.Id
-                join department in _context.Departments on eq.DepartmentId equals department.Id
-                join section in _context.Sections on department.SectionId equals section.Id
-                select new
+            // PHASE 3: Join with Equipment and EquipmentType to build the report DTO
+            var query =
+                from ec in equipmentWithCounts
+                join e in _context.Equipments
+                    on ec.EquipmentId equals e.Id
+                join et in _context.EquipmentTypes
+                    on e.EquipmentTypeId equals et.Id
+                select new EquipmentReplacementReportDto
                 {
-                    Equipment = eq,
-                    EquipmentTypeName = equipmentType.Name,
-                    Department = department,
+                    EquipmentId = e.Id,
+                    EquipmentName = e.Name,
+                    EquipmentTypeName = et.Name,
+                    MaintenanceCountLastYear = ec.MaintenanceCount,
+                    LastMaintenanceDate = ec.LastMaintenanceDate
                 };
 
-            var detailedList = await detailedQuery.ToListAsync();
+            var list = await query
+                .AsNoTracking()
+                .ToListAsync();
 
-            // Combine the data
-            var result = from f in frequentList
-                         join d in detailedList on f.EquipmentId equals d.Equipment.Id
-                         select new FrequentMaintenanceEquipmentDto
-                         {
-                             EquipmentName = d.Equipment.Name,
-                             EquipmentType = d.EquipmentTypeName,
-                             State = GetStateName(d.Equipment.StateId),
-                             AcquisitionDate = d.Equipment.AcquisitionDate,
-                             Department = d.Department.Name,
-                             MaintenanceCountLastYear = f.Count,
-                             LastMaintenanceDate = f.LastDate,
-                             TotalMaintenanceCost = f.TotalCost,
-                             Recommendation = "REPLACEMENT RECOMMENDED",
-                             DaysSinceAcquisition = (int)(DateTime.UtcNow - d.Equipment.AcquisitionDate).TotalDays,
-                             MonthlyMaintenanceFrequency = Math.Round(f.Count / 12.0m, 2)
-                         };
-
-            return result.ToList();
+            return list;
         }
 
         /// <summary>
-        /// Gets technician performance for bonuses in the last 6 months.
+        /// REPORT 6 - Technician performance comparison for salary review.
+        /// Compares technicians based on supervisor ratings and total interventions performed.
         /// </summary>
-        /// <returns>List of technician performance bonus data.</returns>
-        public async Task<IEnumerable<TechnicianPerformanceBonusDto>> GetTechnicianPerformanceBonusAsync()
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>
+        /// List of technicians ordered by performance score, then total interventions.
+        /// </returns>
+        public async Task<List<TechnicianPerformanceReportDto>> GetTechnicianPerformanceReportAsync()
         {
-            var sixMonthsAgo = DateTime.UtcNow.AddMonths(-6);
-            
-            try
-            {
-                // Get all required data separately
-                var technicians = await _context.Technicals.ToListAsync();
-                var maintenances = await _context.Maintenances
-                    .Where(m => m.MaintenanceDate >= sixMonthsAgo)
-                    .ToListAsync();
-                var assessments = await _context.Assessments.ToListAsync();
-
-                var results = new List<TechnicianPerformanceBonusDto>();
-
-                foreach (var tech in technicians)
+            // PHASE 1: Average performance score per technician
+            var technicianPerformance =
+                from a in _context.Assessments
+                group a by a.TechnicalId into g
+                select new
                 {
-                    var techMaintenances = maintenances
-                        .Where(m => m.TechnicalId == tech.Id)
-                        .ToList();
-                        
-                    var techAssessments = assessments
-                        .Where(a => a.TechnicalId == tech.Id)
-                        .ToList();
-                    
-                    // Only process technicians with at least one intervention or rating
-                    if (!techMaintenances.Any() && !techAssessments.Any())
-                        continue;
-                    
-                    var totalInterventions = techMaintenances.Count;
-                    var totalInterventionCost = techMaintenances.Sum(m => m.Cost);
-                    var totalRatings = techAssessments.Count;
-                    
-                    // Calculate average rating (safe against division by zero)
-                    decimal averageRating = 0;
-                    if (totalRatings > 0)
-                    {
-                        averageRating = techAssessments.Average(a => a.Score.Value);
-                    }
-                    
-                    // Last rating date (nullable)
-                    DateTime? lastRatingDate = null;
-                    if (techAssessments.Any())
-                    {
-                        lastRatingDate = techAssessments.Max(a => a.AssessmentDate);
-                    }
-                    
-                    // Calculate bonus score
-                    decimal bonusScore = (totalInterventions * 0.4m) + (averageRating * 0.6m);
-                    
-                    // Determine recommendation
-                    string bonusRecommendation = bonusScore > 7 ? "BONUS" : "KEEP";
-                    
-                    // Calculate days without intervention
-                    int daysWithoutIntervention = 999;
-                    if (techMaintenances.Any())
-                    {
-                        var lastMaintenance = techMaintenances.Max(m => m.MaintenanceDate);
-                        daysWithoutIntervention = (int)(DateTime.UtcNow - lastMaintenance).TotalDays;
-                    }
-                    
-                    results.Add(new TechnicianPerformanceBonusDto
-                    {
-                        TechnicalName = tech.Name,
-                        Speciality = tech.Specialty,
-                        Experience = tech.Experience,
-                        Email = tech.Email.Value,
-                        TotalInterventions = totalInterventions,
-                        TotalInterventionCost = totalInterventionCost,
-                        TotalRatings = totalRatings,
-                        AverageRating = Math.Round(averageRating, 2),
-                        LastRatingDate = lastRatingDate,
-                        BonusScore = Math.Round(bonusScore, 2),
-                        BonusRecommendation = bonusRecommendation,
-                        DaysWithoutIntervention = daysWithoutIntervention
-                    });
-                }
-                
-                return results
-                    .OrderByDescending(r => r.BonusScore)
-                    .ThenByDescending(r => r.TotalInterventions)
-                    .ToList();
-            }
-            catch (Exception ex)
-            {
-                // Log error
-                Console.WriteLine($"Error in GetTechnicianPerformanceBonusAsync: {ex.Message}");
-                Console.WriteLine($"StackTrace: {ex.StackTrace}");
-                
-                // Return an empty list in case of error to avoid breaking the flow
-                return new List<TechnicianPerformanceBonusDto>();
-            }
+                    TechnicalId = g.Key,
+                    AvgScore = g.Average(x => x.Score.Value)
+                };
+
+            // PHASE 2: Total interventions per technician
+            var technicianInterventions =
+                from m in _context.Maintenances
+                group m by m.TechnicalId into g
+                select new
+                {
+                    TechnicalId = g.Key,
+                    TotalInterventions = g.Count()
+                };
+
+            // PHASE 3: Combine data and order by performance metrics
+            var query =
+                from perf in technicianPerformance
+                join interv in technicianInterventions on perf.TechnicalId equals interv.TechnicalId
+                join tech in _context.Technicals on perf.TechnicalId equals tech.Id
+                orderby perf.AvgScore descending, interv.TotalInterventions descending
+                select new TechnicianPerformanceReportDto
+                {
+                    TechnicianId = perf.TechnicalId,
+                    TechnicianName = tech.Name,
+                    AveragePerformanceScore = perf.AvgScore,
+                    TotalInterventions = interv.TotalInterventions
+                };
+
+            var list = await query
+                .AsNoTracking()
+                .ToListAsync();
+
+            return list;
         }
-        
+
         /// <summary>
         /// Gets the state name for a given state id.
         /// </summary>
@@ -466,15 +365,15 @@ namespace Infrastructure.Reports
             };
 
         /// <summary>
-        /// Gets the maintenance type name for a given type id.
+        /// Gets the maintenance type name for a given maintenance type id.
         /// </summary>
         private static string GetMaintenanceTypeName(int id) =>
             id switch
             {
                 1 => "Preventive",
                 2 => "Corrective",
-                3 => "Predective",
-                4 => "Emergency",
+                3 => "Predictive",
+                4 => "Calibration",
                 _ => "Unknown"
             };
 
@@ -491,44 +390,83 @@ namespace Infrastructure.Reports
             };
 
         /// <summary>
-        /// Gets the list of equipment sent to a specific department.
+        /// REPORT 7 - Equipment sent to a specific department.
+        /// Returns all equipment that has arrived at the target department,
+        /// including sender, receiver, destination department and sending company.
+        /// Combines decommissions (DestinyType = 1) and internal transfers.
         /// </summary>
-        /// <param name="targetDepartmentId">The target department identifier.</param>
-        /// <returns>List of equipment sent to the specified department.</returns>
-        public async Task<IEnumerable<EquipmentSentToDepartmentDto>> GetEquipmentSentToDepartmentAsync(Guid targetDepartmentId)
+        /// <param name="targetDepartmentId">Target department identifier.</param>
+        /// <returns>
+        /// List of <see cref="EquipmentSentToDepartmentDto"/> ordered by sent date (newest first).
+        /// </returns>
+        public async Task<IEnumerable<EquipmentSentToDepartmentDto>>
+            GetEquipmentSentToDepartmentAsync(Guid targetDepartmentId)
         {
-
-            var query =
+            var decommissionsQuery =
                 from decomm in _context.EquipmentDecommissions
-                where decomm.DepartmentId == targetDepartmentId && decomm.DestinyTypeId == 1 // 1 = Department
-                join equipment in _context.Equipments on decomm.EquipmentId equals equipment.Id
-                join equipmentType in _context.EquipmentTypes on equipment.EquipmentTypeId equals equipmentType.Id
-                join technical in _context.Technicals on decomm.TechnicalId equals technical.Id
-                join sourceDept in _context.Departments on equipment.DepartmentId equals sourceDept.Id
-                join sourceSection in _context.Sections on sourceDept.SectionId equals sourceSection.Id
-                join targetDept in _context.Departments on decomm.DepartmentId equals targetDept.Id
-                join recipient in _context.Responsibles on decomm.RecipientId equals recipient.Id
+                where decomm.DestinyTypeId == 1
+                      && decomm.DepartmentId == targetDepartmentId
+
+                join equipment in _context.Equipments
+                    on decomm.EquipmentId equals equipment.Id
+
+                join destinationDepartment in _context.Departments
+                    on decomm.DepartmentId equals destinationDepartment.Id
+
+                join sender in _context.Technicals
+                    on decomm.TechnicalId equals sender.Id
+
+                join receiver in _context.Responsibles
+                    on decomm.RecipientId equals receiver.Id
+
+                join section in _context.Sections
+                    on destinationDepartment.SectionId equals section.Id
+
                 select new EquipmentSentToDepartmentDto
                 {
                     EquipmentName = equipment.Name,
-                    EquipmentType = equipmentType.Name,
-                    SendDate = decomm.DecommissionDate,
-                    Reason = decomm.Reason,
-                    SenderName = technical.Name,
-                    SenderEmail = technical.Email.Value,
-                    SenderDepartment = sourceDept.Name,
-                    SenderCompany = sourceSection.Name,
-                    ReceiverName = recipient.Name,
-                    ReceiverEmail = recipient.Email.Value,
-                    ReceiverDepartment = targetDept.Name,
-                    EquipmentState = GetStateName(equipment.StateId),
-                    IsDefective = decomm.Reason.Contains("defect", StringComparison.OrdinalIgnoreCase) ||
-                                 decomm.Reason.Contains("fail", StringComparison.OrdinalIgnoreCase)
+                    SenderName = sender.Name,
+                    ReceiverName = receiver.Name,
+                    DestinationDepartment = destinationDepartment.Name,
+                    SendingCompany = section.Name,
+                    SentDate = decomm.DecommissionDate
                 };
+
+            var transfersQuery =
+                from transfer in _context.Transfers
+                where transfer.TargetDepartmentId == targetDepartmentId
+
+                join equipment in _context.Equipments
+                    on transfer.EquipmentId equals equipment.Id
+
+                join destinationDepartment in _context.Departments
+                    on transfer.TargetDepartmentId equals destinationDepartment.Id
+
+                join sender in _context.Responsibles
+                    on transfer.ResponsibleId equals sender.Id
+
+                join receiver in _context.Responsibles
+                    on transfer.RecipientId equals receiver.Id
+
+                join section in _context.Sections
+                    on destinationDepartment.SectionId equals section.Id
+
+                select new EquipmentSentToDepartmentDto
+                {
+                    EquipmentName = equipment.Name,
+                    SenderName = sender.Name,
+                    ReceiverName = receiver.Name,
+                    DestinationDepartment = destinationDepartment.Name,
+                    SendingCompany = section.Name,
+                    SentDate = transfer.TransferDate
+                };
+
+            var query = decommissionsQuery
+                .Union(transfersQuery);
 
             return await query
                 .AsNoTracking()
-                .OrderByDescending(x => x.SendDate)
+                .OrderByDescending(x => x.SentDate)
                 .ToListAsync();
         }
     }
