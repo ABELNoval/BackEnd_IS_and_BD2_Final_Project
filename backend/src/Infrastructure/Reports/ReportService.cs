@@ -1,37 +1,35 @@
 using Application.DTOs.ReportRequest;
 using Application.Interfaces.Services;
+using Application.Reports.Generators;
 
 namespace Infrastructure.Reports
 {
+    /// <summary>
+    /// Provides report generation using a factory to resolve the appropriate generator by format.
+    /// </summary>
     public class ReportService : IReportService
     {
-        private readonly PdfReportGenerator _pdfGenerator;
-        private readonly ExcelReportGenerator _excelGenerator;
-        private readonly WordReportGenerator _wordGenerator;
+        private readonly IReportGeneratorFactory _factory;
 
-        public ReportService(
-            PdfReportGenerator pdfGenerator,
-            ExcelReportGenerator excelGenerator,
-            WordReportGenerator wordGenerator)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ReportService"/> class.
+        /// </summary>
+        /// <param name="factory">The report generator factory.</param>
+        public ReportService(IReportGeneratorFactory factory)
         {
-            _pdfGenerator = pdfGenerator;
-            _excelGenerator = excelGenerator;
-            _wordGenerator = wordGenerator;
+            _factory = factory;
         }
 
-        public async Task<byte[]> GeneratePdfReport(ReportRequestDto request)
+        /// <summary>
+        /// Generates a report in the specified format asynchronously.
+        /// </summary>
+        /// <param name="request">The report request DTO containing report parameters.</param>
+        /// <param name="format">The desired report format (e.g., "pdf", "excel", "word").</param>
+        /// <returns>A byte array representing the generated report file.</returns>
+        public async Task<byte[]> GenerateReportAsync(ReportRequestDto request, string format)
         {
-            return await _pdfGenerator.Generate(request);
-        }
-
-        public async Task<byte[]> GenerateExcelReport(ReportRequestDto request)
-        {
-            return await _excelGenerator.Generate(request);
-        }
-
-        public async Task<byte[]> GenerateWordReport(ReportRequestDto request)
-        {
-            return await _wordGenerator.Generate(request);
+            var generator = _factory.GetGenerator(format);
+            return await generator.GenerateAsync(request);
         }
     }
 }

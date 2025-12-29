@@ -7,6 +7,9 @@ using Application.Interfaces.Security;
 using Infrastructure.Security;
 using Application.Interfaces.Services;
 using Infrastructure.Reports;
+using Application.Reports.Generators;
+using Infrastructure.Reports.Generators;
+using Application.Interfaces.Repositories;
 
 namespace Infrastructure
 {
@@ -38,13 +41,18 @@ namespace Infrastructure
             // 🔹 JwtProvider = infraestructura técnica → debe estar aquí
             services.AddSingleton<IJwtProvider, JwtProvider>();
 
-             services.AddScoped<IReportQueryService, ReportQueryService>();
-            services.AddScoped<IReportService, ReportService>();
-    
-            // Generadores de formatos
+
+
+            // Register all report generators (explicit, for constructor injection)
             services.AddScoped<PdfReportGenerator>();
             services.AddScoped<ExcelReportGenerator>();
             services.AddScoped<WordReportGenerator>();
+
+            // Register the factory and the service
+            services.AddScoped<IReportGeneratorFactory, ReportGeneratorFactory>();
+            services.AddScoped<IReportService, ReportService>();
+
+            services.AddScoped<IReportQueriesRepository, ReportQueriesRepository>();
 
             return services;
         }
