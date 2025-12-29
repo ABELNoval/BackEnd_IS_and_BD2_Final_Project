@@ -51,7 +51,7 @@ namespace Application.Services
             equipment.AddTransfer(
                 dto.TargetDepartmentId,
                 dto.ResponsibleId,
-                dto.TransferDate);
+                dto.TransferDate ?? DateTime.UtcNow);
 
             var transfer = equipment.Transfers.Last();
             await _transferRepository.CreateAsync(transfer);

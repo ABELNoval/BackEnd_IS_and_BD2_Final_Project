@@ -27,7 +27,7 @@ namespace Application.Mappers
                 .ForMember(dest => dest.DepartmentId, opt => opt.MapFrom(src => src.DepartmentId))
                 .ForMember(dest => dest.DestinyTypeId, opt => opt.MapFrom(src => src.DestinyTypeId))
                 .ForMember(dest => dest.RecipientId, opt => opt.MapFrom(src => src.RecipientId))
-                .ForMember(dest => dest.DecommissionDate, opt => opt.MapFrom(src => src.DecommissionDate))
+                .ForMember(dest => dest.DecommissionDate, opt => opt.MapFrom(src => src.DecommissionDate ?? DateTime.UtcNow))
                 .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.Reason));
         }
     }

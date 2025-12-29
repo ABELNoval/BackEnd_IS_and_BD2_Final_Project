@@ -24,7 +24,7 @@ namespace Application.Mappers
                 .ForMember(dest => dest.SourceDepartmentId, opt => opt.MapFrom(src => src.SourceDepartmentId))
                 .ForMember(dest => dest.TargetDepartmentId, opt => opt.MapFrom(src => src.TargetDepartmentId))
                 .ForMember(dest => dest.ResponsibleId, opt => opt.MapFrom(src => src.ResponsibleId))
-                .ForMember(dest => dest.TransferDate, opt => opt.MapFrom(src => src.TransferDate));
+                .ForMember(dest => dest.TransferDate, opt => opt.MapFrom(src => src.TransferDate ?? DateTime.UtcNow));
         }
     }
 }

@@ -49,7 +49,7 @@ namespace Application.Services
 
             equipment.AddMaintenance(
                 dto.TechnicalId,
-                dto.MaintenanceDate,
+                dto.MaintenanceDate ?? DateTime.UtcNow,
                 dto.MaintenanceTypeId,
                 dto.Cost);
 
