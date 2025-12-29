@@ -47,7 +47,10 @@ namespace Domain.Interfaces
         /// Obtiene usuarios con email que contiene texto específico
         /// </summary>
         Task<IEnumerable<User>> SearchByEmailAsync(string emailPart, CancellationToken cancellationToken = default);
-        
+        /// <summary>
+        /// Obtiene un usuario por su email exacto
+        /// </summary>
+        Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);        
         /// <summary>
         /// Verifica si existe un usuario con el email especificado
         /// </summary>

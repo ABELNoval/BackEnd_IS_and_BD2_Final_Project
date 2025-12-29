@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,6 +15,20 @@ namespace Infrastructure.Persistence.Repositories
     public class EmployeeRepository : BaseRepository<Employee>, IEmployeeRepository
     {
         public EmployeeRepository(AppDbContext context) : base(context) { }
+
+        public async Task<IEnumerable<Employee>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default)
+        {
+            var deptList = departmentIds.ToList();
+            return await _context.Employees
+                .Where(e => deptList.Contains(e.DepartmentId))
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<Employee?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Employees
+                .FirstOrDefaultAsync(e => e.Email == Email.Create(email), cancellationToken);
+        }
 
         public async Task<IEnumerable<Employee>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {

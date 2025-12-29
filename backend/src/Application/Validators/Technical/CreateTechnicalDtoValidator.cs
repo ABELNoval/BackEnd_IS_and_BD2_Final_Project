@@ -48,8 +48,8 @@ namespace Application.Validators.Technical
         /// </summary>
         private async System.Threading.Tasks.Task<bool> EmailIsUnique(string email, System.Threading.CancellationToken ct)
         {
-            var existing = await _technicalRepo.FilterAsync($"Email == \"{email}\"", ct);
-            return existing == null || !existing.GetEnumerator().MoveNext();
+            var existing = await _technicalRepo.GetByEmailAsync(email, ct);
+            return existing == null;
         }
     }
 }

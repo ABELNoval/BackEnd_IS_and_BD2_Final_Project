@@ -1,6 +1,7 @@
 using Application.DTOs.Maintenance;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Web.Controllers
 {
@@ -9,10 +10,14 @@ namespace Web.Controllers
     public class MaintenanceController : ControllerBase
     {
         private readonly IMaintenanceService _maintenanceService;
+        private readonly IDepartmentService _departmentService;
+        private readonly IEquipmentService _equipmentService;
 
-        public MaintenanceController (IMaintenanceService maintenanceService)
+        public MaintenanceController (IMaintenanceService maintenanceService, IDepartmentService departmentService, IEquipmentService equipmentService)
         {
             _maintenanceService = maintenanceService;
+            _departmentService = departmentService;
+            _equipmentService = equipmentService;
         }
 
         // ==============================
@@ -21,8 +26,48 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            var result = await _maintenanceService.GetAllAsync(cancellationToken);
-            return Ok(result);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<MaintenanceDto>());
+                    }
+
+                    var equipments = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    var equipmentIds = equipments.Select(e => e.Id).ToList();
+
+                    if (!equipmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<MaintenanceDto>());
+                    }
+
+                    var ids = string.Join(",", equipmentIds.Select(id => $"\"{id}\""));
+                    var query = $"EquipmentId in ({ids})";
+                    
+                    var result = await _maintenanceService.FilterAsync(query, cancellationToken);
+                    return Ok(result);
+                }
+            }
+            else if (role == "Technical")
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    var query = $"TechnicalId == \"{userId}\"";
+                    var result = await _maintenanceService.FilterAsync(query, cancellationToken);
+                    return Ok(result);
+                }
+            }
+
+            var resultAll = await _maintenanceService.GetAllAsync(cancellationToken);
+            return Ok(resultAll);
         }
 
         // ==============================
@@ -80,6 +125,42 @@ namespace Web.Controllers
             if (request != null && request.Count > 0)
             {
                 query = string.Join(" AND ", request);
+            }
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<MaintenanceDto>());
+                    }
+
+                    var equipments = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    var equipmentIds = equipments.Select(e => e.Id).ToList();
+
+                    if (!equipmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<MaintenanceDto>());
+                    }
+
+                    var ids = string.Join(",", equipmentIds.Select(id => $"\"{id}\""));
+                    var sectionFilter = $"EquipmentId in ({ids})";
+                    
+                    if (!string.IsNullOrEmpty(query))
+                    {
+                        query = $"({query}) AND {sectionFilter}";
+                    }
+                    else
+                    {
+                        query = sectionFilter;
+                    }
+                }
             }
 
             var result = await _maintenanceService.FilterAsync(query, cancellationToken);

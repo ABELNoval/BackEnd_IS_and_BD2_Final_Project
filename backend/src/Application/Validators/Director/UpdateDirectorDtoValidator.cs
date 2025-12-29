@@ -47,8 +47,8 @@ namespace Application.Validators.Director
         /// </summary>
         private async System.Threading.Tasks.Task<bool> EmailIsUnique(UpdateDirectorDto dto, string email, System.Threading.CancellationToken ct)
         {
-            var existing = await _directorRepo.FilterAsync($"Email == \"{email}\" && Id != Guid(\"{dto.Id}\")", ct);
-            return existing == null || !existing.GetEnumerator().MoveNext();
+            var existing = await _directorRepo.GetByEmailAsync(email, ct);
+            return existing == null || existing.Id == dto.Id;
         }
     }
 }

@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,6 +15,13 @@ namespace Infrastructure.Persistence.Repositories
     public class ResponsibleRepository : BaseRepository<Responsible>, IResponsibleRepository
     {
         public ResponsibleRepository(AppDbContext context) : base(context) { }
+
+        public async Task<Responsible?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            // EF Core will use the Value Converter to convert Email.Create(email) to string for comparison
+            return await _context.Responsibles
+                .FirstOrDefaultAsync(r => r.Email == Email.Create(email), cancellationToken);
+        }
 
         public async Task<IEnumerable<Responsible>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {

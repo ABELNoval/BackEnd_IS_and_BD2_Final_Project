@@ -139,6 +139,18 @@ namespace Application.Services
         }
 
         /// <summary>
+        /// Gets employees by department IDs.
+        /// </summary>
+        public async Task<IEnumerable<EmployeeDto>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default)
+        {
+            if (departmentIds == null || !departmentIds.Any())
+                return Enumerable.Empty<EmployeeDto>();
+
+            var entities = await _employeeRepository.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+            return _mapper.Map<IEnumerable<EmployeeDto>>(entities);
+        }
+
+        /// <summary>
         /// Filters employees by a query string.
         /// </summary>
         /// <param name="query">The filter query.</param>

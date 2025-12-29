@@ -13,5 +13,10 @@ namespace Domain.Interfaces
         /// </summary>
         /// <param name="query">Consulta en formato Dynamic LINQ (ej: "Name.Contains('John') && Experience > 5")</param>
         Task<IEnumerable<Technical>> FilterAsync(string query, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene un técnico por su email
+        /// </summary>
+        Task<Technical?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
     }
 }

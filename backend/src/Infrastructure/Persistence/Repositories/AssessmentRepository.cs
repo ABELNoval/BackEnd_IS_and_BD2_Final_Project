@@ -31,7 +31,7 @@ namespace Infrastructure.Persistence.Repositories
                 }
             }
 
-            return (IEnumerable<Assessment>)await baseQuery.Select(a => a.Id).ToListAsync(cancellationToken);
+            return await baseQuery.ToListAsync(cancellationToken);
         }
 
         public async Task<(IEnumerable<Assessment> Data, int Total, int Pages)> FilterPaginatedAsync(

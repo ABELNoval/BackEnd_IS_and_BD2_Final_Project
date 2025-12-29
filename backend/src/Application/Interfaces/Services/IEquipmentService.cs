@@ -10,6 +10,7 @@ namespace Application.Interfaces.Services
         Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default);
         Task<EquipmentDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
         Task<IEnumerable<EquipmentDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        Task<IEnumerable<EquipmentDto>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default);
         Task<IEnumerable<EquipmentDto>> FilterAsync(string query, CancellationToken cancellationToken = default);
     }
 }

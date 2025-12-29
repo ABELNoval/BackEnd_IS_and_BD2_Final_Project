@@ -63,8 +63,8 @@ namespace Application.Validators.Responsible
         /// </summary>
         private async Task<bool> EmailIsUniqueAsync(UpdateResponsibleDto dto, string email, CancellationToken cancellationToken)
         {
-            var existing = await _responsibleRepository.FilterAsync($"Email == \"{email}\" && Id != Guid(\"{dto.Id}\")", cancellationToken);
-            return existing == null || !existing.GetEnumerator().MoveNext();
+            var existing = await _responsibleRepository.GetByEmailAsync(email, cancellationToken);
+            return existing == null || existing.Id == dto.Id;
         }
 
         /// <summary>

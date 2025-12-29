@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -14,6 +15,12 @@ namespace Infrastructure.Persistence.Repositories
     public class DirectorRepository : BaseRepository<Director>, IDirectorRepository
     {
         public DirectorRepository(AppDbContext context) : base(context) { }
+
+        public async Task<Director?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Directors
+                .FirstOrDefaultAsync(d => d.Email == Email.Create(email), cancellationToken);
+        }
 
         public async Task<IEnumerable<Director>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {

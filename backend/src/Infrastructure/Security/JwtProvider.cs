@@ -26,13 +26,23 @@ namespace Infrastructure.Security
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            var claims = new[]
+            var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, user.Email),
                 new Claim("name", user.Name),
                 new Claim(ClaimTypes.Role, user.Role)
             };
+
+            if (user.DepartmentId.HasValue)
+            {
+                claims.Add(new Claim("DepartmentId", user.DepartmentId.Value.ToString()));
+            }
+
+            if (user.SectionId.HasValue)
+            {
+                claims.Add(new Claim("SectionId", user.SectionId.Value.ToString()));
+            }
 
             var token = new JwtSecurityToken(
                 issuer,

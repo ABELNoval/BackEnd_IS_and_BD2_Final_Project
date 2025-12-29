@@ -51,7 +51,7 @@ namespace Application.Services
             equipment.AddTransfer(
                 dto.TargetDepartmentId,
                 dto.ResponsibleId,
-                dto.TransferDate);
+                dto.TransferDate ?? DateTime.UtcNow);
 
             var transfer = equipment.Transfers.Last();
             await _transferRepository.CreateAsync(transfer);
@@ -119,6 +119,18 @@ namespace Application.Services
         public async Task<IEnumerable<TransferDto>> GetAllAsync(CancellationToken cancellationToken = default)
         {
             var entities = await _transferRepository.GetAllAsync(cancellationToken);
+            return _mapper.Map<IEnumerable<TransferDto>>(entities);
+        }
+
+        /// <summary>
+        /// Gets transfers by source or target department IDs
+        /// </summary>
+        public async Task<IEnumerable<TransferDto>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default)
+        {
+            if (departmentIds == null || !departmentIds.Any())
+                return Enumerable.Empty<TransferDto>();
+
+            var entities = await _transferRepository.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
             return _mapper.Map<IEnumerable<TransferDto>>(entities);
         }
 

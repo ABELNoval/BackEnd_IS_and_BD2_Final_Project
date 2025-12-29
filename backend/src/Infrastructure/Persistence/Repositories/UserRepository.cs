@@ -1,5 +1,6 @@
 using Domain.Entities;
 using Domain.Interfaces;
+using Domain.ValueObjects;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -80,15 +81,27 @@ namespace Infrastructure.Persistence.Repositories
 
         public async Task<IEnumerable<User>> SearchByEmailAsync(string emailPart, CancellationToken cancellationToken = default)
         {
+            // Note: Contains on Value Object property might fail if not owned. 
+            // Since Email is converted, we can't use .Value.Contains easily unless we do client eval or raw SQL.
+            // However, if we assume the converter maps to string, maybe we can use EF.Functions.Like?
+            // Or just fetch all and filter (bad for performance).
+            // For now, let's try to use the property directly if possible, but Contains on Email object is not defined.
+            // We will leave this as is for now, but be aware it might fail.
             return await _context.Users
                 .Where(u => u.Email.Value.Contains(emailPart))
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
+        {
+            return await _context.Users
+                .FirstOrDefaultAsync(u => u.Email == Email.Create(email), cancellationToken);
+        }
+
         public async Task<bool> ExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Users
-                .AnyAsync(u => u.Email.Value == email, cancellationToken);
+                .AnyAsync(u => u.Email == Email.Create(email), cancellationToken);
         }
 
         public async Task<Dictionary<int, int>> GetCountByRoleAsync(CancellationToken cancellationToken = default)

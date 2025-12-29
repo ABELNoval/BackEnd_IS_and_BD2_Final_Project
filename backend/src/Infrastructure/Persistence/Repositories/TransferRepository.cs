@@ -15,6 +15,14 @@ namespace Infrastructure.Persistence.Repositories
     {
         public TransferRepository(AppDbContext context) : base(context) { }
 
+        public async Task<IEnumerable<Transfer>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default)
+        {
+            var deptList = departmentIds.ToList();
+            return await _context.Transfers
+                .Where(t => deptList.Contains(t.SourceDepartmentId) || deptList.Contains(t.TargetDepartmentId))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IEnumerable<Transfer>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
             IQueryable<Transfer> baseQuery = _context.Transfers;

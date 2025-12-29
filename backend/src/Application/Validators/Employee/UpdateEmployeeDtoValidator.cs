@@ -63,8 +63,8 @@ namespace Application.Validators.Employee
         /// </summary>
         private async Task<bool> EmailIsUniqueAsync(UpdateEmployeeDto dto, string email, CancellationToken cancellationToken)
         {
-            var existing = await _employeeRepository.FilterAsync($"Email == \"{email}\" && Id != Guid(\"{dto.Id}\")", cancellationToken);
-            return existing == null || !existing.GetEnumerator().MoveNext();
+            var existing = await _employeeRepository.GetByEmailAsync(email, cancellationToken);
+            return existing == null || existing.Id == dto.Id;
         }
 
         /// <summary>

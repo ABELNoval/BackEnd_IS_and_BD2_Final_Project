@@ -8,13 +8,16 @@ namespace Application.Services
     public class AuthService : IAuthService
     {
         private readonly IUserRepository _userRepository;
+        private readonly IDepartmentRepository _departmentRepository;
         private readonly IJwtProvider _jwtProvider;
 
         public AuthService(
             IUserRepository userRepository,
+            IDepartmentRepository departmentRepository,
             IJwtProvider jwtProvider)
         {
             _userRepository = userRepository;
+            _departmentRepository = departmentRepository;
             _jwtProvider = jwtProvider;
         }
 
@@ -54,6 +57,18 @@ namespace Application.Services
                 Email = user.Email.Value,
                 Role = role
             };
+
+            // Populate DepartmentId and SectionId for Employee/Responsible
+            if (user is Domain.Entities.Employee employee)
+            {
+                authUserDto.DepartmentId = employee.DepartmentId;
+                
+                var department = await _departmentRepository.GetByIdAsync(employee.DepartmentId, cancellationToken);
+                if (department != null)
+                {
+                    authUserDto.SectionId = department.SectionId;
+                }
+            }
 
             // Generate token
             var token = _jwtProvider.GenerateToken(authUserDto);

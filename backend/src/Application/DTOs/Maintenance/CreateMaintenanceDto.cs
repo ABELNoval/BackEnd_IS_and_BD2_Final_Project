@@ -6,7 +6,7 @@ namespace Application.DTOs.Maintenance
 
         public Guid TechnicalId { get; set; }
 
-        public DateTime MaintenanceDate { get; set; }
+        public DateTime? MaintenanceDate { get; set; } // Auto-set to today if null
 
         public int MaintenanceTypeId { get; set; }
         

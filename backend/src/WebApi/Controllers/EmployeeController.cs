@@ -1,6 +1,7 @@
 using Application.DTOs.Employee;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace Web.Controllers
 {
@@ -9,10 +10,12 @@ namespace Web.Controllers
     public class EmployeeController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
+        private readonly IDepartmentService _departmentService;
 
-        public EmployeeController(IEmployeeService employeeService)
+        public EmployeeController(IEmployeeService employeeService, IDepartmentService departmentService)
         {
             _employeeService = employeeService;
+            _departmentService = departmentService;
         }
 
         // =========================================
@@ -21,8 +24,27 @@ namespace Web.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            var result = await _employeeService.GetAllAsync(cancellationToken);
-            return Ok(result);
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<EmployeeDto>());
+                    }
+
+                    var result = await _employeeService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    return Ok(result);
+                }
+            }
+
+            var resultAll = await _employeeService.GetAllAsync(cancellationToken);
+            return Ok(resultAll);
         }
 
         // =========================================
@@ -79,6 +101,34 @@ namespace Web.Controllers
             if (request != null && request.Count > 0)
             {
                 query = string.Join(" AND ", request);
+            }
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<EmployeeDto>());
+                    }
+
+                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
+                    var sectionFilter = $"DepartmentId in ({ids})";
+                    
+                    if (!string.IsNullOrEmpty(query))
+                    {
+                        query = $"({query}) AND {sectionFilter}";
+                    }
+                    else
+                    {
+                        query = sectionFilter;
+                    }
+                }
             }
 
             var result = await _employeeService.FilterAsync(query, cancellationToken);

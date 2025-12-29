@@ -13,5 +13,10 @@ namespace Domain.Interfaces
         /// </summary>
         /// <param name="query">Consulta en formato Dynamic LINQ (ej: "Email.Value.Contains('@company.com')")</param>
         Task<IEnumerable<Director>> FilterAsync(string query, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Obtiene un director por su email
+        /// </summary>
+        Task<Director?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);
     }
 }
