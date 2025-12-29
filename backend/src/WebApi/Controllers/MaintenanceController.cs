@@ -115,6 +115,16 @@ namespace Web.Controllers
         }
 
         // =========================================
+        // POST: api/maintenance/{id}/complete
+        // =========================================
+        [HttpPost("{id:guid}/complete")]
+        public async Task<IActionResult> Complete(Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _maintenanceService.CompleteAsync(id, cancellationToken);
+            return Ok(result);
+        }
+
+        // =========================================
         // POST: api/maintenance/filter
         // =========================================
         [HttpPost("filter")]

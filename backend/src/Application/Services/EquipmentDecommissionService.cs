@@ -167,5 +167,43 @@ namespace Application.Services
                 _ => throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("DestinyTypeId", $"Invalid destiny type ID: {destinyType.Id}") })
             };
         }
+
+        /// <summary>
+        /// Releases equipment from warehouse to a specific department.
+        /// Updates the decommission record and the equipment's location.
+        /// </summary>
+        /// <param name="decommissionId">The decommission ID.</param>
+        /// <param name="targetDepartmentId">The target department ID.</param>
+        /// <param name="recipientId">The recipient ID in the target department.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated EquipmentDecommissionDto.</returns>
+        public async Task<EquipmentDecommissionDto> ReleaseToDepartmentAsync(
+            Guid decommissionId,
+            Guid targetDepartmentId,
+            Guid recipientId,
+            CancellationToken cancellationToken = default)
+        {
+            var decommission = await _decommissionRepository.GetByIdAsync(decommissionId, cancellationToken);
+            if (decommission == null)
+                throw new EntityNotFoundException(nameof(EquipmentDecommission), decommissionId);
+
+            // Get the equipment to update its location
+            var equipment = await _equipmentRepository.GetByIdAsync(decommission.EquipmentId, cancellationToken);
+            if (equipment == null)
+                throw new EntityNotFoundException(nameof(Equipment), decommission.EquipmentId);
+
+            // Release the decommission to the department (validates internally)
+            decommission.ReleaseToDepartment(targetDepartmentId, recipientId);
+
+            // Update the equipment's location to the department and set it back to Operative
+            equipment.AssignToDepartment(targetDepartmentId);
+
+            // Persist changes
+            await _decommissionRepository.UpdateAsync(decommission);
+            await _equipmentRepository.UpdateAsync(equipment);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return _mapper.Map<EquipmentDecommissionDto>(decommission);
+        }
     }
 }

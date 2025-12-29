@@ -195,7 +195,16 @@ namespace Infrastructure.Persistence
                 entity.Property(m => m.MaintenanceDate)
                     .IsRequired();
 
+                entity.Property(m => m.EndDate)
+                    .IsRequired(false);
+
+                entity.Property(m => m.StatusId)
+                    .HasColumnName("StatusId")
+                    .IsRequired()
+                    .HasDefaultValue(1); // Default to InProgress
+
                 entity.HasIndex(m => m.MaintenanceDate);
+                entity.HasIndex(m => m.StatusId);
             });
 
             /// <summary>

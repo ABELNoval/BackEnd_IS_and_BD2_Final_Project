@@ -99,5 +99,29 @@ namespace Web.Controllers
 
             return Ok(result);
         }
+
+        // =====================================================
+        // POST: api/equipmentDecommission/{id}/release
+        // =====================================================
+        /// <summary>
+        /// Releases equipment from warehouse to a specific department
+        /// </summary>
+        /// <param name="id">The decommission ID</param>
+        /// <param name="dto">The release details (target department and recipient)</param>
+        /// <param name="cancellationToken">Cancellation token</param>
+        /// <returns>The updated decommission record</returns>
+        [HttpPost("{id:guid}/release")]
+        public async Task<IActionResult> ReleaseToDepartment(
+            Guid id,
+            [FromBody] ReleaseToDepartmentDto dto,
+            CancellationToken cancellationToken)
+        {
+            var updated = await _equipmentDecommissionService.ReleaseToDepartmentAsync(
+                id,
+                dto.TargetDepartmentId,
+                dto.RecipientId,
+                cancellationToken);
+            return Ok(updated);
+        }
     }
 }

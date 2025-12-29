@@ -106,6 +106,34 @@ public class EquipmentDecommission : Entity
         => new(equipmentId, technicalId, departmentId, destinyTypeId, recipientId, decommissionDate, reason);
 
     /// <summary>
+    /// Releases the equipment from warehouse to a specific department.
+    /// Only valid for decommissions with Warehouse destiny type.
+    /// </summary>
+    /// <param name="targetDepartmentId">The department to release the equipment to</param>
+    /// <param name="recipientId">The recipient in the target department</param>
+    /// <exception cref="InvalidEntityException">If the decommission is not of Warehouse type</exception>
+    public void ReleaseToDepartment(Guid targetDepartmentId, Guid recipientId)
+    {
+        if (DestinyTypeId != DestinyType.Warehouse.Id)
+            throw new InvalidEntityException(
+                nameof(EquipmentDecommission),
+                "Only equipment in warehouse can be released to a department");
+
+        ValidateGuidProperty(targetDepartmentId, "Target Department ID");
+        ValidateGuidProperty(recipientId, "Recipient ID");
+
+        DepartmentId = targetDepartmentId;
+        RecipientId = recipientId;
+        DestinyTypeId = DestinyType.Department.Id;
+        DecommissionDate = DateTime.UtcNow;
+    }
+
+    /// <summary>
+    /// Checks if this decommission is in warehouse and can be released to a department
+    /// </summary>
+    public bool CanBeReleasedToDepartment => DestinyTypeId == DestinyType.Warehouse.Id;
+
+    /// <summary>
     /// Updates the reason for decommissioning
     /// </summary>
     /// <param name="newReason">The new reason for decommissioning</param>

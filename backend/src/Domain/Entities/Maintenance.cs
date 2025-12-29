@@ -21,9 +21,24 @@ public class Maintenance : Entity
     public Guid TechnicalId { get; private set; }
 
     /// <summary>
-    /// Date when the maintenance was performed
+    /// Date when the maintenance was started
     /// </summary>
     public DateTime MaintenanceDate { get; private set; }
+
+    /// <summary>
+    /// Date when the maintenance was completed (null if still in progress)
+    /// </summary>
+    public DateTime? EndDate { get; private set; }
+
+    /// <summary>
+    /// Status of the maintenance (InProgress, Completed)
+    /// </summary>
+    public int StatusId { get; private set; }
+
+    /// <summary>
+    /// Calculated property to get the MaintenanceStatus object
+    /// </summary>
+    public MaintenanceStatus Status => MaintenanceStatus.FromId(StatusId);
 
     /// <summary>
     /// Type of maintenance performed (references MaintenanceType enumeration)
@@ -62,6 +77,8 @@ public class Maintenance : Entity
         MaintenanceDate = maintenanceDate;
         MaintenanceTypeId = maintenanceTypeId;
         Cost = cost;
+        StatusId = MaintenanceStatus.InProgress.Id; // New maintenance starts InProgress
+        EndDate = null;
     }
 
     /// <summary>
@@ -81,6 +98,23 @@ public class Maintenance : Entity
         int maintenanceTypeId,
         decimal cost)
         => new(equipmentId, technicalId, maintenanceDate, maintenanceTypeId, cost);
+
+    /// <summary>
+    /// Completes the maintenance, setting the end date and status to Completed
+    /// </summary>
+    public void Complete()
+    {
+        if (StatusId == MaintenanceStatus.Completed.Id)
+            throw new InvalidEntityException(nameof(Maintenance), "Maintenance is already completed.");
+        
+        EndDate = DateTime.UtcNow;
+        StatusId = MaintenanceStatus.Completed.Id;
+    }
+
+    /// <summary>
+    /// Checks if the maintenance is completed
+    /// </summary>
+    public bool IsCompleted => StatusId == MaintenanceStatus.Completed.Id;
 
     /// <summary>
     /// Updates the maintenance cost

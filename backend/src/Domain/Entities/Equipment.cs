@@ -208,6 +208,26 @@ public class Equipment : Entity
         StateId = EquipmentState.Operative.Id;
     }
 
+    /// <summary>
+    /// Assigns equipment to a department from warehouse, making it operative.
+    /// Used when releasing equipment from warehouse to a department.
+    /// </summary>
+    /// <param name="departmentId">The target department ID</param>
+    public void AssignToDepartment(Guid departmentId)
+    {
+        if (departmentId == Guid.Empty)
+            throw new ArgumentException("Department ID cannot be empty", nameof(departmentId));
+
+        if (StateId == EquipmentState.Disposed.Id)
+            throw new BusinessRuleViolationException(
+                "AssignDisposedEquipment",
+                "Cannot assign disposed equipment to a department");
+
+        DepartmentId = departmentId;
+        LocationTypeId = LocationType.Department.Id;
+        StateId = EquipmentState.Operative.Id;
+    }
+
     #region Internal Methods (Called by Strategies)
 
     /// <summary>

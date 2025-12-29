@@ -127,5 +127,31 @@ namespace Application.Services
             var entities = await _maintenanceRepository.FilterAsync(query, cancellationToken);
             return _mapper.Map<IEnumerable<MaintenanceDto>>(entities);
         }
+
+        /// <summary>
+        /// Completes a maintenance - sets end date, marks as completed, and changes equipment to Operative
+        /// </summary>
+        public async Task<MaintenanceDto> CompleteAsync(Guid maintenanceId, CancellationToken cancellationToken = default)
+        {
+            var maintenance = await _maintenanceRepository.GetByIdAsync(maintenanceId, cancellationToken);
+            if (maintenance == null)
+                throw new EntityNotFoundException(nameof(Maintenance), maintenanceId);
+
+            // Complete the maintenance (sets EndDate and StatusId)
+            maintenance.Complete();
+            await _maintenanceRepository.UpdateAsync(maintenance);
+
+            // Get the equipment and set it to Operative
+            var equipment = await _equipmentRepository.GetByIdAsync(maintenance.EquipmentId, cancellationToken);
+            if (equipment != null)
+            {
+                equipment.CompleteMaintenance();
+                await _equipmentRepository.UpdateAsync(equipment);
+            }
+
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return _mapper.Map<MaintenanceDto>(maintenance);
+        }
     }
 }

@@ -19,6 +19,12 @@ namespace Application.Interfaces.Services
 
         // Obtener todos los mantenimientos
         Task<IEnumerable<MaintenanceDto>> GetAllAsync(CancellationToken cancellationToken = default);
+        
         Task<IEnumerable<MaintenanceDto>> FilterAsync(string query, CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Complete a maintenance - sets end date, marks as completed, and changes equipment to Operative
+        /// </summary>
+        Task<MaintenanceDto> CompleteAsync(Guid maintenanceId, CancellationToken cancellationToken = default);
     }
 }

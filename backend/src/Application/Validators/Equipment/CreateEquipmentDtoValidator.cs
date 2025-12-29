@@ -11,18 +11,22 @@ namespace Application.Validators.Equipment
     {
         private readonly Domain.Interfaces.IEquipmentTypeRepository _equipmentTypeRepo;
         private readonly Domain.Interfaces.IDepartmentRepository _departmentRepo;
+        private readonly Domain.Interfaces.ITechnicalRepository _technicalRepo;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CreateEquipmentDtoValidator"/> class.
         /// </summary>
         /// <param name="equipmentTypeRepo">The equipment type repository for existence checks.</param>
         /// <param name="departmentRepo">The department repository for existence checks.</param>
+        /// <param name="technicalRepo">The technical repository for existence checks.</param>
         public CreateEquipmentDtoValidator(
             Domain.Interfaces.IEquipmentTypeRepository equipmentTypeRepo,
-            Domain.Interfaces.IDepartmentRepository departmentRepo)
+            Domain.Interfaces.IDepartmentRepository departmentRepo,
+            Domain.Interfaces.ITechnicalRepository technicalRepo)
         {
             _equipmentTypeRepo = equipmentTypeRepo;
             _departmentRepo = departmentRepo;
+            _technicalRepo = technicalRepo;
 
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Equipment name is required.")
@@ -47,13 +51,11 @@ namespace Application.Validators.Equipment
                     .WithMessage("The specified department does not exist.");
             });
 
-            RuleFor(x => x.StateId)
-                .GreaterThan(0)
-                .WithMessage("State ID must be greater than 0.");
-
-            RuleFor(x => x.LocationTypeId)
-                .GreaterThan(0)
-                .WithMessage("Location type ID must be greater than 0.");
+            RuleFor(x => x.TechnicalId)
+                .NotEqual(Guid.Empty)
+                .WithMessage("Technical ID is required for initial maintenance.")
+                .MustAsync(TechnicalExists)
+                .WithMessage("The specified technical does not exist.");
         }
 
         /// <summary>
@@ -62,6 +64,14 @@ namespace Application.Validators.Equipment
         private async System.Threading.Tasks.Task<bool> EquipmentTypeExists(System.Guid id, System.Threading.CancellationToken ct)
         {
             return await _equipmentTypeRepo.GetByIdAsync(id, ct) != null;
+        }
+
+        /// <summary>
+        /// Checks if the technical exists in the database.
+        /// </summary>
+        private async System.Threading.Tasks.Task<bool> TechnicalExists(System.Guid id, System.Threading.CancellationToken ct)
+        {
+            return await _technicalRepo.GetByIdAsync(id, ct) != null;
         }
     }
 }

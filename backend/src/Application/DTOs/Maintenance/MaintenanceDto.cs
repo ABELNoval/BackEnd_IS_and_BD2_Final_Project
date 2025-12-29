@@ -10,6 +10,10 @@ namespace Application.DTOs.Maintenance
 
         public DateTime MaintenanceDate { get; set; }
 
+        public DateTime? EndDate { get; set; }
+
+        public int StatusId { get; set; }
+
         public int MaintenanceTypeId { get; set; }
 
         // public string MaintenanceTypeName { get; set; } = string.Empty;

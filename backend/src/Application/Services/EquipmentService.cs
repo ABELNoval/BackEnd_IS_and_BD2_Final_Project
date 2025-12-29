@@ -3,6 +3,7 @@ using Application.Interfaces.Services;
 using Application.Validators.Equipment;
 using AutoMapper;
 using Domain.Entities;
+using Domain.Enumerations;
 using Domain.Interfaces;
 using FluentValidation;
 using Application.Exceptions;
@@ -13,6 +14,7 @@ namespace Application.Services
     public class EquipmentService : IEquipmentService
     {
         private readonly IEquipmentRepository _equipmentRepository;
+        private readonly IMaintenanceRepository _maintenanceRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IValidator<CreateEquipmentDto> _createValidator;
@@ -20,12 +22,14 @@ namespace Application.Services
 
         public EquipmentService(
             IEquipmentRepository equipmentRepository,
+            IMaintenanceRepository maintenanceRepository,
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IValidator<CreateEquipmentDto> createValidator,
             IValidator<UpdateEquipmentDto> updateValidator)
         {
             _equipmentRepository = equipmentRepository;
+            _maintenanceRepository = maintenanceRepository;
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _createValidator = createValidator;
@@ -34,6 +38,7 @@ namespace Application.Services
 
         /// <summary>
         /// Creates a new equipment entity after validating the DTO.
+        /// Also creates an initial preventive maintenance for the equipment.
         /// </summary>
         /// <param name="dto">The CreateEquipmentDto to validate and create.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
@@ -43,8 +48,20 @@ namespace Application.Services
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
                 throw new Application.Exceptions.ValidationException(validationResult.Errors);
+            
             var entity = _mapper.Map<Equipment>(dto);
             await _equipmentRepository.CreateAsync(entity, cancellationToken);
+
+            // Create initial preventive maintenance (cost 0 for initial check)
+            entity.AddMaintenance(
+                dto.TechnicalId,
+                DateTime.UtcNow,
+                MaintenanceType.Preventive.Id,
+                0m);
+
+            var maintenance = entity.Maintenances.Last();
+            await _maintenanceRepository.CreateAsync(maintenance);
+
             await _unitOfWork.SaveChangesAsync(cancellationToken);
             return _mapper.Map<EquipmentDto>(entity);
         }

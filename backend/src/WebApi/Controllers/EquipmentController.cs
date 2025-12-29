@@ -69,7 +69,6 @@ namespace WebApi.Controllers
         [HttpPost]
         public async Task<ActionResult<EquipmentDto>> Create(CreateEquipmentDto dto, CancellationToken cancellationToken)
         {
-            Console.WriteLine("Received Equipment State: " + dto.StateId);
             var created = await _equipmentService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
