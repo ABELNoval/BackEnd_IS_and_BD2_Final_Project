@@ -47,6 +47,16 @@ namespace WebApi.Controllers
         }
 
         // ============================================================
+        // GET: api/department/all - OBTENER TODOS SIN FILTRAR (para dropdowns)
+        // ============================================================
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetAllUnfiltered(CancellationToken cancellationToken)
+        {
+            var result = await _departmentService.GetAllAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        // ============================================================
         // GET: api/department/{id} - OBTENER POR ID
         // ============================================================
         [HttpGet("{id:guid}")]

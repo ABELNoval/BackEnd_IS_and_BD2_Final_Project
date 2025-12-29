@@ -129,10 +129,7 @@ namespace Application.Services
             if (departmentIds == null || !departmentIds.Any())
                 return Enumerable.Empty<EquipmentDto>();
 
-            var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
-            var query = $"DepartmentId in ({ids})";
-            
-            var entities = await _equipmentRepository.FilterAsync(query, cancellationToken);
+            var entities = await _equipmentRepository.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
             return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
         }
 

@@ -24,6 +24,7 @@ namespace Infrastructure.Persistence
         public DbSet<Maintenance> Maintenances { get; set; }
         public DbSet<Section> Sections { get; set; }
         public DbSet<Transfer> Transfers { get; set; }
+        public DbSet<TransferRequest> TransferRequests { get; set; }
         public DbSet<EquipmentDecommission> EquipmentDecommissions { get; set; }
         
         // Smart Enums NO necesitan DbSet - son valores en código, no tablas

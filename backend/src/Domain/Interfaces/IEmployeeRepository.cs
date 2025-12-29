@@ -15,6 +15,11 @@ namespace Domain.Interfaces
         Task<IEnumerable<Employee>> FilterAsync(string query, CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Gets employees by a list of department IDs
+        /// </summary>
+        Task<IEnumerable<Employee>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Obtiene un empleado por su email
         /// </summary>
         Task<Employee?> GetByEmailAsync(string email, CancellationToken cancellationToken = default);

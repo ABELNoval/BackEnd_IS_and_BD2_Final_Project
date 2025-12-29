@@ -39,10 +39,7 @@ namespace Web.Controllers
                         return Ok(Enumerable.Empty<TransferDto>());
                     }
 
-                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
-                    var query = $"SourceDepartmentId in ({ids}) || TargetDepartmentId in ({ids})";
-                    
-                    var result = await _transferService.FilterAsync(query, cancellationToken);
+                    var result = await _transferService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
                     return Ok(result);
                 }
             }

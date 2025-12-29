@@ -73,6 +73,7 @@ namespace Application
             services.AddScoped<IEmployeeService, EmployeeService>();
             services.AddScoped<ITechnicalService, TechnicalService>();
             services.AddScoped<ITransferService, TransferService>();
+            services.AddScoped<ITransferRequestService, TransferRequestService>();
             services.AddScoped<IEquipmentDecommissionService, EquipmentDecommissionService>();
             services.AddScoped<IAssessmentService, AssessmentService>();
             services.AddScoped<IUserService, UserService>();

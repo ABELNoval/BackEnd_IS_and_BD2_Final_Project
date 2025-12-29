@@ -31,6 +31,7 @@ namespace Infrastructure
             services.AddScoped<IMaintenanceRepository, MaintenanceRepository>();
             services.AddScoped<IAssessmentRepository, AssessmentRepository>();
             services.AddScoped<ITransferRepository, TransferRepository>();
+            services.AddScoped<ITransferRequestRepository, TransferRequestRepository>();
             services.AddScoped<IDestinyTypeRepository, DestinyTypeRepository>();
             services.AddScoped<IEquipmentDecommissionRepository, EquipmentDecommissionRepository>();
 

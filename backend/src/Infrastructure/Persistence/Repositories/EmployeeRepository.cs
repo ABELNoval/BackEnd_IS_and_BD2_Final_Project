@@ -16,6 +16,14 @@ namespace Infrastructure.Persistence.Repositories
     {
         public EmployeeRepository(AppDbContext context) : base(context) { }
 
+        public async Task<IEnumerable<Employee>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default)
+        {
+            var deptList = departmentIds.ToList();
+            return await _context.Employees
+                .Where(e => deptList.Contains(e.DepartmentId))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<Employee?> GetByEmailAsync(string email, CancellationToken cancellationToken = default)
         {
             return await _context.Employees

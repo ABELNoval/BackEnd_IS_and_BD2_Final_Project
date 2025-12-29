@@ -38,10 +38,7 @@ namespace Web.Controllers
                         return Ok(Enumerable.Empty<EmployeeDto>());
                     }
 
-                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
-                    var query = $"DepartmentId in ({ids})";
-                    
-                    var result = await _employeeService.FilterAsync(query, cancellationToken);
+                    var result = await _employeeService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
                     return Ok(result);
                 }
             }

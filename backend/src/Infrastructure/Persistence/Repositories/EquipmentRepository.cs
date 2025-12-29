@@ -15,6 +15,14 @@ namespace Infrastructure.Persistence.Repositories
     {
         public EquipmentRepository(AppDbContext context) : base(context) { }
 
+        public async Task<IEnumerable<Equipment>> GetByDepartmentIdsAsync(IEnumerable<Guid> departmentIds, CancellationToken cancellationToken = default)
+        {
+            var deptList = departmentIds.ToList();
+            return await _context.Equipments
+                .Where(e => e.DepartmentId.HasValue && deptList.Contains(e.DepartmentId.Value))
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<IEnumerable<Equipment>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
             IQueryable<Equipment> baseQuery = _context.Equipments;
