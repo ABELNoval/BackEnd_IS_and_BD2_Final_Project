@@ -155,6 +155,7 @@ public class Equipment : Entity
     public void AddTransfer(
         Guid targetDepartmentId,
         Guid responsibleId,
+        Guid recipientId,
         DateTime transferDate)
     {
         ValidateCanBeTransferred(targetDepartmentId);
@@ -166,6 +167,7 @@ public class Equipment : Entity
             sourceDepartmentId: sourceDepartmentId,
             targetDepartmentId: targetDepartmentId,
             responsibleId: responsibleId,
+            recipientId: recipientId,
             transferDate: transferDate);
 
         _transfers.Add(transfer);

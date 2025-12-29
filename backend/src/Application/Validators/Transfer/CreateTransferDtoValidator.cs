@@ -12,6 +12,7 @@ namespace Application.Validators.Transfer
         private readonly Domain.Interfaces.IEquipmentRepository _equipmentRepo;
         private readonly Domain.Interfaces.IDepartmentRepository _departmentRepo;
         private readonly Domain.Interfaces.IResponsibleRepository _responsibleRepo;
+        private readonly Domain.Interfaces.ITechnicalRepository _technicalRepo;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CreateTransferDtoValidator"/> class.
@@ -19,14 +20,17 @@ namespace Application.Validators.Transfer
         /// <param name="equipmentRepo">The equipment repository for existence and state checks.</param>
         /// <param name="departmentRepo">The department repository for existence checks.</param>
         /// <param name="responsibleRepo">The responsible repository for existence checks.</param>
+        /// <param name="technicalRepo">The technical repository for recipient existence checks.</param>
         public CreateTransferDtoValidator(
             Domain.Interfaces.IEquipmentRepository equipmentRepo,
             Domain.Interfaces.IDepartmentRepository departmentRepo,
-            Domain.Interfaces.IResponsibleRepository responsibleRepo)
+            Domain.Interfaces.IResponsibleRepository responsibleRepo,
+            Domain.Interfaces.ITechnicalRepository technicalRepo)
         {
             _equipmentRepo = equipmentRepo;
             _departmentRepo = departmentRepo;
             _responsibleRepo = responsibleRepo;
+            _technicalRepo = technicalRepo;
 
             // Basic validations
             RuleFor(x => x.EquipmentId)
@@ -38,6 +42,12 @@ namespace Application.Validators.Transfer
             RuleFor(x => x.TargetDepartmentId)
                 .NotEmpty().WithMessage("Target department ID is required.")
                 .NotEqual(x => x.SourceDepartmentId).WithMessage("Target department cannot be the same as source department.");
+
+            RuleFor(x => x.ResponsibleId)
+                .NotEmpty().WithMessage("Responsible ID is required.");
+
+            RuleFor(x => x.RecipientId)
+                .NotEmpty().WithMessage("Recipient ID is required.");
 
             RuleFor(x => x.TransferDate)
                 .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("Transfer date cannot be in the future.");
@@ -58,6 +68,10 @@ namespace Application.Validators.Transfer
             RuleFor(x => x.ResponsibleId)
                 .MustAsync(ResponsibleExists)
                 .WithMessage("The specified responsible does not exist.");
+
+            RuleFor(x => x.RecipientId)
+                .MustAsync(TechnicalExists)
+                .WithMessage("The specified recipient (technical) does not exist.");
 
             // Cross-entity: Equipment is not disposed
             RuleFor(x => x.EquipmentId)
@@ -101,6 +115,17 @@ namespace Application.Validators.Transfer
         private async System.Threading.Tasks.Task<bool> ResponsibleExists(Guid id, System.Threading.CancellationToken ct)
         {
             return await _responsibleRepo.GetByIdAsync(id, ct) != null;
+        }
+
+        /// <summary>
+        /// Checks if the technical (recipient) exists in the database.
+        /// </summary>
+        /// <param name="id">The technical ID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>True if the technical exists; otherwise, false.</returns>
+        private async System.Threading.Tasks.Task<bool> TechnicalExists(Guid id, System.Threading.CancellationToken ct)
+        {
+            return await _technicalRepo.GetByIdAsync(id, ct) != null;
         }
 
         /// <summary>

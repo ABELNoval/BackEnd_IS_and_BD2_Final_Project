@@ -51,6 +51,16 @@ namespace WebApi.Controllers
         }
 
         // ================================
+        // GET: api/equipment/all - OBTENER TODOS SIN FILTRAR (para dropdowns)
+        // ================================
+        [HttpGet("all")]
+        public async Task<ActionResult<IEnumerable<EquipmentDto>>> GetAllUnfiltered(CancellationToken cancellationToken)
+        {
+            var result = await _equipmentService.GetAllAsync(cancellationToken);
+            return Ok(result);
+        }
+
+        // ================================
         // GET: api/equipment/{id} - OBTENER POR ID
         // ================================
         [HttpGet("{id:guid}")]

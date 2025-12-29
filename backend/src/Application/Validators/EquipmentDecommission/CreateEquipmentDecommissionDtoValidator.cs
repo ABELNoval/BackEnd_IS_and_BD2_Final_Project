@@ -37,10 +37,6 @@ namespace Application.Validators.EquipmentDecommission
                 .NotEmpty().WithMessage("Technical ID is required.")
                 .NotEqual(Guid.Empty).WithMessage("Technical ID cannot be empty.");
 
-            RuleFor(x => x.DepartmentId)
-                .NotEmpty().WithMessage("Department ID is required.")
-                .NotEqual(Guid.Empty).WithMessage("Department ID cannot be empty.");
-
             RuleFor(x => x.DestinyTypeId)
                 .NotEmpty().WithMessage("Destiny type is required.")
                 .InclusiveBetween(1, 3).WithMessage("Destiny type must be valid (1: Department, 2: Disposal, 3: Warehouse).");
@@ -62,23 +58,28 @@ namespace Application.Validators.EquipmentDecommission
                 .MustAsync(TechnicalExists)
                 .WithMessage("The specified technical does not exist.");
 
-            RuleFor(x => x.DepartmentId)
-                .MustAsync(DepartmentExists)
-                .WithMessage("The specified department does not exist.");
-
-            // Conditional validations for RecipientId
+            // Conditional validations: DepartmentId and RecipientId only required for Department destiny (DestinyTypeId == 1)
             When(x => x.DestinyTypeId == 1, () =>
             {
+                RuleFor(x => x.DepartmentId)
+                    .NotEmpty().WithMessage("Department ID is required when destiny is Department.")
+                    .NotEqual(Guid.Empty).WithMessage("Department ID cannot be empty when destiny is Department.")
+                    .MustAsync(DepartmentExists)
+                    .WithMessage("The specified department does not exist.");
+
                 RuleFor(x => x.RecipientId)
-                    .NotEmpty().WithMessage("Recipient ID is required for Department destiny type.")
-                    .MustAsync(async (id, ct) => await _departmentRepo.GetByIdAsync(id, ct) != null)
-                    .WithMessage("The specified recipient department does not exist.");
+                    .NotEmpty().WithMessage("Recipient ID is required when destiny is Department.")
+                    .NotEqual(Guid.Empty).WithMessage("Recipient ID cannot be empty when destiny is Department.");
             });
 
-            Unless(x => x.DestinyTypeId == 1, () =>
+            // For Disposal (2) and Warehouse (3), DepartmentId and RecipientId should be empty
+            When(x => x.DestinyTypeId == 2 || x.DestinyTypeId == 3, () =>
             {
+                RuleFor(x => x.DepartmentId)
+                    .Equal(Guid.Empty).WithMessage("Department ID must be empty for Disposal or Warehouse destiny.");
+
                 RuleFor(x => x.RecipientId)
-                    .Equal(Guid.Empty).WithMessage("Recipient ID must be empty unless destiny type is Department.");
+                    .Equal(Guid.Empty).WithMessage("Recipient ID must be empty for Disposal or Warehouse destiny.");
             });
         }
 

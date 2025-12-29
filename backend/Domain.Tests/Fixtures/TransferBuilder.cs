@@ -9,6 +9,7 @@ namespace Domain.Tests.Fixtures
         private Guid _sourceDepartmentId = Guid.NewGuid();
         private Guid _targetDepartmentId = Guid.NewGuid();
         private Guid _responsibleId = Guid.NewGuid();
+        private Guid _recipientId = Guid.NewGuid();
         private DateTime _transferDate = DateTime.UtcNow.AddDays(-5);
 
         public TransferBuilder WithEquipmentId(Guid id)
@@ -31,6 +32,11 @@ namespace Domain.Tests.Fixtures
             _responsibleId = id;
             return this;
         }
+        public TransferBuilder WithRecipientId(Guid id)
+        {
+            _recipientId = id;
+            return this;
+        }
         public TransferBuilder WithTransferDate(DateTime date)
         {
             _transferDate = date;
@@ -43,6 +49,7 @@ namespace Domain.Tests.Fixtures
                 _sourceDepartmentId,
                 _targetDepartmentId,
                 _responsibleId,
+                _recipientId,
                 _transferDate
             );
         }

@@ -19,12 +19,12 @@ public static class DestinationStrategyFactory
             throw new ArgumentNullException(nameof(destinyType));
         
         // Mapeo directo usando el ID del smart enum
+        // IDs: 1 = Department, 2 = Disposal, 3 = Warehouse
         return destinyType.Id switch
         {
-            1 => new DisposalDestinationStrategy(),      // Disposal
-            2 => new DepartmentDestinationStrategy(),    // Transfer (es lo mismo que Department)
-            3 => new DepartmentDestinationStrategy(),    // Department
-            4 => new WarehouseDestinationStrategy(),     // Warehouse
+            1 => new DepartmentDestinationStrategy(),    // Department
+            2 => new DisposalDestinationStrategy(),      // Disposal
+            3 => new WarehouseDestinationStrategy(),     // Warehouse
             _ => throw new ArgumentException(
                 $"Unknown destiny type: {destinyType.Name} (ID: {destinyType.Id})",
                 nameof(destinyType))

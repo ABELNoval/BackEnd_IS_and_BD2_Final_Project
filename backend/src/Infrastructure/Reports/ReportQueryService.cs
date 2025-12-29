@@ -136,8 +136,8 @@ namespace Infrastructure.Reports
         /// - Low equipment longevity (from acquisition to decommission)
         /// - Poor supervisor assessment scores.
         /// Grouped by technician and equipment type for analytical reporting.
+        /// Uses a Stored Procedure for complex SQL that EF Core cannot translate.
         /// </summary>
-        /// <param name="ct">Cancellation token.</param>
         /// <returns>
         /// A list of <see cref="TechnicianPerformanceCorrelationDto"/> representing
         /// the 5 technicians with the worst cost/longevity/performance correlation
@@ -145,101 +145,11 @@ namespace Infrastructure.Reports
         /// </returns>
         public async Task<IEnumerable<TechnicianPerformanceCorrelationDto>> GetTechnicianMaintenanceCorrelationAsync()
         {
-            // PHASE 1: Irreparable equipment (reason = "fallo técnico irreparable")
-            var irreparableEquipments =
-                from d in _context.EquipmentDecommissions
-                where d.Reason.ToLower() == "fallo técnico irreparable"
-                select new
-                {
-                    d.EquipmentId,
-                    d.TechnicalId,
-                    d.DecommissionDate
-                };
-
-            // PHASE 2: Equipment longevity (from acquisition to decommission)
-            var equipmentLongevity =
-                from e in _context.Equipments
-                join d in irreparableEquipments
-                    on e.Id equals d.EquipmentId
-                select new
-                {
-                    d.TechnicalId,
-                    EquipmentId = e.Id,
-                    LongevityDays = EF.Functions.DateDiffDay(
-                        e.AcquisitionDate,
-                        d.DecommissionDate)
-                };
-
-            // PHASE 3: Total maintenance cost per technician + equipment BEFORE decommission
-            var maintenanceCosts =
-                from m in _context.Maintenances
-                join d in irreparableEquipments
-                    on m.EquipmentId equals d.EquipmentId
-                where m.MaintenanceDate < d.DecommissionDate
-                group m by new { m.TechnicalId, m.EquipmentId } into g
-                select new
-                {
-                    g.Key.TechnicalId,
-                    g.Key.EquipmentId,
-                    TotalCost = g.Sum(x => x.Cost)
-                };
-
-            // PHASE 4: Average technician performance score (assessments)
-            var technicianPerformance =
-                from a in _context.Assessments
-                group a by a.TechnicalId into g
-                select new
-                {
-                    TechnicalId = g.Key,
-                    AvgScore = g.Average(x => x.Score.Value)
-                };
-
-            // PHASE 5: Final join, aggregation by technician + equipment type, ordering and TOP 5
-            var query =
-                from lon in equipmentLongevity
-                join cost in maintenanceCosts
-                    on new { lon.TechnicalId, lon.EquipmentId }
-                    equals new { cost.TechnicalId, cost.EquipmentId }
-                join perf in technicianPerformance
-                    on lon.TechnicalId equals perf.TechnicalId
-                join tech in _context.Technicals
-                    on lon.TechnicalId equals tech.Id
-                join eq in _context.Equipments
-                    on lon.EquipmentId equals eq.Id
-                join type in _context.EquipmentTypes
-                    on eq.EquipmentTypeId equals type.Id
-                group new { lon, cost, perf, type } by new
-                {
-                    tech.Id,
-                    tech.Name,
-                    EquipmentTypeName = type.Name,
-                    perf.AvgScore
-                }
-                into g
-                // Aggregated metrics per technician + equipment type
-                let totalCost = g.Sum(x => x.cost.TotalCost)
-                let avgLongevity = g.Average(x => (double)x.lon.LongevityDays)
-                // Ordering: worst correlation = higher cost, lower longevity, lower rating
-                orderby totalCost descending,
-                        avgLongevity ascending,
-                        g.Key.AvgScore ascending
-                select new TechnicianPerformanceCorrelationDto
-                {
-                    TechnicianId = g.Key.Id,
-                    TechnicianName = g.Key.Name,
-                    EquipmentTypeName = g.Key.EquipmentTypeName,
-                    AveragePerformanceScore = g.Key.AvgScore,
-                    TotalMaintenanceCost = totalCost,
-                    AverageEquipmentLongevityDays = avgLongevity
-                };
-
-            // Read-only query and TOP 5 from the database
-            var list = await query
-                .AsNoTracking()
-                .Take(5)
+            var result = await _context.Database
+                .SqlQueryRaw<TechnicianPerformanceCorrelationDto>("CALL GetTechnicianMaintenanceCorrelation()")
                 .ToListAsync();
 
-            return list;
+            return result;
         }
 
 
@@ -311,13 +221,14 @@ namespace Infrastructure.Reports
         public async Task<List<TechnicianPerformanceReportDto>> GetTechnicianPerformanceReportAsync()
         {
             // PHASE 1: Average performance score per technician
+            // Using EF.Property to access the mapped column directly (bypasses Value Object)
             var technicianPerformance =
                 from a in _context.Assessments
                 group a by a.TechnicalId into g
                 select new
                 {
                     TechnicalId = g.Key,
-                    AvgScore = g.Average(x => x.Score.Value)
+                    AvgScore = g.Average(x => EF.Property<decimal>(x, "Score"))
                 };
 
             // PHASE 2: Total interventions per technician

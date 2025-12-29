@@ -258,11 +258,12 @@ namespace Domain.Tests.Entities
                     .Build();
 
                 var responsibleId = Guid.NewGuid();
+                var recipientId = Guid.NewGuid();
                 var transferDate = DateTime.UtcNow;
 
                 // Act & Assert
                 Assert.Throws<EquipmentDisposedException>(() =>
-                    equipment.AddTransfer(targetDepartmentId, responsibleId, transferDate));
+                    equipment.AddTransfer(targetDepartmentId, responsibleId, recipientId, transferDate));
             }
 
             [Fact]
@@ -278,11 +279,12 @@ namespace Domain.Tests.Entities
                     .Build();
 
                 var responsibleId = Guid.NewGuid();
+                var recipientId = Guid.NewGuid();
                 var transferDate = DateTime.UtcNow;
 
                 // Act & Assert
                 Assert.Throws<BusinessRuleViolationException>(() =>
-                    equipment.AddTransfer(targetDepartmentId, responsibleId, transferDate));
+                    equipment.AddTransfer(targetDepartmentId, responsibleId, recipientId, transferDate));
             }
             [Fact]
             public void AddTransfer_UpdatesDepartmentAndLocationType()
@@ -296,10 +298,11 @@ namespace Domain.Tests.Entities
                     .Build();
 
                 var responsibleId = Guid.NewGuid();
+                var recipientId = Guid.NewGuid();
                 var transferDate = DateTime.UtcNow;
 
                 // Act
-                equipment.AddTransfer(targetDepartmentId, responsibleId, transferDate);
+                equipment.AddTransfer(targetDepartmentId, responsibleId, recipientId, transferDate);
 
                 // Assert
                 Assert.Equal(targetDepartmentId, equipment.DepartmentId);
@@ -323,11 +326,12 @@ namespace Domain.Tests.Entities
                     .Build();
 
                 var responsibleId = Guid.NewGuid();
+                var recipientId = Guid.NewGuid();
                 var transferDate = DateTime.UtcNow;
 
                 // Act & Assert
                 Assert.Throws<BusinessRuleViolationException>(() =>
-                    equipment.AddTransfer(departmentId, responsibleId, transferDate));
+                    equipment.AddTransfer(departmentId, responsibleId, recipientId, transferDate));
             }
 
             [Fact]
@@ -341,11 +345,12 @@ namespace Domain.Tests.Entities
 
                 var targetDepartmentId = Guid.NewGuid();
                 var responsibleId = Guid.NewGuid();
+                var recipientId = Guid.NewGuid();
                 var transferDate = DateTime.UtcNow;
 
                 // Act & Assert
                 Assert.Throws<BusinessRuleViolationException>(() =>
-                    equipment.AddTransfer(targetDepartmentId, responsibleId, transferDate));
+                    equipment.AddTransfer(targetDepartmentId, responsibleId, recipientId, transferDate));
             }
             [Fact]
             public void AddDecommission_ToDepartment_UpdatesDepartmentAndLocationType()

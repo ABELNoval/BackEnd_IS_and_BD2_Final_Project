@@ -54,7 +54,7 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateEquipmentDecommissionDto dto, CancellationToken cancellationToken)
         {
-            Console.WriteLine("Reached EquipmentDecommissionController Create method.");
+            Console.WriteLine($"DTO received - DestinyTypeId: {dto.DestinyTypeId}, EquipmentId: {dto.EquipmentId}, TechnicalId: {dto.TechnicalId}");
             var created = await _equipmentDecommissionService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
