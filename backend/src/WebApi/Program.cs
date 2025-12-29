@@ -9,6 +9,8 @@ using FluentValidation;
 using Application.Validators.Generic;
 using Application.Validators.Assessment;
 using WebAPI.ExceptionHandlers;
+using MediatR;
+using Application.Reports.Queries.GetDecommissionLastYear;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +34,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 // Registrar Infrastructure (Repos, UoW, JwtProvider)
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Registro explícito de MediatR y repositorio de queries de reportes (por claridad, aunque AddInfrastructure ya lo registra)
+builder.Services.AddMediatR(typeof(GetDecommissionLastYearQuery).Assembly);
 
 // Registrar Application (Services + AutoMapper)
 builder.Services.AddApplication();
@@ -80,6 +85,8 @@ builder.Services.AddSingleton(typeof(IValidator<>), typeof(Application.Validator
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddMediatR(typeof(GetDecommissionLastYearQuery).Assembly);
 
 var app = builder.Build();
 

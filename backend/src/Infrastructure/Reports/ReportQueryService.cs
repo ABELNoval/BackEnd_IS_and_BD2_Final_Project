@@ -1,16 +1,16 @@
 using Application.DTOs.ReportResult;
-using Application.Interfaces.Services;
+using Application.Interfaces.Repositories;
 using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Reports
 {
 
-    public class ReportQueryService : IReportQueryService
+    public class ReportQueriesRepository : IReportQueriesRepository
     {
         private readonly AppDbContext _context;
 
-        public ReportQueryService(AppDbContext context)
+        public ReportQueriesRepository(AppDbContext context)
         {
             _context = context;
         }
