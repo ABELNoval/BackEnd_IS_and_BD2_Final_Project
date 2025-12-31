@@ -33,16 +33,17 @@ namespace Application.Validators.Maintenance
             RuleFor(x => x.EquipmentId)
                 .NotEmpty().WithMessage("Equipment ID is required.")
                 .NotEqual(Guid.Empty).WithMessage("Equipment ID cannot be empty.")
-                .MustAsync(EquipmentExistsAsync).WithMessage("Equipment with the specified ID does not exist.");
+                .MustAsync(EquipmentExistsAsync).WithMessage("Equipment with the specified ID does not exist.")
+                .CustomAsync(ValidateEquipmentStateAsync);
 
             RuleFor(x => x.TechnicalId)
                 .NotEmpty().WithMessage("Technical ID is required.")
                 .NotEqual(Guid.Empty).WithMessage("Technical ID cannot be empty.")
                 .MustAsync(TechnicalExistsAsync).WithMessage("Technical with the specified ID does not exist.");
 
-            RuleFor(x => x.MaintenanceDate)
-                .NotEmpty().WithMessage("Maintenance date is required.")
-                .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("Maintenance date cannot be in the future.");
+            // RuleFor(x => x.MaintenanceDate)
+            //     .NotEmpty().WithMessage("Maintenance date is required.")
+            //     .LessThanOrEqualTo(DateTime.UtcNow).WithMessage("Maintenance date cannot be in the future.");
 
             RuleFor(x => x.MaintenanceTypeId)
                 .NotEmpty().WithMessage("Maintenance type is required.")
@@ -79,6 +80,32 @@ namespace Application.Validators.Maintenance
         private Task<bool> MaintenanceTypeIsValidAsync(int maintenanceTypeId, CancellationToken cancellationToken)
         {
             return Task.FromResult(Domain.Enumerations.MaintenanceType.FromId(maintenanceTypeId) != null);
+        }
+
+        /// <summary>
+        /// Validates the state of the equipment to ensure it can receive maintenance.
+        /// </summary>
+        private async Task ValidateEquipmentStateAsync(Guid equipmentId, ValidationContext<CreateMaintenanceDto> context, CancellationToken cancellationToken)
+        {
+            if (equipmentId == Guid.Empty) return;
+
+            var equipment = await _equipmentRepository.GetByIdAsync(equipmentId, cancellationToken);
+            if (equipment == null) return; // Handled by EquipmentExistsAsync
+
+            if (equipment.StateId == EquipmentState.UnderMaintenance.Id)
+            {
+                context.AddFailure("EquipmentId", "Equipment is already under maintenance.");
+            }
+
+            if (equipment.StateId == EquipmentState.Disposed.Id || equipment.LocationTypeId == LocationType.Disposal.Id)
+            {
+                context.AddFailure("EquipmentId", "Equipment is disposed and cannot receive maintenance.");
+            }
+
+            if (equipment.LocationTypeId == LocationType.Warehouse.Id)
+            {
+                context.AddFailure("EquipmentId", "Equipment is in the warehouse and cannot receive maintenance.");
+            }
         }
     }
 }

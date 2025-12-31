@@ -109,11 +109,47 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Migraciones automáticas
+// Migraciones automáticas y seed de administrador
 using (var scope = app.Services.CreateScope())
 {
     var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     ctx.Database.Migrate();
+
+    try
+    {
+        var adminEmail = "abel@gmail.com";
+
+        var connection = ctx.Database.GetDbConnection();
+        connection.Open();
+        using (var cmd = connection.CreateCommand())
+        {
+            cmd.CommandText = "SELECT COUNT(1) FROM `Users` WHERE `Email` = @email";
+            var param = cmd.CreateParameter();
+            param.ParameterName = "@email";
+            param.Value = adminEmail;
+            cmd.Parameters.Add(param);
+            var result = cmd.ExecuteScalar();
+            var exists = Convert.ToInt32(result) > 0;
+            if (!exists)
+            {
+                using (var insert = connection.CreateCommand())
+                {
+                    insert.CommandText = "INSERT INTO `Users` (`Id`,`Name`,`Email`,`PasswordHash`,`RoleId`) VALUES (@id, @name, @email, @pwd, @role);";
+                    var pId = insert.CreateParameter(); pId.ParameterName = "@id"; pId.Value = "11111111-1111-1111-1111-111111111111"; insert.Parameters.Add(pId);
+                    var pName = insert.CreateParameter(); pName.ParameterName = "@name"; pName.Value = "Abel"; insert.Parameters.Add(pName);
+                    var pEmail = insert.CreateParameter(); pEmail.ParameterName = "@email"; pEmail.Value = adminEmail; insert.Parameters.Add(pEmail);
+                    var pPwd = insert.CreateParameter(); pPwd.ParameterName = "@pwd"; pPwd.Value = "1234yolo"; insert.Parameters.Add(pPwd);
+                    var pRole = insert.CreateParameter(); pRole.ParameterName = "@role"; pRole.Value = 1; insert.Parameters.Add(pRole);
+                    insert.ExecuteNonQuery();
+                }
+            }
+        }
+        connection.Close();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine("Admin seeding failed: " + ex.Message);
+    }
 }
 
 app.Run();

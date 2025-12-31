@@ -6,9 +6,9 @@ namespace Domain.Entities;
 
 /// <summary>
 /// Base user entity for the Technical Equipment Management System.
-/// Abstract base class for all user types in the system.
+/// Base class for all user types in the system.
 /// </summary>
-public abstract class User : Entity
+public class User : Entity
 {
     private const int MaxNameLength = 100;
     private const int MinNameLength = 2;
