@@ -161,9 +161,7 @@ namespace Application.Services
                     (dto.DepartmentId != Guid.Empty) ? dto.DepartmentId : throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("DepartmentId", "DepartmentId is required for transfer destiny") }),
                     (dto.RecipientId != Guid.Empty) ? dto.RecipientId : throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("RecipientId", "RecipientId is required for transfer destiny") }),
                     dto.DecommissionDate ?? DateTime.UtcNow),
-                3 => DecommissionContext.ForWarehouse(
-                    (dto.RecipientId != Guid.Empty) ? dto.RecipientId : throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("RecipientId", "RecipientId is required for transfer destiny") }),
-                    dto.DecommissionDate ?? DateTime.UtcNow),
+                3 => DecommissionContext.ForWarehouse(),
                 _ => throw new Application.Exceptions.ValidationException(new List<FluentValidation.Results.ValidationFailure> { new FluentValidation.Results.ValidationFailure("DestinyTypeId", $"Invalid destiny type ID: {destinyType.Id}") })
             };
         }

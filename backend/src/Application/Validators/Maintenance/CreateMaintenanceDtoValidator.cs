@@ -97,14 +97,14 @@ namespace Application.Validators.Maintenance
                 context.AddFailure("EquipmentId", "Equipment is already under maintenance.");
             }
 
+            if (equipment.StateId == EquipmentState.Decommissioned.Id || equipment.LocationTypeId == LocationType.Warehouse.Id)
+            {
+                context.AddFailure("EquipmentId", "Equipment is decommissioned (in warehouse) and cannot receive maintenance.");
+            }
+
             if (equipment.StateId == EquipmentState.Disposed.Id || equipment.LocationTypeId == LocationType.Disposal.Id)
             {
                 context.AddFailure("EquipmentId", "Equipment is disposed and cannot receive maintenance.");
-            }
-
-            if (equipment.LocationTypeId == LocationType.Warehouse.Id)
-            {
-                context.AddFailure("EquipmentId", "Equipment is in the warehouse and cannot receive maintenance.");
             }
         }
     }

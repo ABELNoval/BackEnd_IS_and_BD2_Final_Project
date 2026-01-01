@@ -24,12 +24,9 @@ public class DecommissionContext
         return new DecommissionContext(targetDepartmentId, ReceptorId, transferDate);
     }
 
-    public static DecommissionContext ForWarehouse(Guid recipientId, DateTime transferDate)
+    public static DecommissionContext ForWarehouse()
     {
-        if (recipientId == Guid.Empty)
-            throw new ArgumentException("receptor ID is required", nameof(recipientId));
-
-        return new DecommissionContext(null, recipientId, transferDate);
+        return new DecommissionContext(null, null, DateTime.UtcNow);
     }
 
     public static DecommissionContext ForDisposal()

@@ -144,8 +144,7 @@ public class Equipment : Entity
         destinationStrategy.ApplyTo(this, context);
 
         _decommissions.Add(decommission);
-        if (StateId != EquipmentState.Disposed.Id)
-            StateId = EquipmentState.Decommissioned.Id;
+        // Note: State changes are handled by the strategy (Disposal sets Disposed, others keep current state)
     }
 
     /// <summary>
@@ -246,11 +245,13 @@ public class Equipment : Entity
     /// <summary>
     /// Moves equipment to warehouse.
     /// Called by WarehouseDestinationStrategy.
+    /// Sets state to Decommissioned while in warehouse.
     /// </summary>
     internal void MoveToWarehouse()
     {
         DepartmentId = null;
         LocationTypeId = LocationType.Warehouse.Id;
+        StateId = EquipmentState.Decommissioned.Id;
     }
 
     /// <summary>
@@ -324,7 +325,9 @@ public class Equipment : Entity
             throw new EquipmentAlreadyDisposedException(Id);
 
         if (State == EquipmentState.Decommissioned)
-            throw new EquipmentAlreadyDecommissionedException(Id);
+            throw new BusinessRuleViolationException(
+                "DecommissionEquipmentAlreadyDecommissioned",
+                "Cannot decommission equipment that is already decommissioned (in warehouse)");
 
         if (State == EquipmentState.UnderMaintenance)
             throw new BusinessRuleViolationException(
@@ -336,6 +339,11 @@ public class Equipment : Entity
     {
         if (State == EquipmentState.Disposed)
             throw new EquipmentDisposedException(Id, "Cannot transfer disposed equipment");
+
+        if (State == EquipmentState.Decommissioned)
+            throw new BusinessRuleViolationException(
+                "TransferEquipmentDecommissioned",
+                "Cannot transfer equipment that is decommissioned (in warehouse). Use release instead.");
 
         if (State == EquipmentState.UnderMaintenance)
             throw new BusinessRuleViolationException(
@@ -366,7 +374,7 @@ public class Equipment : Entity
         if (State == EquipmentState.Decommissioned)
             throw new BusinessRuleViolationException(
                 "MaintainDecommissionedEquipment",
-                "Cannot maintain decommissioned equipment");
+                "Cannot maintain equipment that is decommissioned (in warehouse)");
     }
 
     #endregion
