@@ -111,12 +111,15 @@ namespace Application.Services
             await _transferRequestRepository.UpdateAsync(request);
 
             // Create the actual transfer
+            // ResponsibleId = original requester (sender)
+            // RecipientId = resolver (receiver who accepts the equipment)
             var createTransferDto = new CreateTransferDto
             {
                 EquipmentId = request.EquipmentId,
                 SourceDepartmentId = equipment.DepartmentId.Value,
                 TargetDepartmentId = request.TargetDepartmentId,
-                ResponsibleId = resolverId,
+                ResponsibleId = request.RequesterId,
+                RecipientId = resolverId,
                 TransferDate = request.RequestedTransferDate
             };
 

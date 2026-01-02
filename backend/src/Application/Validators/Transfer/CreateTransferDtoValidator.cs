@@ -70,8 +70,8 @@ namespace Application.Validators.Transfer
                 .WithMessage("The specified responsible does not exist.");
 
             RuleFor(x => x.RecipientId)
-                .MustAsync(TechnicalExists)
-                .WithMessage("The specified recipient (technical) does not exist.");
+                .MustAsync(ResponsibleExistsForRecipient)
+                .WithMessage("The specified recipient (responsible) does not exist.");
 
             // Cross-entity: Equipment is not disposed
             RuleFor(x => x.EquipmentId)
@@ -126,6 +126,17 @@ namespace Application.Validators.Transfer
         private async System.Threading.Tasks.Task<bool> TechnicalExists(Guid id, System.Threading.CancellationToken ct)
         {
             return await _technicalRepo.GetByIdAsync(id, ct) != null;
+        }
+
+        /// <summary>
+        /// Checks if the responsible (recipient) exists in the database.
+        /// </summary>
+        /// <param name="id">The responsible ID.</param>
+        /// <param name="ct">Cancellation token.</param>
+        /// <returns>True if the responsible exists; otherwise, false.</returns>
+        private async System.Threading.Tasks.Task<bool> ResponsibleExistsForRecipient(Guid id, System.Threading.CancellationToken ct)
+        {
+            return await _responsibleRepo.GetByIdAsync(id, ct) != null;
         }
 
         /// <summary>

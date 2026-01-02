@@ -18,53 +18,25 @@ namespace Infrastructure.Reports
         /// REPORT 1 - Decommissioned equipment last year.
         /// Lists all equipment decommissioned in the last year, including decommission cause,
         /// final destination and recipient name (if assigned).
+        /// Uses Stored Procedure for efficient database-side processing.
         /// </summary>
         /// <returns>
         /// IEnumerable of <see cref="EquipmentDecommissionLastYearDto"/> ordered by decommission date (newest first).
         /// </returns>
         public async Task<IEnumerable<EquipmentDecommissionLastYearDto>> GetEquipmentDecommissionLastYearAsync()
         {
-            var oneYearAgo = DateTime.UtcNow.AddYears(-1);
-
-            var query =
-                from decomm in _context.EquipmentDecommissions
-                where decomm.DecommissionDate >= oneYearAgo
-
-                join equipment in _context.Equipments
-                    on decomm.EquipmentId equals equipment.Id
-
-                // LEFT JOIN receiver (may not exist)
-                join receiver in _context.Responsibles
-                    on decomm.RecipientId equals receiver.Id into receivers
-                from receiver in receivers.DefaultIfEmpty()
-
-                // LEFT JOIN department (only for DestinyTypeId == 1)
-                join department in _context.Departments
-                    on decomm.DepartmentId equals department.Id into departments
-                from department in departments.DefaultIfEmpty()
-
-                select new EquipmentDecommissionLastYearDto
-                {
-                    EquipmentName = equipment.Name,
-                    DecommissionCause = decomm.Reason,
-                    FinalDestination =
-                        decomm.DestinyTypeId == 1 && department != null
-                            ? department.Name
-                            : GetDestinyName(decomm.DestinyTypeId),
-                    ReceiverName = receiver != null ? receiver.Name : "No recipient assigned",
-                    DecommissionDate = decomm.DecommissionDate
-                };
-
-            return await query
-                .AsNoTracking()
-                .OrderByDescending(x => x.DecommissionDate)
+            var result = await _context.Database
+                .SqlQueryRaw<EquipmentDecommissionLastYearDto>("CALL GetEquipmentDecommissionLastYear()")
                 .ToListAsync();
+
+            return result;
         }
         
         /// <summary>
         /// REPORT 2 - Equipment maintenance history.
         /// Gets the maintenance history for a specific equipment, classified by type and date,
         /// including technicians who performed the interventions.
+        /// Uses Stored Procedure for efficient database-side processing.
         /// </summary>
         /// <param name="equipmentId">The equipment identifier.</param>
         /// <returns>
@@ -72,26 +44,13 @@ namespace Infrastructure.Reports
         /// </returns>
         public async Task<IEnumerable<EquipmentMaintenanceHistoryDto>> GetEquipmentMaintenanceHistoryAsync(Guid equipmentId)
         {
-            var query =
-                from m in _context.Maintenances
-                where m.EquipmentId == equipmentId
-                join eq in _context.Equipments
-                    on m.EquipmentId equals eq.Id
-                join tech in _context.Technicals
-                    on m.TechnicalId equals tech.Id
-                select new EquipmentMaintenanceHistoryDto
-                {
-                    MaintenanceId = m.Id,
-                    MaintenanceDate = m.MaintenanceDate,
-                    MaintenanceType = GetMaintenanceTypeName(m.MaintenanceTypeId),
-                    EquipmentName = eq.Name,
-                    TechnicalName = tech.Name
-                };
-
-            return await query
-                .AsNoTracking()
-                .OrderByDescending(x => x.MaintenanceDate)
+            var result = await _context.Database
+                .SqlQueryRaw<EquipmentMaintenanceHistoryDto>(
+                    "CALL GetEquipmentMaintenanceHistory({0})",
+                    equipmentId.ToString())
                 .ToListAsync();
+
+            return result;
         }
 
         /// <summary>
@@ -284,7 +243,7 @@ namespace Infrastructure.Reports
                 1 => "Preventive",
                 2 => "Corrective",
                 3 => "Predictive",
-                4 => "Calibration",
+                4 => "Emergency",
                 _ => "Unknown"
             };
 
