@@ -1,0 +1,142 @@
+using Application.DTOs.Director;
+using Application.Interfaces.Services;
+using Application.Validators.Director;
+using AutoMapper;
+using Domain.Entities;
+using Domain.Interfaces;
+using Domain.ValueObjects;
+using FluentValidation;
+using Application.Exceptions;
+
+namespace Application.Services
+{
+    public class DirectorService : IDirectorService
+    {
+        private readonly IDirectorRepository _directorRepository;
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly IValidator<CreateDirectorDto> _createValidator;
+        private readonly IValidator<UpdateDirectorDto> _updateValidator;
+
+        public DirectorService(
+            IDirectorRepository directorRepository,
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            IValidator<CreateDirectorDto> createValidator,
+            IValidator<UpdateDirectorDto> updateValidator)
+        {
+            _directorRepository = directorRepository;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _createValidator = createValidator;
+            _updateValidator = updateValidator;
+        }
+
+        /// <summary>
+        /// Creates a new director after validating the DTO.
+        /// </summary>
+        /// <param name="dto">The CreateDirectorDto to validate and create.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The created DirectorDto.</returns>
+        public async Task<DirectorDto> CreateAsync(CreateDirectorDto dto, CancellationToken cancellationToken = default)
+        {
+            var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
+
+            var entity = Director.Create(
+                dto.Name,
+                Email.Create(dto.Email),
+                PasswordHash.Create(dto.Password)
+            );
+
+            await _directorRepository.CreateAsync(entity, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return _mapper.Map<DirectorDto>(entity);
+        }
+
+        /// <summary>
+        /// Updates an existing director after validating the DTO.
+        /// </summary>
+        /// <param name="dto">The UpdateDirectorDto to validate and update.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The updated DirectorDto, or throws EntityNotFoundException if not found.</returns>
+        public async Task<DirectorDto?> UpdateAsync(UpdateDirectorDto dto, CancellationToken cancellationToken = default)
+        {
+            var validationResult = await _updateValidator.ValidateAsync(dto, cancellationToken);
+            if (!validationResult.IsValid)
+                throw new Application.Exceptions.ValidationException(validationResult.Errors);
+
+            var existing = await _directorRepository.GetByIdAsync(dto.Id, cancellationToken);
+            if (existing == null)
+                throw new EntityNotFoundException(nameof(Director), dto.Id);
+
+            var updatedEmail = existing.Email.Update(dto.Email);
+            var updatedPasswordHash = string.IsNullOrWhiteSpace(dto.Password) 
+                ? existing.PasswordHash   
+                : existing.PasswordHash.Update(dto.Password);
+
+            existing.Update(
+                dto.Name,
+                updatedEmail,
+                updatedPasswordHash
+            );
+
+            await _directorRepository.UpdateAsync(existing);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return _mapper.Map<DirectorDto>(existing);
+        }
+
+
+        /// <summary>
+        /// Deletes a director by ID.
+        /// </summary>
+        /// <param name="id">The director ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>True if deleted, otherwise throws EntityNotFoundException.</returns>
+        public async Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+
+            var existing = await _directorRepository.GetByIdAsync(id, cancellationToken);
+            if (existing == null)
+                throw new EntityNotFoundException(nameof(Director), id);
+
+            await _directorRepository.DeleteAsync(id, cancellationToken);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+            return true;
+        }
+
+        /// <summary>
+        /// Gets a director by ID.
+        /// </summary>
+        /// <param name="id">The director ID.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        /// <returns>The DirectorDto if found, otherwise throws EntityNotFoundException.</returns>
+        public async Task<DirectorDto?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+        {
+            if (id == Guid.Empty)
+                throw new ArgumentException("ID cannot be empty", nameof(id));
+
+            var entity = await _directorRepository.GetByIdAsync(id, cancellationToken);
+            if (entity == null)
+                throw new EntityNotFoundException(nameof(Director), id);
+            return _mapper.Map<DirectorDto>(entity);
+        }
+
+        public async Task<IEnumerable<DirectorDto>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            var entities = await _directorRepository.GetAllAsync(cancellationToken);
+            return _mapper.Map<IEnumerable<DirectorDto>>(entities);
+        }
+
+        public async Task<IEnumerable<DirectorDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
+        {
+            var entities = await _directorRepository.FilterAsync(query, cancellationToken);
+            return _mapper.Map<IEnumerable<DirectorDto>>(entities);
+        }
+    }
+}
