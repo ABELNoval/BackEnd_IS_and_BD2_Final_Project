@@ -11,11 +11,16 @@ namespace WebApi.Controllers
     {
         private readonly IEquipmentService _equipmentService;
         private readonly IDepartmentService _departmentService;
+        private readonly ITransferRequestService _transferRequestService;
 
-        public EquipmentController(IEquipmentService equipmentService, IDepartmentService departmentService)
+        public EquipmentController(
+            IEquipmentService equipmentService, 
+            IDepartmentService departmentService,
+            ITransferRequestService transferRequestService)
         {
             _equipmentService = equipmentService;
             _departmentService = departmentService;
+            _transferRequestService = transferRequestService;
         }
 
         // ================================
@@ -26,16 +31,38 @@ namespace WebApi.Controllers
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             
-            // Responsible: solo equipos de departamentos de su sección
+            // Responsible: equipos de departamentos de su sección + equipos de TransferRequests aceptados
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;
-                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+                
+                if (Guid.TryParse(sectionIdClaim, out var sectionId) && Guid.TryParse(userIdClaim, out var userId))
                 {
+                    // Get current equipment from their section's departments
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    var result = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
-                    return Ok(result);
+                    var currentEquipment = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    
+                    // Get equipment from accepted transfer requests where they were the requester
+                    var allTransferRequests = await _transferRequestService.GetAllAsync(cancellationToken);
+                    var acceptedRequests = allTransferRequests
+                        .Where(tr => tr.RequesterId == userId && tr.StatusId == 2) // 2 = Accepted
+                        .Select(tr => tr.EquipmentId)
+                        .Distinct()
+                        .ToList();
+                    
+                    // Get past equipment that was transferred away
+                    var allEquipment = await _equipmentService.GetAllAsync(cancellationToken);
+                    var pastEquipment = allEquipment.Where(e => acceptedRequests.Contains(e.Id));
+                    
+                    // Combine current + past (distinct by Id)
+                    var combinedEquipment = currentEquipment
+                        .Concat(pastEquipment)
+                        .DistinctBy(e => e.Id)
+                        .ToList();
+                    
+                    return Ok(combinedEquipment);
                 }
             }
             // Employee: solo equipos de su departamento

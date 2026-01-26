@@ -10,10 +10,17 @@ namespace Web.Controllers
     public class EquipmentDecommissionController : ControllerBase
     {
         private readonly IEquipmentDecommissionService _equipmentDecommissionService;
+        private readonly IDepartmentService _departmentService;
+        private readonly IEquipmentService _equipmentService;
 
-        public EquipmentDecommissionController (IEquipmentDecommissionService equipmentDecommissionService)
+        public EquipmentDecommissionController (
+            IEquipmentDecommissionService equipmentDecommissionService,
+            IDepartmentService departmentService,
+            IEquipmentService equipmentService)
         {
             _equipmentDecommissionService = equipmentDecommissionService;
+            _departmentService = departmentService;
+            _equipmentService = equipmentService;
         }
 
         // ==============================
@@ -23,6 +30,8 @@ namespace Web.Controllers
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            
+            // Technical: only their own decommissions
             if (role == "Technical")
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -31,6 +40,36 @@ namespace Web.Controllers
                     var query = $"TechnicalId == \"{userId}\"";
                     var resultT = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
                     return Ok(resultT);
+                }
+            }
+            
+            // Responsible: only decommissions of their CURRENT equipment (not past)
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    
+                    if (!departmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<EquipmentDecommissionDto>());
+                    }
+
+                    var equipments = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    var equipmentIds = equipments.Select(e => e.Id).ToList();
+
+                    if (!equipmentIds.Any())
+                    {
+                        return Ok(Enumerable.Empty<EquipmentDecommissionDto>());
+                    }
+
+                    var ids = string.Join(",", equipmentIds.Select(id => $"\"{id}\""));
+                    var query = $"EquipmentId in ({ids})";
+                    
+                    var result1 = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
+                    return Ok(result1);
                 }
             }
 
