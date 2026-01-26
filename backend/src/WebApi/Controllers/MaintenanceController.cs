@@ -86,6 +86,17 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateMaintenanceDto dto, CancellationToken cancellationToken)
         {
+            // Auto-fill TechnicalId for Technical role
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Technical")
+            {
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+                if (Guid.TryParse(userIdClaim, out var userId))
+                {
+                    dto.TechnicalId = userId;
+                }
+            }
+            
             Console.WriteLine($"El type es: {dto.MaintenanceTypeId}");
             var created = await _maintenanceService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);

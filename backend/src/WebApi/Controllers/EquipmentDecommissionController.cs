@@ -54,6 +54,17 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateEquipmentDecommissionDto dto, CancellationToken cancellationToken)
         {
+            // Auto-fill TechnicalId for Technical role
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Technical")
+            {
+                var userIdClaim = User.FindFirst("UserId")?.Value;
+                if (Guid.TryParse(userIdClaim, out var userId))
+                {
+                    dto.TechnicalId = userId;
+                }
+            }
+            
             Console.WriteLine($"DTO received - DestinyTypeId: {dto.DestinyTypeId}, EquipmentId: {dto.EquipmentId}, TechnicalId: {dto.TechnicalId}");
             var created = await _equipmentDecommissionService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
