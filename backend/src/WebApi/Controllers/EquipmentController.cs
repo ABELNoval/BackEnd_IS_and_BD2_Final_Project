@@ -62,7 +62,23 @@ namespace WebApi.Controllers
                         .DistinctBy(e => e.Id)
                         .ToList();
                     
-                    return Ok(combinedEquipment);
+                    // Marcar cada equipo como propietario (Yes) o transferido (No)
+                    var transferredIds = new HashSet<Guid>(acceptedRequests);
+                    var extendedEquipment = combinedEquipment.Select(e => {
+                        var dto = new EquipmentDto {
+                            Id = e.Id,
+                            Name = e.Name,
+                            AcquisitionDate = e.AcquisitionDate,
+                            EquipmentTypeId = e.EquipmentTypeId,
+                            DepartmentId = e.DepartmentId,
+                            StateId = e.StateId,
+                            LocationTypeId = e.LocationTypeId
+                        };
+                        // Propiedad extra para el frontend
+                        dto.IsTransferred = transferredIds.Contains(e.Id); // Yes para propietario, No para transferido
+                        return dto;
+                    }).ToList();
+                    return Ok(extendedEquipment);
                 }
             }
             // Employee: solo equipos de su departamento
