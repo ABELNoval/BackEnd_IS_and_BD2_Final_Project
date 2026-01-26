@@ -43,6 +43,9 @@ namespace WebApi.Controllers
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
                     var currentEquipment = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    foreach ( var equipment in currentEquipment){
+                        Console.WriteLine("EQUIPO ACTUAL: " + equipment.Name);
+                    };
                     
                     // Get equipment from accepted transfer requests where they were the requester
                     var allTransferRequests = await _transferRequestService.GetAllAsync(cancellationToken);
@@ -75,7 +78,7 @@ namespace WebApi.Controllers
                             LocationTypeId = e.LocationTypeId
                         };
                         // Propiedad extra para el frontend
-                        dto.IsTransferred = transferredIds.Contains(e.Id); // Yes para propietario, No para transferido
+                        dto.IsTransferred = !transferredIds.Contains(e.Id); // Yes para propietario, No para transferido
                         return dto;
                     }).ToList();
                     return Ok(extendedEquipment);
