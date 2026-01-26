@@ -18,6 +18,7 @@ namespace Application.Mappers
                 .ForMember(dest => dest.DestinyTypeId, opt => opt.MapFrom(src => src.DestinyTypeId))
                 .ForMember(dest => dest.RecipientId, opt => opt.MapFrom(src => src.RecipientId))
                 .ForMember(dest => dest.DecommissionDate, opt => opt.MapFrom(src => src.DecommissionDate))
+                .ForMember(dest => dest.CompletionDate, opt => opt.MapFrom(src => src.CompletionDate))
                 .ForMember(dest => dest.Reason, opt => opt.MapFrom(src => src.Reason));    
         
             // DTO → Entity

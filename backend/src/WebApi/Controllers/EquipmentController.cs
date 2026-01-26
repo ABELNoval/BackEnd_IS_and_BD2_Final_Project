@@ -19,12 +19,14 @@ namespace WebApi.Controllers
         }
 
         // ================================
-        // GET: api/equipment - OBTENER TODOS
+        // GET: api/equipment - OBTENER TODOS (filtrado por rol)
         // ================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EquipmentDto>>> GetAll(CancellationToken cancellationToken)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            
+            // Responsible: solo equipos de departamentos de su sección
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;
@@ -36,6 +38,7 @@ namespace WebApi.Controllers
                     return Ok(result);
                 }
             }
+            // Employee: solo equipos de su departamento
             else if (role == "Employee")
             {
                 var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
@@ -46,6 +49,7 @@ namespace WebApi.Controllers
                 }
             }
 
+            // Admin, Director, Technical: todos los equipos
             var resultAll = await _equipmentService.GetAllAsync(cancellationToken);
             return Ok(resultAll);
         }

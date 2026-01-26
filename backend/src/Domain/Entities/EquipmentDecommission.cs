@@ -44,6 +44,14 @@ public class EquipmentDecommission : Entity
     public DateTime DecommissionDate { get; private set; }
 
     /// <summary>
+    /// Date when decommissioning was completed (null if pending)
+    /// - Disposal: always null
+    /// - Warehouse: set when released to department
+    /// - Department: set to same as DecommissionDate
+    /// </summary>
+    public DateTime? CompletionDate { get; private set; }
+
+    /// <summary>
     /// Reason for decommissioning
     /// </summary>
     public string Reason { get; private set; } = string.Empty;
@@ -80,6 +88,12 @@ public class EquipmentDecommission : Entity
         RecipientId = recipientId;
         DecommissionDate = decommissionDate;
         Reason = reason.Trim();
+        
+        // Set CompletionDate based on destiny type:
+        // - Department: completed immediately (same day)
+        // - Warehouse: pending (null) until released
+        // - Disposal: always null (no completion)
+        CompletionDate = destinyTypeId == DestinyType.Department.Id ? decommissionDate : null;
     }
 
     /// <summary>
@@ -124,7 +138,7 @@ public class EquipmentDecommission : Entity
         DepartmentId = targetDepartmentId;
         RecipientId = recipientId;
         DestinyTypeId = DestinyType.Department.Id;
-        DecommissionDate = DateTime.UtcNow;
+        CompletionDate = DateTime.UtcNow; // Mark as completed when released
     }
 
     /// <summary>

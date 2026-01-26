@@ -17,12 +17,14 @@ namespace WebApi.Controllers
         }
 
         // ============================================================
-        // GET: api/department - OBTENER TODOS
+        // GET: api/department - OBTENER TODOS (filtrado por rol)
         // ============================================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DepartmentDto>>> GetAll(CancellationToken cancellationToken)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            
+            // Responsible: solo departamentos de su sección
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;
@@ -32,6 +34,7 @@ namespace WebApi.Controllers
                     return Ok(result);
                 }
             }
+            // Employee: solo su departamento
             else if (role == "Employee")
             {
                 var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
@@ -42,6 +45,7 @@ namespace WebApi.Controllers
                 }
             }
 
+            // Admin, Director, Technical: todos los departamentos
             var allResult = await _departmentService.GetAllAsync(cancellationToken);
             return Ok(allResult);
         }
