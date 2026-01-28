@@ -9,6 +9,7 @@ namespace Application.DTOs.EquipmentDecommission
         public int DestinyTypeId { get; set; }
         public Guid RecipientId { get; set; }
         public DateTime DecommissionDate { get; set; }
+        public DateTime? CompletionDate { get; set; }
         public string Reason { get; set; } = string.Empty;
 
     }

@@ -1,6 +1,7 @@
 using Application.DTOs.Section;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -9,18 +10,49 @@ namespace WebApi.Controllers
     public class SectionController : ControllerBase
     {
         private readonly ISectionService _sectionService;
+        private readonly IDepartmentService _departmentService;
 
-        public SectionController(ISectionService sectionService)
+        public SectionController(ISectionService sectionService, IDepartmentService departmentService)
         {
             _sectionService = sectionService;
+            _departmentService = departmentService;
         }
 
         // ================================
-        // GET: api/section - OBTENER TODOS
+        // GET: api/section - OBTENER TODOS (filtrado por rol)
         // ================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<SectionDto>>> GetAll(CancellationToken cancellationToken)
         {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            
+            // Employee: only their section (via department)
+            if (role == "Employee" || role == "Receptor")
+            {
+                var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
+                if (Guid.TryParse(departmentIdClaim, out var departmentId))
+                {
+                    var department = await _departmentService.GetByIdAsync(departmentId, cancellationToken);
+                    if (department != null)
+                    {
+                        var section = await _sectionService.GetByIdAsync(department.SectionId, cancellationToken);
+                        return Ok(section != null ? new List<SectionDto> { section } : new List<SectionDto>());
+                    }
+                }
+                return Ok(new List<SectionDto>());
+            }
+            
+            // Responsible: only sections they manage (via SectionId claim)
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var section = await _sectionService.GetByIdAsync(sectionId, cancellationToken);
+                    return Ok(section != null ? new List<SectionDto> { section } : new List<SectionDto>());
+                }
+            }
+            
             var result = await _sectionService.GetAllAsync(cancellationToken);
             return Ok(result);
         }

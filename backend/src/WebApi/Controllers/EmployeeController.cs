@@ -25,6 +25,15 @@ namespace Web.Controllers
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            
+            // Technical: only see regular Employees (exclude Responsibles, keep Directors)
+            if (role == "Technical")
+            {
+                var allEmployees = await _employeeService.GetAllAsync(cancellationToken);
+                var filteredEmployees = allEmployees.Where(e => e.Role != "Responsible").ToList();
+                return Ok(filteredEmployees);
+            }
+            
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;

@@ -9,6 +9,5 @@ namespace Application.DTOs.Equipment
         public Guid? DepartmentId { get; set; }
         public int StateId { get; set; }          
         public int LocationTypeId { get; set; }  
-        
     }
 }

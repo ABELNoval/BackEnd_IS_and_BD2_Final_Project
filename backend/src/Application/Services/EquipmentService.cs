@@ -48,7 +48,7 @@ namespace Application.Services
             var validationResult = await _createValidator.ValidateAsync(dto, cancellationToken);
             if (!validationResult.IsValid)
                 throw new Application.Exceptions.ValidationException(validationResult.Errors);
-            
+
             var entity = _mapper.Map<Equipment>(dto);
             await _equipmentRepository.CreateAsync(entity, cancellationToken);
 
@@ -152,6 +152,7 @@ namespace Application.Services
 
         public async Task<IEnumerable<EquipmentDto>> FilterAsync(string query, CancellationToken cancellationToken = default)
         {
+            Console.WriteLine(query);
             var entities = await _equipmentRepository.FilterAsync(query, cancellationToken);
             return _mapper.Map<IEnumerable<EquipmentDto>>(entities);
         }

@@ -11,20 +11,27 @@ namespace WebApi.Controllers
     {
         private readonly IEquipmentService _equipmentService;
         private readonly IDepartmentService _departmentService;
+        private readonly ITransferRequestService _transferRequestService;
 
-        public EquipmentController(IEquipmentService equipmentService, IDepartmentService departmentService)
+        public EquipmentController(
+            IEquipmentService equipmentService,
+            IDepartmentService departmentService,
+            ITransferRequestService transferRequestService)
         {
             _equipmentService = equipmentService;
             _departmentService = departmentService;
+            _transferRequestService = transferRequestService;
         }
 
         // ================================
-        // GET: api/equipment - OBTENER TODOS
+        // GET: api/equipment - OBTENER TODOS (filtrado por rol)
         // ================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EquipmentDto>>> GetAll(CancellationToken cancellationToken)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
+
+            // Responsible: equipos de departamentos de su sección + equipos de TransferRequests aceptados
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;
@@ -36,6 +43,7 @@ namespace WebApi.Controllers
                     return Ok(result);
                 }
             }
+            // Employee: solo equipos de su departamento
             else if (role == "Employee")
             {
                 var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
@@ -46,6 +54,7 @@ namespace WebApi.Controllers
                 }
             }
 
+            // Admin, Director, Technical: todos los equipos
             var resultAll = await _equipmentService.GetAllAsync(cancellationToken);
             return Ok(resultAll);
         }
@@ -133,15 +142,15 @@ namespace WebApi.Controllers
                 {
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    
+
                     if (!departmentIds.Any())
                     {
                         return Ok(Enumerable.Empty<EquipmentDto>());
                     }
 
-                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
+                    var ids = string.Join(",", departmentIds.Select(id => $"Guid.Parse(\"{id}\")"));
                     var sectionFilter = $"DepartmentId in ({ids})";
-                    
+
                     if (!string.IsNullOrEmpty(query))
                     {
                         query = $"({query}) AND {sectionFilter}";

@@ -54,7 +54,19 @@ namespace Web.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateAssessmentDto dto, CancellationToken cancellationToken)
         {
-             var created = await _assessmentService.CreateAsync(dto, cancellationToken);
+            // Auto-fill TechnicalId for Technical role
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Technical")
+            {
+                var userIdClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value 
+                                ?? User.FindFirst("sub")?.Value;
+                if (Guid.TryParse(userIdClaim, out var userId))
+                {
+                    dto.TechnicalId = userId;
+                }
+            }
+            
+            var created = await _assessmentService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
@@ -85,7 +97,7 @@ namespace Web.Controllers
         // GET: api/assessment/filter
         // =========================================
         [HttpPost("filter")]
-        public async Task<IActionResult> Filter([FromBody] List<string> request)
+        public async Task<IActionResult> Filter([FromBody] List<string> request, CancellationToken cancellationToken)
         {
             string query = "";
 

@@ -1,6 +1,7 @@
 using Application.DTOs.EquipmentType;
 using Application.Interfaces.Services;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace WebApi.Controllers
 {
@@ -9,18 +10,67 @@ namespace WebApi.Controllers
     public class EquipmentTypeController : ControllerBase
     {
         private readonly IEquipmentTypeService _equipmentTypeService;
+        private readonly IEquipmentService _equipmentService;
+        private readonly IDepartmentService _departmentService;
+        private readonly ITransferRequestService _transferRequestService;
 
-        public EquipmentTypeController(IEquipmentTypeService equipmentTypeService)
+        public EquipmentTypeController(
+            IEquipmentTypeService equipmentTypeService,
+            IEquipmentService equipmentService,
+            IDepartmentService departmentService,
+            ITransferRequestService transferRequestService)
         {
             _equipmentTypeService = equipmentTypeService;
+            _equipmentService = equipmentService;
+            _departmentService = departmentService;
+            _transferRequestService = transferRequestService;
         }
 
         // ================================
-        // GET: api/equipmenttype - OBTENER TODOS
+        // GET: api/equipmenttype - OBTENER TODOS (filtrado por rol)
         // ================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<EquipmentTypeDto>>> GetAll(CancellationToken cancellationToken)
         {
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            
+            // Responsible: equipment types from their visible equipment (current + past)
+            if (role == "Responsible")
+            {
+                var sectionIdClaim = User.FindFirst("SectionId")?.Value;
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
+                {
+                    var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
+                    var departmentIds = departments.Select(d => d.Id).ToList();
+                    var equipments = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    
+                    var typeIds = equipments.Select(e => e.EquipmentTypeId).Distinct().ToList();
+                    var allTypes = await _equipmentTypeService.GetAllAsync(cancellationToken);
+                    var filteredTypes = allTypes.Where(t => typeIds.Contains(t.Id)).ToList();
+                    return Ok(filteredTypes);
+                }
+            }
+            
+            // Employee: only equipment types from their department's equipment
+            if (role == "Employee" || role == "Receptor")
+            {
+                var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
+                if (Guid.TryParse(departmentIdClaim, out var departmentId))
+                {
+                    // Get equipment in their department
+                    var equipments = await _equipmentService.GetByDepartmentIdsAsync(
+                        new List<Guid> { departmentId }, cancellationToken);
+                    
+                    // Get unique equipment type IDs
+                    var typeIds = equipments.Select(e => e.EquipmentTypeId).Distinct().ToList();
+                    
+                    // Get only those equipment types
+                    var allTypes = await _equipmentTypeService.GetAllAsync(cancellationToken);
+                    var filteredTypes = allTypes.Where(t => typeIds.Contains(t.Id)).ToList();
+                    return Ok(filteredTypes);
+                }
+            }
+            
             var result = await _equipmentTypeService.GetAllAsync(cancellationToken);
             return Ok(result);
         }
