@@ -35,7 +35,7 @@ namespace WebApi.Controllers
                 }
             }
             // Employee: solo su departamento
-            else if (role == "Employee")
+            else if (role == "Employee" || role == "Receptor")
             {
                 var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
                 if (Guid.TryParse(departmentIdClaim, out var departmentId))

@@ -27,7 +27,7 @@ namespace WebApi.Controllers
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             
             // Employee: only their section (via department)
-            if (role == "Employee")
+            if (role == "Employee" || role == "Receptor")
             {
                 var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
                 if (Guid.TryParse(departmentIdClaim, out var departmentId))

@@ -72,8 +72,7 @@ namespace WebApi.Controllers
             }
             
             // Employee: only equipment types from their department's equipment
-            if (role == "Employee")
-            if (role == "Employee")
+            if (role == "Employee" || role == "Receptor")
             {
                 var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
                 if (Guid.TryParse(departmentIdClaim, out var departmentId))

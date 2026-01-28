@@ -12,15 +12,18 @@ namespace Web.Controllers
         private readonly IEquipmentDecommissionService _equipmentDecommissionService;
         private readonly IDepartmentService _departmentService;
         private readonly IEquipmentService _equipmentService;
+        private readonly IEmployeeService _employeeService;
 
         public EquipmentDecommissionController(
             IEquipmentDecommissionService equipmentDecommissionService,
             IDepartmentService departmentService,
-            IEquipmentService equipmentService)
+            IEquipmentService equipmentService,
+            IEmployeeService employeeService)
         {
             _equipmentDecommissionService = equipmentDecommissionService;
             _departmentService = departmentService;
             _equipmentService = equipmentService;
+            _employeeService = employeeService;
         }
 
         // ==============================
@@ -70,6 +73,30 @@ namespace Web.Controllers
 
                     var resultR = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
                     return Ok(resultR);
+                }
+            }
+
+            if (role == "Receptor")
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId) && Guid.TryParse(userId, out var userGuid))
+                {
+                    var query = $"RecipientId == Guid.Parse(\"{userGuid}\")";
+                    var resultRec = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
+                    return Ok(resultRec);
+                }
+                return Ok(new List<EquipmentDecommissionDto>());
+            }
+
+            // Employee: only decommissions destined to their department
+            if (role == "Employee" || role == "Receptor")
+            {
+                var departmentIdClaim = User.FindFirst("DepartmentId")?.Value;
+                if (Guid.TryParse(departmentIdClaim, out var departmentId))
+                {
+                    var query = $"DepartmentId == Guid.Parse(\"{departmentId}\")";
+                    var resultE = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
+                    return Ok(resultE);
                 }
             }
 
