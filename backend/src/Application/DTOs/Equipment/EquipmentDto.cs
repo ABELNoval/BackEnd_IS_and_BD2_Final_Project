@@ -9,7 +9,5 @@ namespace Application.DTOs.Equipment
         public Guid? DepartmentId { get; set; }
         public int StateId { get; set; }          
         public int LocationTypeId { get; set; }  
-        public bool IsTransferred { get; set; } // True if not currently owned by Responsible
-        
     }
 }

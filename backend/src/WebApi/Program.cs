@@ -158,17 +158,17 @@ using (var scope = app.Services.CreateScope())
 
     ctx.Database.Migrate();
 
-    if (env.IsDevelopment())
-    {
-        try
-        {
-            await ExecuteSeedAsync(ctx);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine("Error ejecutando seed: " + ex.Message);
-        }
-    }
+    // if (env.IsDevelopment())
+    // {
+    //     try
+    //     {
+    //         await ExecuteSeedAsync(ctx);
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         Console.WriteLine("Error ejecutando seed: " + ex.Message);
+    //     }
+    // }
 
     try
     {
