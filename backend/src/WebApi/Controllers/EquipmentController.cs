@@ -14,7 +14,7 @@ namespace WebApi.Controllers
         private readonly ITransferRequestService _transferRequestService;
 
         public EquipmentController(
-            IEquipmentService equipmentService, 
+            IEquipmentService equipmentService,
             IDepartmentService departmentService,
             ITransferRequestService transferRequestService)
         {
@@ -30,23 +30,25 @@ namespace WebApi.Controllers
         public async Task<ActionResult<IEnumerable<EquipmentDto>>> GetAll(CancellationToken cancellationToken)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            
+
             // Responsible: equipos de departamentos de su sección + equipos de TransferRequests aceptados
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;
                 var userIdClaim = User.FindFirst("UserId")?.Value;
-                
+
                 if (Guid.TryParse(sectionIdClaim, out var sectionId) && Guid.TryParse(userIdClaim, out var userId))
                 {
                     // Get current equipment from their section's departments
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
                     var currentEquipment = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
-                    foreach ( var equipment in currentEquipment){
+                    foreach (var equipment in currentEquipment)
+                    {
                         Console.WriteLine("EQUIPO ACTUAL: " + equipment.Name);
-                    };
-                    
+                    }
+                    ;
+
                     // Get equipment from accepted transfer requests where they were the requester
                     var allTransferRequests = await _transferRequestService.GetAllAsync(cancellationToken);
                     var acceptedRequests = allTransferRequests
@@ -54,21 +56,23 @@ namespace WebApi.Controllers
                         .Select(tr => tr.EquipmentId)
                         .Distinct()
                         .ToList();
-                    
+
                     // Get past equipment that was transferred away
                     var allEquipment = await _equipmentService.GetAllAsync(cancellationToken);
                     var pastEquipment = allEquipment.Where(e => acceptedRequests.Contains(e.Id));
-                    
+
                     // Combine current + past (distinct by Id)
                     var combinedEquipment = currentEquipment
                         .Concat(pastEquipment)
                         .DistinctBy(e => e.Id)
                         .ToList();
-                    
+
                     // Marcar cada equipo como propietario (Yes) o transferido (No)
                     var transferredIds = new HashSet<Guid>(acceptedRequests);
-                    var extendedEquipment = combinedEquipment.Select(e => {
-                        var dto = new EquipmentDto {
+                    var extendedEquipment = combinedEquipment.Select(e =>
+                    {
+                        var dto = new EquipmentDto
+                        {
                             Id = e.Id,
                             Name = e.Name,
                             AcquisitionDate = e.AcquisitionDate,
@@ -183,15 +187,15 @@ namespace WebApi.Controllers
                 {
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    
+
                     if (!departmentIds.Any())
                     {
                         return Ok(Enumerable.Empty<EquipmentDto>());
                     }
 
-                    var ids = string.Join(",", departmentIds.Select(id => $"\"{id}\""));
+                    var ids = string.Join(",", departmentIds.Select(id => $"Guid.Parse(\"{id}\")"));
                     var sectionFilter = $"DepartmentId in ({ids})";
-                    
+
                     if (!string.IsNullOrEmpty(query))
                     {
                         query = $"({query}) AND {sectionFilter}";

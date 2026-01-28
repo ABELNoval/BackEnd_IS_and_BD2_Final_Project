@@ -13,7 +13,7 @@ namespace Web.Controllers
         private readonly IDepartmentService _departmentService;
         private readonly IEquipmentService _equipmentService;
 
-        public EquipmentDecommissionController (
+        public EquipmentDecommissionController(
             IEquipmentDecommissionService equipmentDecommissionService,
             IDepartmentService departmentService,
             IEquipmentService equipmentService)
@@ -30,19 +30,19 @@ namespace Web.Controllers
         public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-            
+
             // Technical: only their own decommissions
             if (role == "Technical")
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    var query = $"TechnicalId == \"{userId}\"";
+                    var query = $"TechnicalId == Guid.Parse(\"{userId}\")";
                     var resultT = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
                     return Ok(resultT);
                 }
             }
-            
+
             // Responsible: only decommissions of their CURRENT equipment (not past)
             if (role == "Responsible")
             {
@@ -51,7 +51,7 @@ namespace Web.Controllers
                 {
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    
+
                     if (!departmentIds.Any())
                     {
                         return Ok(Enumerable.Empty<EquipmentDecommissionDto>());
@@ -65,11 +65,11 @@ namespace Web.Controllers
                         return Ok(Enumerable.Empty<EquipmentDecommissionDto>());
                     }
 
-                    var ids = string.Join(",", equipmentIds.Select(id => $"\"{id}\""));
+                    var ids = string.Join(",", equipmentIds.Select(id => $"Guid.Parse(\"{id}\")"));
                     var query = $"EquipmentId in ({ids})";
-                    
-                    var result1 = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
-                    return Ok(result1);
+
+                    var resultR = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
+                    return Ok(resultR);
                 }
             }
 
@@ -103,7 +103,7 @@ namespace Web.Controllers
                     dto.TechnicalId = userId;
                 }
             }
-            
+
             Console.WriteLine($"DTO received - DestinyTypeId: {dto.DestinyTypeId}, EquipmentId: {dto.EquipmentId}, TechnicalId: {dto.TechnicalId}");
             var created = await _equipmentDecommissionService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
@@ -115,7 +115,7 @@ namespace Web.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, UpdateEquipmentDecommissionDto dto, CancellationToken cancellationToken)
         {
-             if (dto.Id != id)
+            if (dto.Id != id)
                 dto.Id = id;
 
             var updated = await _equipmentDecommissionService.UpdateAsync(dto, cancellationToken);

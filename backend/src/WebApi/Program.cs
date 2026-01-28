@@ -12,6 +12,45 @@ using WebAPI.ExceptionHandlers;
 using MediatR;
 using Application.Reports.Queries.GetDecommissionLastYear;
 
+static async Task ExecuteSeedAsync(AppDbContext context)
+{
+    var seedPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "..", "..", "..", "db", "seed.sql");
+
+    if (!File.Exists(seedPath))
+    {
+        Console.WriteLine("seed.sql no encontrado en: " + seedPath);
+        return;
+    }
+
+    var connection = context.Database.GetDbConnection();
+    await connection.OpenAsync();
+
+    // 1. DESACTIVAR FK para TODO el seed.sql
+    using (var cmd = connection.CreateCommand())
+    {
+        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 0";
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    // 2. EJECUTAR TODO seed.sql COMPLETO (NO línea por línea)
+    var sql = await File.ReadAllTextAsync(seedPath);
+    using (var cmd = connection.CreateCommand())
+    {
+        cmd.CommandText = sql;
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    // 3. REACTIVAR FK
+    using (var cmd = connection.CreateCommand())
+    {
+        cmd.CommandText = "SET FOREIGN_KEY_CHECKS = 1";
+        await cmd.ExecuteNonQueryAsync();
+    }
+
+    await connection.CloseAsync();
+    Console.WriteLine("Seed.sql ejecutado completo");
+}
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Controllers
@@ -58,8 +97,9 @@ builder.Services.AddAuthentication(options =>
         ValidIssuer = builder.Configuration["Jwt:Issuer"],
         ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])
-        )
+    Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ?? "")
+)
+
     };
 });
 
@@ -113,7 +153,22 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var ctx = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var services = scope.ServiceProvider;
+    var env = services.GetRequiredService<IWebHostEnvironment>();
+
     ctx.Database.Migrate();
+
+    if (env.IsDevelopment())
+    {
+        try
+        {
+            await ExecuteSeedAsync(ctx);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error ejecutando seed: " + ex.Message);
+        }
+    }
 
     try
     {

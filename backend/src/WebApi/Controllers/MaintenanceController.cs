@@ -13,7 +13,7 @@ namespace Web.Controllers
         private readonly IDepartmentService _departmentService;
         private readonly IEquipmentService _equipmentService;
 
-        public MaintenanceController (IMaintenanceService maintenanceService, IDepartmentService departmentService, IEquipmentService equipmentService)
+        public MaintenanceController(IMaintenanceService maintenanceService, IDepartmentService departmentService, IEquipmentService equipmentService)
         {
             _maintenanceService = maintenanceService;
             _departmentService = departmentService;
@@ -34,7 +34,7 @@ namespace Web.Controllers
                 {
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    
+
                     if (!departmentIds.Any())
                     {
                         return Ok(Enumerable.Empty<MaintenanceDto>());
@@ -48,9 +48,9 @@ namespace Web.Controllers
                         return Ok(Enumerable.Empty<MaintenanceDto>());
                     }
 
-                    var ids = string.Join(",", equipmentIds.Select(id => $"\"{id}\""));
+                    var ids = string.Join(",", equipmentIds.Select(id => $"Guid.Parse(\"{id}\")"));
                     var query = $"EquipmentId in ({ids})";
-                    
+
                     var result = await _maintenanceService.FilterAsync(query, cancellationToken);
                     return Ok(result);
                 }
@@ -60,7 +60,7 @@ namespace Web.Controllers
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    var query = $"TechnicalId == \"{userId}\"";
+                    var query = $"TechnicalId == Guid.Parse(\"{userId}\")";
                     var result = await _maintenanceService.FilterAsync(query, cancellationToken);
                     return Ok(result);
                 }
@@ -96,7 +96,7 @@ namespace Web.Controllers
                     dto.TechnicalId = userId;
                 }
             }
-            
+
             Console.WriteLine($"El type es: {dto.MaintenanceTypeId}");
             var created = await _maintenanceService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
@@ -108,7 +108,7 @@ namespace Web.Controllers
         [HttpPut("{id:guid}")]
         public async Task<IActionResult> Update(Guid id, UpdateMaintenanceDto dto, CancellationToken cancellationToken)
         {
-             if (dto.Id != id)
+            if (dto.Id != id)
                 dto.Id = id;
 
             var updated = await _maintenanceService.UpdateAsync(dto, cancellationToken);
@@ -156,7 +156,7 @@ namespace Web.Controllers
                 {
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    
+
                     if (!departmentIds.Any())
                     {
                         return Ok(Enumerable.Empty<MaintenanceDto>());
@@ -172,7 +172,7 @@ namespace Web.Controllers
 
                     var ids = string.Join(",", equipmentIds.Select(id => $"\"{id}\""));
                     var sectionFilter = $"EquipmentId in ({ids})";
-                    
+
                     if (!string.IsNullOrEmpty(query))
                     {
                         query = $"({query}) AND {sectionFilter}";
