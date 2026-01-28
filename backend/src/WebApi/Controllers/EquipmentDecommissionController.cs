@@ -37,10 +37,11 @@ namespace Web.Controllers
             // Technical: only their own decommissions
             if (role == "Technical")
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!string.IsNullOrEmpty(userId))
+                var userIdClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value 
+                                ?? User.FindFirst("sub")?.Value;
+                if (!string.IsNullOrEmpty(userIdClaim))
                 {
-                    var query = $"TechnicalId == Guid.Parse(\"{userId}\")";
+                    var query = $"TechnicalId == Guid.Parse(\"{userIdClaim}\")";
                     var resultT = await _equipmentDecommissionService.FilterAsync(query, cancellationToken);
                     return Ok(resultT);
                 }

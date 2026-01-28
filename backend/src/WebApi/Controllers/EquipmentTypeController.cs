@@ -38,33 +38,13 @@ namespace WebApi.Controllers
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;
-                var userIdClaim = User.FindFirst("UserId")?.Value;
-                
-                if (Guid.TryParse(sectionIdClaim, out var sectionId) && Guid.TryParse(userIdClaim, out var userId))
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
                 {
-                    // Get current equipment from their section's departments
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    var currentEquipment = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    var equipments = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
                     
-                    // Get equipment from accepted transfer requests where they were the requester
-                    var allTransferRequests = await _transferRequestService.GetAllAsync(cancellationToken);
-                    var acceptedRequests = allTransferRequests
-                        .Where(tr => tr.RequesterId == userId && tr.StatusId == 2)
-                        .Select(tr => tr.EquipmentId)
-                        .Distinct()
-                        .ToList();
-                    
-                    var allEquipment = await _equipmentService.GetAllAsync(cancellationToken);
-                    var pastEquipment = allEquipment.Where(e => acceptedRequests.Contains(e.Id));
-                    
-                    // Get unique equipment type IDs from combined equipment
-                    var typeIds = currentEquipment
-                        .Concat(pastEquipment)
-                        .Select(e => e.EquipmentTypeId)
-                        .Distinct()
-                        .ToList();
-                    
+                    var typeIds = equipments.Select(e => e.EquipmentTypeId).Distinct().ToList();
                     var allTypes = await _equipmentTypeService.GetAllAsync(cancellationToken);
                     var filteredTypes = allTypes.Where(t => typeIds.Contains(t.Id)).ToList();
                     return Ok(filteredTypes);

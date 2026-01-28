@@ -35,39 +35,12 @@ namespace WebApi.Controllers
             if (role == "Responsible")
             {
                 var sectionIdClaim = User.FindFirst("SectionId")?.Value;
-                var userIdClaim = User.FindFirst("UserId")?.Value;
-
-                if (Guid.TryParse(sectionIdClaim, out var sectionId) && Guid.TryParse(userIdClaim, out var userId))
+                if (Guid.TryParse(sectionIdClaim, out var sectionId))
                 {
-                    // Get current equipment from their section's departments
                     var departments = await _departmentService.GetBySectionIdAsync(sectionId, cancellationToken);
                     var departmentIds = departments.Select(d => d.Id).ToList();
-                    var currentEquipment = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
-                    foreach (var equipment in currentEquipment)
-                    {
-                        Console.WriteLine("EQUIPO ACTUAL: " + equipment.Name);
-                    }
-                    ;
-
-                    // Get equipment from accepted transfer requests where they were the requester
-                    var allTransferRequests = await _transferRequestService.GetAllAsync(cancellationToken);
-                    var acceptedRequests = allTransferRequests
-                        .Where(tr => tr.RequesterId == userId && tr.StatusId == 2) // 2 = Accepted
-                        .Select(tr => tr.EquipmentId)
-                        .Distinct()
-                        .ToList();
-
-                    // Get past equipment that was transferred away
-                    var allEquipment = await _equipmentService.GetAllAsync(cancellationToken);
-                    var pastEquipment = allEquipment.Where(e => acceptedRequests.Contains(e.Id));
-
-                    // Combine current + past (distinct by Id)
-                    var combinedEquipment = currentEquipment
-                        .Concat(pastEquipment)
-                        .DistinctBy(e => e.Id)
-                        .ToList();
-
-                    return Ok(combinedEquipment);
+                    var result = await _equipmentService.GetByDepartmentIdsAsync(departmentIds, cancellationToken);
+                    return Ok(result);
                 }
             }
             // Employee: solo equipos de su departamento

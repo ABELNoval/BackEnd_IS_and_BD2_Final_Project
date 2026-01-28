@@ -90,7 +90,8 @@ namespace Web.Controllers
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             if (role == "Technical")
             {
-                var userIdClaim = User.FindFirst("UserId")?.Value;
+                var userIdClaim = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value 
+                                ?? User.FindFirst("sub")?.Value;
                 if (Guid.TryParse(userIdClaim, out var userId))
                 {
                     dto.TechnicalId = userId;
